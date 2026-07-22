@@ -1,7 +1,7 @@
 "use client"
 
+import { CreateUserAction } from "@/lib/actions/auth.actions"
 import { useState } from "react"
-import { CreateUserr } from "./action"
 
 export default function Signup() {
 
@@ -10,7 +10,7 @@ export default function Signup() {
     const [password, setPassword] = useState("")
 
     async function CreateUser() {
-        const result = await CreateUserr({
+        const result = await CreateUserAction({
             username,
             number,
             password
