@@ -2,8 +2,16 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { DirectionProvider } from "@base-ui/react/direction-provider";
+import { Noto_Sans_Arabic } from "next/font/google"
+import Header from "@/components/core/Header";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+
+const fontSans = Noto_Sans_Arabic({
+  subsets: ["arabic"],
+  variable: "--font-sans",
+})
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,11 +34,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // <html
+    //   lang="en"
+    //   className={cn("h-full dark", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
+    // >
     <html
       lang="en"
-      className={cn("h-full dark", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
+      dir="rtl"
+      className={cn("h-full dark", "antialiased",fontSans.variable)}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <DirectionProvider direction="rtl">
+          {children}
+        </DirectionProvider>
+      </body>
     </html>
   );
 }
