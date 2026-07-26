@@ -18,12 +18,97 @@ model User {
   number   String  @unique
   password String
   admin    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model GeneralCategory {
+model MasterCategory {
   id     String  @id @default(uuid())
-  namee  String
+  name   String
   active Boolean @default(true)
 
-  // productCategory ProductCategory[]
+  subCategory SubCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SubCategory {
+  id          String @id @default(uuid())
+  name        String
+  description String
+
+  masterCategoryId String         @unique
+  masterCategory   MasterCategory @relation(fields: [masterCategoryId], references: [id])
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ProductType {
+  LENS
+  FRAME
+  OTHER
+}
+
+model Product {
+  id String @id @default(uuid())
+
+  name           String
+  description    String
+  active         Boolean  @default(true)
+  price          String
+  priceUpdatedAt DateTime
+
+  type ProductType
+
+  categoryId  String      @unique
+  categoryRel SubCategory @relation(fields: [categoryId], references: [id])
+
+  tags Tags[]
+
+  lens Lens?
+
+  customFields CustomField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tags {
+  id   String @id @default(uuid())
+  name String
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lens {
+  id String @id @default(uuid())
+
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id])
+
+  od String
+  os String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomField {
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id])
+
+  name        String
+  description String?
+  value       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
