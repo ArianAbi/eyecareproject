@@ -2,9 +2,9 @@
 
 import prisma from "@/lib/db"
 import { signIn } from "../Auth"
-import { redirect } from "next/navigation"
 import { AuthError } from "next-auth"
-import z from "zod"
+import * as z from "zod"
+import { LoginSchema } from "../schemas/auth.schema"
 
 export async function CreateUserAction({ username, number, password }: { username: string, number: string, password: string }) {
     const result = await prisma.user.create({
@@ -17,13 +17,6 @@ export async function CreateUserAction({ username, number, password }: { usernam
 
     return result
 }
-
-export const LoginSchema = z.object({
-    username:z.string().min(4,{error:"نام کاربری باید حداقل 4 حرف باشد"}).max(15,{error:"نام کاربری نمیتواند بیشتر از 15 حرف باشد"}),
-    password:z.string().min(8,{error:"کلمه عبور باید حداقل 8 حرف باشد"}).max(30,{error:"کلمه عبور نمیتواند بیشتر از 30 حرف باشد"})
-})
-
-export type LoginSchemaType = z.infer<typeof LoginSchema>
 
 export async function LoginAction(prevState:any,data: FormData) {
     const username = data.get('username')

@@ -1,6 +1,6 @@
 "use client"
 
-import { LoginAction, LoginSchema,LoginSchemaType } from "@/lib/actions/auth.actions"
+import { LoginAction } from "@/lib/actions/auth.actions"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
@@ -8,6 +8,7 @@ import { useActionState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import InputErrorMesage from "./InputErrorMessage"
+import { LoginSchema, LoginSchemaType } from "@/lib/schemas/auth.schema"
 
 export function LoginForm() {
     const initialState = {
@@ -37,8 +38,8 @@ export function LoginForm() {
                     ورود به حساب
                 </CardTitle>
             </CardHeader>
-            <form onSubmit={onSubmit}>
-                <CardContent>
+            <form onSubmit={onSubmit} className="min-w-96">
+                <CardContent className="space-y-3">
                     <div>
 
                         <Input
@@ -66,7 +67,7 @@ export function LoginForm() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button disabled={pending} className={"w-full"} type="submit">
+                    <Button disabled={pending} className={"w-full mt-5"} type="submit">
                         ورود
                     </Button>
                 </CardFooter>
@@ -74,3 +75,4 @@ export function LoginForm() {
         </Card>
     </>
 } 
+
