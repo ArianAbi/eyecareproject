@@ -30,7 +30,7 @@
     "zod": "^4.4.3"
   },
     "overrides": {
-    "zod": "4.4.3"
+          "zod": "$zod"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
