@@ -1,13 +1,15 @@
 "use client"
 import { signOut } from 'next-auth/react'
+import { Button } from './ui/button'
 
 export default function LogoutBtn() {
     return (
-        <button onClick={() => signOut({
+        <Button variant={"outline"}
+        onClick={() => signOut({
             redirect: true,
             redirectTo: '/login'
         })}>
-            Logout
-        </button>
+            خروج از حساب
+        </Button>
     )
 }

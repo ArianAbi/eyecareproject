@@ -3,22 +3,54 @@
 import prisma from "@/lib/db"
 import { signIn } from "../Auth"
 import { AuthError } from "next-auth"
-import * as z from "zod"
-import { LoginSchema } from "../schemas/auth.schema"
+import { LoginSchema, SignupSchema } from "../schemas/auth.schema"
+import { redirect } from "next/navigation"
 
-export async function CreateUserAction({ username, number, password }: { username: string, number: string, password: string }) {
-    const result = await prisma.user.create({
-        data:{
-            username,
-            number,
-            password
-        }
+export async function CreateUserAction(prevState: any, data: FormData) {
+    const username = data.get('username')
+    const number = data.get('number')
+    const password = data.get('password')
+
+    const validateFields = SignupSchema.safeParse({
+        username,
+        number,
+        password
     })
 
-    return result
+    if (!validateFields.success) {
+        return {
+            errors: validateFields.error.flatten()
+        }
+    }
+
+    try {
+        const result = await prisma.user.create({
+            data: {
+                username: validateFields.data.username,
+                number: validateFields.data.number,
+                password: validateFields.data.password,
+            }
+        })
+
+        await signIn('credentials', {
+            username: validateFields.data.username,
+            password: validateFields.data.password,
+            redirect:true,
+            redirectTo: '/',
+        })
+
+        return {}
+    } catch (err) {
+        if (err instanceof AuthError) {
+            return {
+                error: "اطلاعات وارد شده صحیح نمیباشد"
+            }
+        }
+        throw err
+    }
 }
 
-export async function LoginAction(prevState:any,data: FormData) {
+export async function LoginAction(prevState: any, data: FormData) {
     const username = data.get('username')
     const password = data.get('password')
 
@@ -27,9 +59,9 @@ export async function LoginAction(prevState:any,data: FormData) {
         password
     })
 
-    if(!validateFields.success){
+    if (!validateFields.success) {
         return {
-            errors:validateFields.error.flatten()
+            errors: validateFields.error.flatten()
         }
     }
 
@@ -37,14 +69,13 @@ export async function LoginAction(prevState:any,data: FormData) {
         await signIn('credentials', {
             username: username,
             password: password,
-            redirectTo: '/',
+            redirect:true,
+            redirectTo:"/"
         })
-
-        return {}
     } catch (err) {
         if (err instanceof AuthError) {
             return {
-                error:"اطلاعات وارد شده صحیح نمیباشد"
+                error: "اطلاعات وارد شده صحیح نمیباشد"
             }
         }
         throw err
