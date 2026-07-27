@@ -3,12 +3,13 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BoxIcon, ChevronDown, type LucideIcon } from "lucide-react"
+import { BoxIcon, ChevronDown, Globe, Hammer, ReceiptIcon, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -20,6 +21,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { SidebarDataType } from "@/types/sidebar-data"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,7 +43,7 @@ export interface SidebarNavGroup {
 // ---------------------------------------------------------------------------
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  data: SidebarNavGroup[]
+  data: SidebarDataType
   header?: React.ReactNode
 }
 
@@ -53,7 +55,7 @@ export function CustomSidebar({ data, header, ...props }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.map((group, index) =>
+              {data.menus.map((group, index) =>
                 group.items.length > 1 ? (
                   <SidebarNavCollapsibleGroup key={group.group_title || index} group={group} />
                 ) : (
@@ -65,7 +67,15 @@ export function CustomSidebar({ data, header, ...props }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
-    </Sidebar>
+
+      {data.footer && <SidebarFooter>
+        <SidebarFooterItem key={data.footer.path}
+        title={data.footer.title}
+        icon={data.footer.icon}
+        path={data.footer.path}
+        />
+      </SidebarFooter>}
+    </Sidebar >
   )
 }
 
@@ -86,6 +96,25 @@ function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
           <Link href={item.path}>
             <Icon />
             <span>{item.title}</span>
+          </Link>
+        }>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  )
+}
+
+function SidebarFooterItem({ title,icon,path }: {title:string,icon:LucideIcon,path:string}) {
+  const pathname = usePathname()
+  const Icon = icon
+  const isActive = pathname === path
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton isActive={isActive} tooltip={title}
+        render={
+          <Link href={path}>
+            <Icon />
+            <span>{title}</span>
           </Link>
         }>
       </SidebarMenuButton>
@@ -139,19 +168,46 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
   )
 }
 
-export const AdminSidebarData = [
-  {
-    group_title: "محصولات",
-    icon: BoxIcon,
-    items: [
-      {
-        title: "لیست محصولات",
-        path: `/admin/products`
-      },
-      {
-        title: "افزودن محصول",
-        path: `/admin/products`
-      }
-    ]
+export const AdminSidebarData:SidebarDataType = {
+  menus: [
+    {
+      group_title: "محصولات",
+      icon: BoxIcon,
+      items: [
+        {
+          title: "لیست محصولات",
+          path: `/admin/products`
+        },
+        {
+          title: "افزودن محصول",
+          path: `/admin/products`
+        }
+      ]
+    }
+  ],
+  footer: {
+    title: "صفحه اصلی",
+    icon: Globe,
+    path:"/"
   }
-] 
+}
+
+export const UserSidebarData:SidebarDataType = {
+  menus: [
+    {
+      group_title: "سفارشات",
+      icon: ReceiptIcon,
+      items: [
+        {
+          title: "سفارشات",
+          path: `/orders`
+        }
+      ]
+    }
+  ],
+  footer: {
+    title: "مدیریت",
+    icon: Hammer,
+    path:`/admin`
+  }
+}
