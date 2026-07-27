@@ -1,9 +1,6 @@
-import { AdminSidebar } from "@/components/core/AdminSidebar";
-import { buttonVariants } from "@/components/ui/button";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
-import { Home } from "lucide-react"
-import Link from "next/link";
+import { AdminSidebarData, CustomSidebar } from "@/components/core/CustomSidebar";
+import Header from "@/components/core/Header";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function AuthLayout({
     children,
@@ -11,11 +8,21 @@ export default function AuthLayout({
     children: React.ReactNode;
 }) {
     return (
-        <SidebarProvider>
-            <AdminSidebar />
-            <div className="h-svh w-full grid place-items-center">
-                <main>{children}</main>
-            </div>
-        </SidebarProvider>
+        <div className="relative">
+            <SidebarProvider>
+                <CustomSidebar
+                    data={AdminSidebarData}
+                    header={
+                        <>
+                            ICN
+                        </>
+                    }
+                />
+                <div className="w-full">
+                    <Header sidebar />
+                    <main>{children}</main>
+                </div>
+            </SidebarProvider>
+        </div>
     )
 }
