@@ -4,7 +4,6 @@ import prisma from "@/lib/db"
 import { signIn } from "../Auth"
 import { AuthError } from "next-auth"
 import { LoginSchema, SignupSchema } from "../schemas/auth.schema"
-import { redirect } from "next/navigation"
 
 export async function CreateUserAction(prevState: any, data: FormData) {
     const username = data.get('username')

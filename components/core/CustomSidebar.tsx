@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BoxIcon, ChevronDown, Globe, Hammer, ReceiptIcon, type LucideIcon } from "lucide-react"
+import {BoxIcon, ChevronDown, Globe, Hammer, LayoutDashboard, LayoutList, ReceiptIcon, User, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -45,9 +45,10 @@ export interface SidebarNavGroup {
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   data: SidebarDataType
   header?: React.ReactNode
+  footer?: boolean
 }
 
-export function CustomSidebar({ data, header, ...props }: AppSidebarProps) {
+export function CustomSidebar({ data, header,footer=false, ...props }: AppSidebarProps) {
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
       {header && <SidebarHeader>{header}</SidebarHeader>}
@@ -68,7 +69,7 @@ export function CustomSidebar({ data, header, ...props }: AppSidebarProps) {
       </SidebarContent>
       <SidebarRail />
 
-      {data.footer && <SidebarFooter>
+      {data.footer && footer && <SidebarFooter>
         <SidebarFooterItem key={data.footer.path}
         title={data.footer.title}
         icon={data.footer.icon}
@@ -142,7 +143,7 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
           <SidebarMenuButton isActive={isGroupActive} tooltip={group.group_title}>
             <Icon />
             <span>{group.group_title}</span>
-            <ChevronDown className="mr-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+            <ChevronDown className="mr-auto transition-transform -rotate-90 " />
           </SidebarMenuButton>
         }
       />
@@ -168,8 +169,43 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
   )
 }
 
+
 export const AdminSidebarData:SidebarDataType = {
   menus: [
+    {
+      group_title: "داشبورد",
+      icon: LayoutDashboard,
+      items: [
+        {
+          title: "داشبورد",
+          path: `/admin/`
+        }
+      ]
+    },
+    {
+      group_title: "مدیریت کاربران",
+      icon: User,
+      items: [
+        {
+          title: "مدیریت کاربران",
+          path: `/admin/users`
+        }
+      ]
+    },
+    {
+        group_title:"دسته بندی ها",
+        icon:LayoutList,
+        items:[
+            {
+                title:"دسته بندی کلی",
+                path: `/admin/master-category`
+            },
+            {
+                title:"دسته بندی محصولات",
+                path:`/admin/product-category`
+            }
+        ]
+    },
     {
       group_title: "محصولات",
       icon: BoxIcon,

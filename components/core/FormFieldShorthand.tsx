@@ -1,7 +1,9 @@
+"use client"
 // components/form-field.tsx
-import { Controller, type Control, type FieldValues, type Path } from "react-hook-form";
+// import {  Controller, type Control, type FieldValues, type Path } from "react-hook-form";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
 interface FormFieldProps<TFieldValues extends FieldValues> {
   name: Path<TFieldValues>;
@@ -11,6 +13,7 @@ interface FormFieldProps<TFieldValues extends FieldValues> {
   type?: React.HTMLInputTypeAttribute;
   autoComplete?: string;
   description?: string;
+  disabled?:boolean
 }
 
 export function FormFieldShorthand<TFieldValues extends FieldValues>({
@@ -21,6 +24,7 @@ export function FormFieldShorthand<TFieldValues extends FieldValues>({
   type = "text",
   autoComplete = "off",
   description,
+  disabled = false
 }: FormFieldProps<TFieldValues>) {
   const id = `form-${name}`;
 
@@ -39,6 +43,7 @@ export function FormFieldShorthand<TFieldValues extends FieldValues>({
             aria-invalid={fieldState.invalid}
             placeholder={placeholder}
             autoComplete={autoComplete}
+            disabled={disabled}
           />
           {description && !fieldState.invalid && (
             <p className="text-muted-foreground text-sm">{description}</p>
