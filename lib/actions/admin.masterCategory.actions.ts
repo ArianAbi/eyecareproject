@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { ActionError } from "../action-error"
 import prisma from "../db"
 
@@ -9,17 +10,15 @@ export async function ADMIN_CreateMasterCategoryAction(data: FormData) {
 
         if (!name) throw new ActionError({ error: "نام دسته بندی الزامیست" })
 
-        await setTimeout(async () => {
-
-            const result = await prisma.masterCategory.create({
-                data: {
-                    name: name.toString()
-                }
-            })
-            return { success: true, data: result }
-
-        }, 1500);
-
+        const result = await prisma.masterCategory.create({
+            data: {
+                name: name.toString()
+            }
+        })
+ 
+        revalidatePath(`/admin/mater-category`)
+        
+        return { success: true, data: result }
     } catch (err) {
         console.log(err);
         throw new ActionError({ error: "failed to create master category, check console" })
@@ -27,11 +26,45 @@ export async function ADMIN_CreateMasterCategoryAction(data: FormData) {
 }
 
 export async function ADMIN_GetMasterCategorys() {
-    try{
+    try {
         const data = await prisma.masterCategory.findMany()
-        return data
+        return { data, success: true }
     } catch (err) {
         console.log(err);
         throw new ActionError({ error: "failed to get master categorys, check console" })
+    }
+}
+
+export async function ADMIN_UpdateMasterCategorys(id: string, name: string, active: boolean) {
+    try {
+        const data = await prisma.masterCategory.update({
+            where: { id: id },
+            data: {
+                name:name,
+                active:active
+            }
+        })
+
+        revalidatePath(`/admin/mater-category`)
+
+        return { data, success: true }
+    } catch (err) {
+        console.log(err);
+        throw new ActionError({ error: "failed to get master categorys, check console" })
+    }
+}
+
+export async function ADMIN_DeleteMasterCategorys(id: string) {
+    try {
+        await prisma.masterCategory.delete({
+            where: { id }
+        })
+
+        revalidatePath(`/admin/mater-category`)
+
+        return { success: true }
+    } catch (err) {
+        console.log(err);
+        throw new ActionError({ error: "failed to delete master categorys, check console" })
     }
 }
