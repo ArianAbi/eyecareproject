@@ -40,37 +40,43 @@ export function FormFieldSelectShorthand<TFieldValues extends FieldValues>({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState }) => (
-        <Field data-invalid={fieldState.invalid}>
-          <FieldLabel className="text-xs" htmlFor={id}>
-            {label}
-          </FieldLabel>
+      render={({ field, fieldState }) => {
+        const selected = options.find(opt => opt.value === field.value);
 
-          <Select
-            value={field.value ?? ""}
-            onValueChange={field.onChange}
-            disabled={disabled}
-          >
-            <SelectTrigger id={id} className="text-xs" aria-invalid={fieldState.invalid}>
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map(opt => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        return (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel className="text-xs" htmlFor={id}>
+              {label}
+            </FieldLabel>
 
-          {description && !fieldState.invalid && (
-            <FieldDescription className="text-muted-foreground text-sm">
-              {description}
-            </FieldDescription>
-          )}
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
-      )}
+            <Select
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+              disabled={disabled}
+            >
+              <SelectTrigger id={id} className="text-xs" aria-invalid={fieldState.invalid}>
+                <SelectValue placeholder={placeholder}>
+                  {selected ? selected.label : placeholder}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {options.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {description && !fieldState.invalid && (
+              <FieldDescription className="text-muted-foreground text-sm">
+                {description}
+              </FieldDescription>
+            )}
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        );
+      }}
     />
   );
 }

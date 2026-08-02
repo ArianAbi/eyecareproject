@@ -1,17 +1,19 @@
 import { DataTable } from "@/components/ui/data-table";
-import CreateMasterCategoryBtn from "./CreateMasterCategoryBtn";
+import CreateProductCategoryBtn from "./CreateProductCategoryBtn";
+import { ADMIN_GetProductCategorys } from "@/lib/actions/admin.productCategory.actions";
+import { AdminSubCategoryColumn } from "./columns";
 import { ADMIN_GetMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
-import { AdminMasterCategoryColumns } from "./columns";
 
 export default async function MasterCategoryPage() {
   
-    const masterCategory = await ADMIN_GetMasterCategorys()
+    const masterCategorys = await ADMIN_GetMasterCategorys()
+    const productCategorys = await ADMIN_GetProductCategorys()
 
     return <div className="space-y-3">
-        <h1>دسته بندی کلی</h1>
+        <h1>دسته بندی محصولات</h1>
 
-        <CreateMasterCategoryBtn />
+        <CreateProductCategoryBtn masterCategorys={masterCategorys.data}/>
 
-        <DataTable data={masterCategory.data} columns={AdminMasterCategoryColumns} />
+        <DataTable data={productCategorys.data} columns={AdminSubCategoryColumn} />
     </div>
 }

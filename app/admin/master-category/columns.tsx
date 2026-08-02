@@ -136,7 +136,7 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory }) {
                 </AlertDialogDescription>
             </AlertDialogHeader>
 
-            <div className="felx flex-col gap-2">
+            <div className="flex flex-col gap-2">
                 <div>
                     <Label className="text-xs">متن زیر را بنویسید</Label>
                     <div className="text-xs bg-amber-400/30 border border-amber-500 text-amber-600 font-semibold px-2 py-1 rounded-md my-2 w-fit">{validationPhrase}</div>
@@ -228,7 +228,7 @@ function MasterCategoryEditBtn({ data }: { data: MasterCategory }) {
                 </AlertDialogTitle>
             </AlertDialogHeader>
 
-            <div className="felx flex-col gap-2">
+            <div className="flex flex-col gap-2">
                 <div className="space-y-2">
                     <FormFieldShorthand
                         control={control}
