@@ -61,7 +61,6 @@ model Product {
   description    String
   active         Boolean  @default(true)
   price          String
-  priceUpdatedAt DateTime
 
   type ProductType
 

@@ -6,21 +6,30 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { MasterCategory } from "@/generated/prisma/client";
+import { MasterCategory, ProductType, SubCategory } from "@/generated/prisma/client";
 import { parseActionError } from "@/lib/action-error";
 import { ADMIN_CreateMasterCategoryAction } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_CreateProductCategoryAction } from "@/lib/actions/admin.productCategory.actions";
+import { ADMIN_CreateProductAction } from "@/lib/actions/admin.products.action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod"
 
-export default function CreateProductBtn({ masterCategorys }: { masterCategorys: MasterCategory[] }) {
+export default function CreateProductBtn({ categorys }: { categorys: SubCategory[] }) {
     const schema = z.object({
         name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
         description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
-        masterCategoryId: z.string({ error: "زیرمجموعه الزامیست" }).min(1, { error: "زیرمجموعه الزامیست" })
+        type: z.string(),
+        price: z.string(),
+        categoryId: z.string({ error: "زیرمجموعه الزامیست" }).min(1, { error: "زیرمجموعه الزامیست" }),
+        lens: z.object({
+            fromOd: z.string(),
+            fromOs: z.string(),
+            toOd: z.string().optional(),
+            toOs: z.string().optional()
+        })
     })
 
     const { control, handleSubmit, formState } = useForm({
@@ -29,18 +38,24 @@ export default function CreateProductBtn({ masterCategorys }: { masterCategorys:
         defaultValues: {
             name: "",
             description: "",
-            masterCategoryId: ""
+            categoryId: "",
+            price: "",
+            type: ""
         }
     })
 
     const onSubmit = handleSubmit(async values => {
-        const data = new FormData()
-        data.append("name", values.name)
-        data.append("description", values.description)
-        data.append("masterCategoryId", values.masterCategoryId)
-
         try {
-            await ADMIN_CreateProductCategoryAction(data)
+            const data = {
+                name: values.name,
+                description: values.description,
+                categoryId: values.categoryId,
+                price: values.price,
+                type: values.type as ProductType,
+                lens: values.lens
+            }
+
+            await ADMIN_CreateProductAction(data)
 
             setAlertOpen(false)
 
@@ -97,10 +112,10 @@ export default function CreateProductBtn({ masterCategorys }: { masterCategorys:
 
                 <FormFieldSelectShorthand
                     control={control}
-                    name="masterCategoryId"
+                    name="categoryId"
                     placeholder="انتخاب زیرمجموعه"
                     label="زیرمجموعه"
-                    options={masterCategorys.map(o => ({ label: o.name, value: o.id }))}
+                    options={categorys.map(o => ({ label: o.name, value: o.id }))}
                 />
 
                 <div className="col-span-full">
