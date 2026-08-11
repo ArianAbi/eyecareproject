@@ -18,9 +18,25 @@ model User {
   number   String  @unique
   password String
   admin    Boolean @default(false)
+  address  String  @default("")
+  credit   Int     @default(0)
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  orders    OrderBatch[]
+  invoices  Invoice[]
+}
+
+model Invoice {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  
+  amount Int
+  invoiceCode String @unique
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model MasterCategory {
@@ -54,13 +70,23 @@ enum ProductType {
   OTHER
 }
 
+enum OrderItemStatus {
+  SUBMITIED
+  LOCKED
+  INPROCESS
+  FINISHED
+  SENT
+  DELIVERED
+  ONHOLD
+}
+
 model Product {
   id String @id @default(uuid())
 
-  name           String
-  description    String
-  active         Boolean  @default(true)
-  price          String
+  name        String
+  description String
+  active      Boolean @default(true)
+  price       String
 
   type ProductType
 
@@ -74,7 +100,9 @@ model Product {
   customFields CustomField[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt()
+
+  orderItem OrderItem[]
 }
 
 model Tags {
@@ -101,6 +129,54 @@ model Lens {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model OrderBatch {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  orderItems OrderItem[]
+
+  orderUpdate OrderUpdate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id])
+
+  orderBatchId String     @unique
+  orderBatch   OrderBatch @relation(fields: [orderBatchId], references: [id])
+
+  customerNote String          @default("")
+  status       OrderItemStatus @default(SUBMITIED)
+
+  orderUpdate OrderUpdate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
+
+model OrderUpdate {
+  id String @id @default(uuid())
+
+  message String?
+
+  orderItemId String?
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
+
+  orderBatchId String?
+  orderBatch   OrderBatch? @relation(fields: [orderBatchId], references: [id])
+
+  updatedStatus OrderItemStatus
+
+  createdAt DateTime @default(now())
 }
 
 model CustomField {
