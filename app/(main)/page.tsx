@@ -1,17 +1,19 @@
 import LogoutBtn from "@/components/LogoutBtn";
 import { auth } from "@/lib/Auth";
+import prisma from "@/lib/db";
 import Image from "next/image";
 
 export default async function Home() {
 
   const session = await auth()
 
+  const data = await prisma.user.findMany()
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
 
-      <pre>
-        {JSON.stringify(session)}
+      <pre className="text-wrap">
+        {JSON.stringify(data)}
       </pre>
 
       <LogoutBtn />

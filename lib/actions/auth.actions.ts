@@ -5,19 +5,18 @@ import { signIn } from "../Auth"
 import { AuthError } from "next-auth"
 import { LoginSchema, SignupSchema } from "../schemas/auth.schema"
 
-export async function CreateUserAction(prevState: any, data: FormData) {
-    const username = data.get('username')
-    const number = data.get('number')
-    const password = data.get('password')
+export async function CreateUserAction(username: string, number: string, password: string) {
 
     const validateFields = SignupSchema.safeParse({
         username,
         number,
-        password
+        password,
+        confirmPassword: password
     })
 
     if (!validateFields.success) {
         return {
+            error: "validation failed",
             errors: validateFields.error.flatten()
         }
     }
@@ -34,7 +33,7 @@ export async function CreateUserAction(prevState: any, data: FormData) {
         await signIn('credentials', {
             username: validateFields.data.username,
             password: validateFields.data.password,
-            redirect:true,
+            redirect: true,
             redirectTo: '/',
         })
 
@@ -49,10 +48,7 @@ export async function CreateUserAction(prevState: any, data: FormData) {
     }
 }
 
-export async function LoginAction(prevState: any, data: FormData) {
-    const username = data.get('username')
-    const password = data.get('password')
-
+export async function LoginAction(username: string, password: string) {
     const validateFields = LoginSchema.safeParse({
         username,
         password
@@ -68,8 +64,8 @@ export async function LoginAction(prevState: any, data: FormData) {
         await signIn('credentials', {
             username: username,
             password: password,
-            redirect:true,
-            redirectTo:"/"
+            redirect: true,
+            redirectTo: "/"
         })
     } catch (err) {
         if (err instanceof AuthError) {

@@ -13,13 +13,10 @@ import { Field, FieldGroup, FieldLabel } from "../ui/field"
 import { FormFieldShorthand } from "../core/FormFieldShorthand"
 import { Separator } from "../ui/separator"
 import { TermsAndConditions } from "../core/TermsAndConditions"
+import { toast } from "../ui/toast"
+import { Spinner } from "../ui/spinner"
 
 export function LoginForm() {
-    const initialState = {
-        error: "",
-    }
-    const [state, formAction, pending] = useActionState(LoginAction, initialState)
-
     const {
         register,
         handleSubmit,
@@ -27,21 +24,29 @@ export function LoginForm() {
         control
     } = useForm<LoginSchemaType>({
         resolver: zodResolver(LoginSchema),
-        reValidateMode:"onChange",
-        mode:"onChange",
-        defaultValues:{
-            username:"",
-            password:""
+        reValidateMode: "onChange",
+        mode: "onChange",
+        defaultValues: {
+            username: "",
+            password: ""
         }
     })
 
-    const onSubmit = handleSubmit((data) => {
-        const formData = new FormData()
-        formData.append("username", data.username)
-        formData.append("password", data.password)
+    const onSubmit = handleSubmit(async (data) => {
+        const response = await LoginAction(data.username, data.password)
 
-        startTransition(()=>{
-            formAction(formData)
+        if (response?.error) {
+            toast.add({
+                title: response.error,
+                type: "error"
+            })
+
+            return
+        }
+
+        toast.add({
+            title: "خوش آمدید",
+            type: "success"
         })
     })
 
@@ -62,7 +67,7 @@ export function LoginForm() {
                             name="username"
                             type="text"
                         />
-                        
+
                         <FormFieldShorthand
                             control={control}
                             label="رمز عبور"
@@ -73,8 +78,11 @@ export function LoginForm() {
                     </FieldGroup>
                 </CardContent>
                 <CardFooter>
-                    <Button disabled={pending || !formState.isValid} className={"w-full mt-5"} type="submit">
-                        ورود
+                    <Button disabled={formState.isSubmitting || !formState.isValid} className={"w-full mt-5"} type="submit">
+                        <span>
+                            ورود
+                        </span>
+                        {formState.isSubmitting && <Spinner />}
                     </Button>
                 </CardFooter>
             </form>
@@ -84,11 +92,6 @@ export function LoginForm() {
 
 
 export function SignupForm() {
-    const initialState = {
-        error: "",
-    }
-    const [state, formAction, pending] = useActionState(CreateUserAction, initialState)
-
     const {
         register,
         handleSubmit,
@@ -97,15 +100,33 @@ export function SignupForm() {
     } = useForm<SignupSchemaType>({
         resolver: zodResolver(SignupSchema),
         mode: "onChange",
-        reValidateMode: "onChange"
+        reValidateMode: "onChange",
+        defaultValues: {
+            username: "",
+            number: "",
+            password: "",
+            confirmPassword: ""
+        }
     })
 
-    const onSubmit = handleSubmit((data) => {
-        const formData = new FormData()
-        formData.append("username", data.username)
-        formData.append("number", data.number)
-        formData.append("password", data.password)
-        formAction(formData)
+    const onSubmit = handleSubmit(async (data) => {
+        const response = await CreateUserAction(data.username, data.number, data.password)
+
+        if (response.error) {
+            toast.add({
+                title: response.error,
+                type: "error"
+            })
+
+            return
+        }
+
+        toast.add({
+            title: "حساب ساخته شد",
+            type: "success"
+        })
+
+        LoginAction(data.username, data.password)
     })
 
     return <>
@@ -116,7 +137,7 @@ export function SignupForm() {
                 </CardTitle>
 
             </CardHeader>
-                <Separator />
+            <Separator />
             <form onSubmit={onSubmit} className="min-w-96">
                 <CardContent>
                     <FieldGroup className="gap-2">
@@ -157,118 +178,121 @@ export function SignupForm() {
                     </FieldGroup>
                 </CardContent>
                 <CardFooter>
-                    <Button disabled={pending || !formState.isValid} className={"w-full mt-5"} type="submit">
-                        ورود
+                    <Button disabled={formState.isSubmitting || !formState.isValid} className={"w-full mt-5"} type="submit">
+                        <span>
+                            ساخت حساب
+                        </span>
+                        {formState.isSubmitting && <Spinner />}
                     </Button>
                 </CardFooter>
-                    <Separator className={"mt-2"}/>
-                    <div className="px-2 text-xs">
-                        <span>
-                            افتتاح حساب به منزله پذیرش 
-                        </span>
-                        <TermsAndConditions />
-                        <span>
-                            میباشد
-                        </span>
-                    </div>
+                <Separator className={"mt-2"} />
+                <div className="px-2 text-xs">
+                    <span>
+                        افتتاح حساب به منزله پذیرش
+                    </span>
+                    <TermsAndConditions />
+                    <span>
+                        میباشد
+                    </span>
+                </div>
             </form>
         </Card>
     </>
 }
 
-export function SignupFormCopy() {
-    const initialState = {
-        error: "",
-    }
-    const [state, formAction, pending] = useActionState(CreateUserAction, initialState)
+// export function SignupFormCopy() {
+//     const initialState = {
+//         error: "",
+//     }
+//     const [state, formAction, pending] = useActionState(CreateUserAction, initialState)
 
-    const {
-        register,
-        handleSubmit,
-        formState,
-        control
-    } = useForm<SignupSchemaType>({
-        resolver: zodResolver(SignupSchema),
-        mode: "onChange",
-        reValidateMode: "onChange"
-    })
+//     const {
+//         register,
+//         handleSubmit,
+//         formState,
+//         control
+//     } = useForm<SignupSchemaType>({
+//         resolver: zodResolver(SignupSchema),
+//         mode: "onChange",
+//         reValidateMode: "onChange"
+//     })
 
-    const onSubmit = handleSubmit((data) => {
-        const formData = new FormData()
-        formData.append("username", data.username)
-        formData.append("number", data.number)
-        formData.append("password", data.password)
-        formAction(formData)
-    })
+//     const onSubmit = handleSubmit((data) => {
+//         const formData = new FormData()
+//         formData.append("username", data.username)
+//         formData.append("number", data.number)
+//         formData.append("password", data.password)
+//         formAction(formData)
+//     })
 
-    return <>
-        <Card>
-            <CardHeader>
-                <CardTitle>
-                    ساخت حساب
-                </CardTitle>
-            </CardHeader>
-            <form onSubmit={onSubmit} className="min-w-96">
-                <CardContent className="space-y-3">
-                    {/* username */}
-                    <div>
-                        <Input
-                            disabled={pending}
-                            placeholder="نام کاربری"
-                            {...register("username")}
-                        />
-                        <InputErrorMesage
-                            condition={!!formState.errors.username}
-                            message={formState.errors.username?.message}
-                        />
-                    </div>
+//     return <>
+//         <Card>
+//             <CardHeader>
+//                 <CardTitle>
+//                     ساخت حساب
+//                 </CardTitle>
+//             </CardHeader>
+//             <form onSubmit={onSubmit} className="min-w-96">
+//                 <CardContent className="space-y-3">
+//                     {/* username */}
+//                     <div>
+//                         <Input
+//                             disabled={pending}
+//                             placeholder="نام کاربری"
+//                             {...register("username")}
+//                         />
+//                         <InputErrorMesage
+//                             condition={!!formState.errors.username}
+//                             message={formState.errors.username?.message}
+//                         />
+//                     </div>
 
-                    {/* number */}
-                    <div>
-                        <Input
-                            disabled={pending}
-                            placeholder="شماره تماس"
-                            {...register("number")}
-                        />
-                        <InputErrorMesage
-                            condition={!!formState.errors.number}
-                            message={formState.errors.number?.message}
-                        />
-                    </div>
+//                     {/* number */}
+//                     <div>
+//                         <Input
+//                             disabled={pending}
+//                             placeholder="شماره تماس"
+//                             {...register("number")}
+//                         />
+//                         <InputErrorMesage
+//                             condition={!!formState.errors.number}
+//                             message={formState.errors.number?.message}
+//                         />
+//                     </div>
 
-                    {/* password */}
-                    <div>
-                        <Input
-                            disabled={pending}
-                            placeholder="کلمه عبور"
-                            {...register("password")}
-                        />
-                        <InputErrorMesage
-                            condition={!!formState.errors.password}
-                            message={formState.errors.password?.message}
-                        />
-                    </div>
+//                     {/* password */}
+//                     <div>
+//                         <Input
+//                             disabled={pending}
+//                             placeholder="کلمه عبور"
+//                             {...register("password")}
+//                         />
+//                         <InputErrorMesage
+//                             condition={!!formState.errors.password}
+//                             message={formState.errors.password?.message}
+//                         />
+//                     </div>
 
-                    {/* password */}
-                    <div>
-                        <Input
-                            disabled={pending}
-                            placeholder="تکرار کلمه عبور"
-                            {...register("confirmPassword")}
-                        />
-                        <InputErrorMesage
-                            condition={!!formState.errors.confirmPassword}
-                            message={formState.errors.confirmPassword?.message}
-                        />
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button disabled={pending || !formState.isValid} className={"w-full mt-5"} type="submit">
-                        ورود
-                    </Button>
-                </CardFooter>
-            </form>
-        </Card>
-    </>
-}
+//                     {/* password */}
+//                     <div>
+//                         <Input
+//                             disabled={pending}
+//                             placeholder="تکرار کلمه عبور"
+//                             {...register("confirmPassword")}
+//                         />
+//                         <InputErrorMesage
+//                             condition={!!formState.errors.confirmPassword}
+//                             message={formState.errors.confirmPassword?.message}
+//                         />
+//                     </div>
+//                 </CardContent>
+//                 <CardFooter>
+//                     <Button disabled={pending || !formState.isValid} className={"w-full mt-5"} type="submit">
+//                         ورود
+//                     </Button>
+//                 </CardFooter>
+//             </form>
+//         </Card>
+//     </>
+// }
 
