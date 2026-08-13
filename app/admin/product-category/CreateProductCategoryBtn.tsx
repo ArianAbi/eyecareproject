@@ -23,7 +23,7 @@ export default function CreateProductCategoryBtn({ masterCategorys }: { masterCa
         masterCategoryId: z.string({ error: "زیرمجموعه الزامیست" }).min(1, { error: "زیرمجموعه الزامیست" })
     })
 
-    const { control, handleSubmit, formState } = useForm({
+    const { control, handleSubmit, formState, reset } = useForm({
         resolver: zodResolver(schema),
         mode: 'onChange',
         defaultValues: {
@@ -48,6 +48,8 @@ export default function CreateProductCategoryBtn({ masterCategorys }: { masterCa
                 title: "دسته بندی محصول اضافه شد",
                 type: "success",
             })
+
+            reset()
         } catch (err) {
             const { error } = parseActionError(err)
 
@@ -86,7 +88,7 @@ export default function CreateProductCategoryBtn({ masterCategorys }: { masterCa
                 <AlertDialogTitle>افزودن دسته بندی محصول</AlertDialogTitle>
             </AlertDialogHeader>
 
-            <form onSubmit={onSubmit} className="grid grid-cols-2 gap-2">
+            <form onSubmit={onSubmit} className="grid grid-cols-1 gap-2">
                 <FormFieldShorthand
                     control={control}
                     placeholder="نام دسته بندی"

@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {BoxIcon, ChevronDown, Globe, Hammer, LayoutDashboard, LayoutList, ReceiptIcon, User, type LucideIcon } from "lucide-react"
+import { BoxIcon, ChevronDown, Globe, Hammer, LayoutDashboard, LayoutList, ReceiptIcon, User, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -48,7 +48,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   footer?: boolean
 }
 
-export function CustomSidebar({ data, header,footer=false, ...props }: AppSidebarProps) {
+export function CustomSidebar({ data, header, footer = false, ...props }: AppSidebarProps) {
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
       {header && <SidebarHeader>{header}</SidebarHeader>}
@@ -71,9 +71,9 @@ export function CustomSidebar({ data, header,footer=false, ...props }: AppSideba
 
       {data.footer && footer && <SidebarFooter>
         <SidebarFooterItem key={data.footer.path}
-        title={data.footer.title}
-        icon={data.footer.icon}
-        path={data.footer.path}
+          title={data.footer.title}
+          icon={data.footer.icon}
+          path={data.footer.path}
         />
       </SidebarFooter>}
     </Sidebar >
@@ -104,7 +104,7 @@ function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
   )
 }
 
-function SidebarFooterItem({ title,icon,path }: {title:string,icon:LucideIcon,path:string}) {
+function SidebarFooterItem({ title, icon, path }: { title: string, icon: LucideIcon, path: string }) {
   const pathname = usePathname()
   const Icon = icon
   const isActive = pathname === path
@@ -170,7 +170,7 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
 }
 
 
-export const AdminSidebarData:SidebarDataType = {
+export const AdminSidebarData: SidebarDataType = {
   menus: [
     {
       group_title: "داشبورد",
@@ -193,18 +193,18 @@ export const AdminSidebarData:SidebarDataType = {
       ]
     },
     {
-        group_title:"دسته بندی ها",
-        icon:LayoutList,
-        items:[
-            {
-                title:"دسته بندی کلی",
-                path: `/admin/master-category`
-            },
-            {
-                title:"دسته بندی محصولات",
-                path:`/admin/product-category`
-            }
-        ]
+      group_title: "دسته بندی ها",
+      icon: LayoutList,
+      items: [
+        {
+          title: "دسته بندی کلی",
+          path: `/admin/master-category`
+        },
+        {
+          title: "دسته بندی محصولات",
+          path: `/admin/product-category`
+        }
+      ]
     },
     {
       group_title: "محصولات",
@@ -214,21 +214,21 @@ export const AdminSidebarData:SidebarDataType = {
           title: "لیست محصولات",
           path: `/admin/products`
         },
-        {
-          title: "افزودن محصول",
-          path: `/admin/products`
-        }
+        // {
+        //   title: "افزودن محصول",
+        //   path: `/admin/products`
+        // }
       ]
     }
   ],
   footer: {
     title: "صفحه اصلی",
     icon: Globe,
-    path:"/"
+    path: "/"
   }
 }
 
-export const UserSidebarData:SidebarDataType = {
+export const UserSidebarData: SidebarDataType = {
   menus: [
     {
       group_title: "سفارشات",
@@ -244,6 +244,6 @@ export const UserSidebarData:SidebarDataType = {
   footer: {
     title: "مدیریت",
     icon: Hammer,
-    path:`/admin`
+    path: `/admin`
   }
 }

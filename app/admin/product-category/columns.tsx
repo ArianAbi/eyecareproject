@@ -18,7 +18,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-export const AdminSubCategoryColumn: ColumnDef<SubCategory&{masterCategory:MasterCategory,products:Product[]}>[] = [
+export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: MasterCategory, products: Product[] }>[] = [
     {
         accessorKey: "edit",
         header: "",
@@ -39,8 +39,8 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory&{masterCategory:Maste
         accessorKey: "description",
         header: "توضیحات",
         cell: ({ row }) => {
-            return <div>
-                description
+            return <div className="">
+                {row.original.description}
             </div>
         }
     },
@@ -79,19 +79,19 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory&{masterCategory:Maste
         cell: ({ row }) => {
             return <div className="space-x-2">
                 {
-                row.original.products.length <= 0
-                ? <ProductCategoryDeleteBtn data={row.original} />
-            :
-            <Button disabled variant={"destructive"}>
-                <TrashIcon />
-            </Button>
-            }
+                    row.original.products.length <= 0
+                        ? <ProductCategoryDeleteBtn data={row.original} />
+                        :
+                        <Button disabled variant={"destructive"}>
+                            <TrashIcon />
+                        </Button>
+                }
             </div>
         }
     },
 ]
 
-function ProductCategoryDeleteBtn({ data }: { data: SubCategory & {products:Product[]} }) {
+function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Product[] } }) {
     // const [inputV, setInputV] = useState("")
     const [loading, setLoading] = useState(false)
     const [disabled, setDisabled] = useState(false)
@@ -101,7 +101,7 @@ function ProductCategoryDeleteBtn({ data }: { data: SubCategory & {products:Prod
 
     async function onDelete() {
         try {
-            if(data.products.length > 0) throw new ActionError({error:"در این دسته بندی محصول هست و قابل حذف نیست"})
+            if (data.products.length > 0) throw new ActionError({ error: "در این دسته بندی محصول هست و قابل حذف نیست" })
             // if (disabled || inputV !== validationPhrase) {
             //     toast.add({
             //         title: "متن تایپ شده صحیح نیست",
@@ -194,21 +194,21 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
 
     const onSubmit = handleSubmit(async values => {
         try {
-            await ADMIN_UpdateProductCategorys(data.id,values.name,values.description)
+            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description)
 
             toast.add({
-                title:"دسته بندی بروزرسانی شد",
-                type:"success"
+                title: "دسته بندی بروزرسانی شد",
+                type: "success"
             })
 
             setOpen(false)
         } catch (err) {
             toast.add({
-                title:"خطا در بروزرسانی",
-                type:"error"
+                title: "خطا در بروزرسانی",
+                type: "error"
             })
             console.log(err);
-            
+
         }
     })
 

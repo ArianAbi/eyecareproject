@@ -5,58 +5,43 @@ import { ActionError } from "../action-error"
 import prisma from "../db"
 import { ProductType } from "@/generated/prisma/client"
 
-export async function ADMIN_CreateProductAction(data: {
+export async function ADMIN_CreateProductsAction(
     name: string,
     description: string,
+    categoryId: string,
     price: string,
     type: ProductType,
-    categoryId: string,
-    lens?: {
-        fromOd: string,
-        fromOs: string,
-        toOd?: string,
-        toOs?: string
+    lensRange?: {
+        from: string,
+        to: string
     }
-},) {
+) {
     try {
-        if (!data.name) throw new ActionError({ error: "نام دسته بندی الزامیست" })
-        if (!data.description) throw new ActionError({ error: "توضیحات الزامیست" })
-        if (!data.categoryId) throw new ActionError({ error: "زیرمجموعه باید انتخاب شود" })
-        if (!data.price) throw new ActionError({ error: "قیمت باید تعیین شود" })
-        if (!data.type) throw new ActionError({ error: "نوع باید مشخص شود" })
-
-        if (data.type == 'LENS') {
-            if (!data.lens) throw new ActionError({ error: "برای محصول با نوع عدسی مشخصات عدسی الزامیست" })
-        }
-
-        const result = await prisma.product.create({
+        const data = await prisma.product.create({
             data: {
-                name: data.name,
-                description: data.description,
-                categoryId: data.categoryId,
-                type: data.type,
-                price: data.price,
-                ...(
-                    data.lens && {
-                        lens: {
-                            create: {
-                                fromOd: data.lens.fromOd,
-                                fromOs: data.lens.fromOs,
-                                toOs: data.lens.toOd ? data.lens.toOd : "",
-                                toOd: data.lens.toOs ? data.lens.toOs : "",
-                            }
-                        }
-                    }
-                )
+                name,
+                description,
+                price,
+                type,
+                categoryId
             }
         })
 
-        revalidatePath(`/admin/products`)
+        if (lensRange !== undefined && data) {
+            await prisma.lens.create({
+                data: {
+                    fromOd: lensRange.from,
+                    fromOs: lensRange.from,
+                    toOd: lensRange.to,
+                    toOs: lensRange.to,
+                    productId: data.id
+                }
+            })
+        }
 
-        return { success: true, data: result }
+        return { data, success: true }
     } catch (err) {
-        console.log(err);
-        throw new ActionError({ error: "failed to create product, check console" })
+        throw new ActionError({ error: "failed to create master category, check console" })
     }
 }
 
@@ -64,7 +49,7 @@ export async function ADMIN_GetProducts() {
     try {
         const data = await prisma.product.findMany({
             include: {
-                lens:true
+                lens: true
             }
         })
         return { data, success: true }

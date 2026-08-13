@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MasterCategory } from "@/generated/prisma/client";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
@@ -18,7 +20,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-export const AdminMasterCategoryColumns: ColumnDef<MasterCategory>[] = [
+export const AdminMasterCategoryColumns: ColumnDef<MasterCategory & { subCategory: { name: string, id: string }[] }>[] = [
     {
         accessorKey: "edit",
         header: "",
@@ -33,6 +35,37 @@ export const AdminMasterCategoryColumns: ColumnDef<MasterCategory>[] = [
         header: "نام",
         cell: ({ row }) => {
             return <div>{row.original.name}</div>
+        }
+    },
+    {
+        accessorKey: "type",
+        header: "نوع دسته بندی",
+        cell: ({ row }) => {
+            let farsiName = ""
+            let style = ""
+
+            switch (row.original.type) {
+                case "FRAME":
+                    farsiName = "فریم"
+                    style = "bg-cyan-500/20 text-cyan-600 font-semibold px-1.5 py-1 border-2 rounded-md w-fit"
+                    break;
+
+                case "LENS":
+                    farsiName = "عدسی"
+                    style = "bg-emerald-500/20 text-emerald-600 font-semibold px-1.5 py-1 border-2 rounded-md w-fit"
+                    break;
+
+                case "OTHER":
+                    farsiName = "سایر"
+                    style = "bg-amber-500/20 text-amber-600 font-semibold px-1.5 py-1 border-2 rounded-md w-fit"
+                    break;
+
+                default:
+                    farsiName = "-سایر-"
+                    style = "bg-amber-500/20 text-amber-600 font-semibold px-1.5 py-1 border-2 rounded-md w-fit"
+                    break;
+            }
+            return <div className={style}>{farsiName}</div>
         }
     },
     {
@@ -72,20 +105,20 @@ export const AdminMasterCategoryColumns: ColumnDef<MasterCategory>[] = [
     },
 ]
 
-function MasterCategoryDeleteBtn({ data }: { data: MasterCategory }) {
+function MasterCategoryDeleteBtn({ data }: { data: MasterCategory & { subCategory: { name: string, id: string }[] } }) {
     const [inputV, setInputV] = useState("")
     const [loading, setLoading] = useState(false)
-    const [disabled, setDisabled] = useState(true)
+    const [disabled, setDisabled] = useState(false)
 
     const [open, setOpen] = useState(false)
 
-    const validationPhrase = "delete-this-category"
+    const hasAttachedCategorys = data.subCategory.length > 0
 
     async function onDelete() {
         try {
-            if (disabled || inputV !== validationPhrase) {
+            if (disabled || hasAttachedCategorys) {
                 toast.add({
-                    title: "متن تایپ شده صحیح نیست",
+                    title: "این دسته بندی شامل زیرمجموعه است و قابل حذف نیست",
                     type: "warning"
                 })
                 return
@@ -114,9 +147,23 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory }) {
     }
 
     return <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger className={buttonVariants({ variant: "destructive" })}>
-            <TrashIcon />
-        </AlertDialogTrigger>
+        {
+            hasAttachedCategorys
+                ?
+                <Tooltip>
+                    <TooltipTrigger className={buttonVariants({ variant: "default" })}>
+                        <TrashIcon />
+                    </TooltipTrigger>
+
+                    <TooltipContent className="bg-amber-500/20 text-amber-500 font-semibold border-amber-500/40 border-2 w-fit px-3 py-1 rounded-md text-xs mb-3">
+                        این دسته بندی شامل زیرمجموعه است و قابل حذف نیست
+                    </TooltipContent>
+                </Tooltip>
+                :
+                <AlertDialogTrigger className={buttonVariants({ variant: "destructive" })}>
+                    <TrashIcon />
+                </AlertDialogTrigger>
+        }
 
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -131,32 +178,18 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory }) {
 
                 <AlertDialogDescription>
                     <span>
-                        این عملیات قابل برگشت نیست و تمامی زیرمجوعه ها شامل محصولات رو هم حذف میکند
+                        این عملیات قابل برگشت نیست
                     </span>
                 </AlertDialogDescription>
             </AlertDialogHeader>
 
-            <div className="flex flex-col gap-2">
-                <div>
-                    <Label className="text-xs">متن زیر را بنویسید</Label>
-                    <div className="text-xs bg-amber-400/30 border border-amber-500 text-amber-600 font-semibold px-2 py-1 rounded-md my-2 w-fit">{validationPhrase}</div>
-                    <Input
-                        placeholder={validationPhrase}
-                        value={inputV}
-                        onChange={e => {
-                            setInputV(e.target.value)
-
-                            if (e.target.value === validationPhrase) {
-                                setDisabled(false)
-                            } else {
-                                setDisabled(true)
-                            }
-                        }}
-                    />
-                </div>
+            <div>
+                {hasAttachedCategorys && <div className="bg-amber-500/20 text-amber-500 font-semibold border-amber-500/40 border-2 w-fit px-3 py-1 rounded-md text-sm mb-3">
+                    این دسته بندی شامل زیرمجموعه است و قابل حذف نیست
+                </div>}
 
                 <div className="space-x-3 mt-3">
-                    <Button onClick={onDelete} disabled={loading || disabled} variant={"destructive"}>
+                    <Button onClick={onDelete} disabled={loading || disabled || hasAttachedCategorys} variant={"destructive"}>
                         <span>
                             حذف
                         </span>
@@ -196,18 +229,18 @@ function MasterCategoryEditBtn({ data }: { data: MasterCategory }) {
             await ADMIN_UpdateMasterCategorys(data.id, values.name, values.active)
 
             toast.add({
-                title:"دسته بندی بروزرسانی شد",
-                type:"success"
+                title: "دسته بندی بروزرسانی شد",
+                type: "success"
             })
 
             setOpen(false)
         } catch (err) {
             toast.add({
-                title:"خطا در بروزرسانی",
-                type:"error"
+                title: "خطا در بروزرسانی",
+                type: "error"
             })
             console.log(err);
-            
+
         }
     })
 

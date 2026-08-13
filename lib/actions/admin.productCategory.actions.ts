@@ -6,6 +6,8 @@ import prisma from "../db"
 
 export async function ADMIN_CreateProductCategoryAction(data: FormData) {
     try {
+        console.log(data);
+
         const name = data.get("name")
         const description = data.get("description")
         const masterCategoryId = data.get("masterCategoryId")
@@ -16,14 +18,14 @@ export async function ADMIN_CreateProductCategoryAction(data: FormData) {
 
         const result = await prisma.subCategory.create({
             data: {
-                name:name.toString(),
-                description:description.toString(),
-                masterCategoryId:masterCategoryId.toString()
+                name: name.toString(),
+                description: description.toString(),
+                masterCategoryId: masterCategoryId.toString()
             }
         })
- 
+
         revalidatePath(`/admin/mater-category`)
-        
+
         return { success: true, data: result }
     } catch (err) {
         console.log(err);
@@ -34,9 +36,9 @@ export async function ADMIN_CreateProductCategoryAction(data: FormData) {
 export async function ADMIN_GetProductCategorys() {
     try {
         const data = await prisma.subCategory.findMany({
-            include:{
-                masterCategory:true,
-                products:true
+            include: {
+                masterCategory: true,
+                products: true
             }
         })
         return { data, success: true }
@@ -51,8 +53,8 @@ export async function ADMIN_UpdateProductCategorys(id: string, name: string, des
         const data = await prisma.subCategory.update({
             where: { id: id },
             data: {
-                name:name,
-                description:description
+                name: name,
+                description: description
             }
         })
 
@@ -68,16 +70,16 @@ export async function ADMIN_UpdateProductCategorys(id: string, name: string, des
 export async function ADMIN_DeleteProductCategorys(id: string) {
     try {
         const data = await prisma.subCategory.findFirst({
-            include:{
-                products:true
+            include: {
+                products: true
             },
-            where:{
-                id:id
+            where: {
+                id: id
             }
         })
-        
-        if(!data) throw new ActionError({ error: "failed to fetch this category data" })
-        if(data.products.length > 0) throw new ActionError({error:"این دسته بندی محصول دارد و قابل حذف نیست"})
+
+        if (!data) throw new ActionError({ error: "failed to fetch this category data" })
+        if (data.products.length > 0) throw new ActionError({ error: "این دسته بندی محصول دارد و قابل حذف نیست" })
 
         await prisma.subCategory.delete({
             where: { id }

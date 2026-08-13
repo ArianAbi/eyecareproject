@@ -1,5 +1,5 @@
 "use client"
-// components/core/FormFieldComboboxShorthand.tsx
+
 import {
   Combobox,
   ComboboxContent,
@@ -16,16 +16,7 @@ interface ComboboxOption {
   value: string;
 }
 
-interface FormFieldComboboxShorthandProps<TFieldValues extends FieldValues> {
-  name: Path<TFieldValues>;
-  control: Control<TFieldValues>;
-  label: string;
-  options: ComboboxOption[];
-  placeholder?: string;
-  emptyText?: string;
-  description?: string;
-  disabled?: boolean;
-}
+// ...props interface unchanged...
 
 export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   name,
@@ -36,6 +27,7 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   emptyText = "موردی یافت نشد",
   description,
   disabled = false,
+  ltr = false
 }: FormFieldComboboxShorthandProps<TFieldValues>) {
   const id = `form-${name}`;
 
@@ -43,45 +35,59 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState }) => (
-        <Field data-invalid={fieldState.invalid}>
-          <FieldLabel className="text-xs" htmlFor={id}>
-            {label}
-          </FieldLabel>
+      render={({ field, fieldState }) => {
+        // find the full option object matching the stored id
+        const selected = options.find((o) => o.value === field.value) ?? null;
 
-          <Combobox
-            items={options}
-            value={field.value}
-            onValueChange={field.onChange}
-            disabled={disabled}
-          >
-            <ComboboxInput
-              id={id}
-              placeholder={placeholder}
-              aria-invalid={fieldState.invalid}
-              onBlur={field.onBlur}
-              className="text-xs"
-            />
-            <ComboboxContent>
-              <ComboboxEmpty>{emptyText}</ComboboxEmpty>
-              <ComboboxList>
-                {(item: ComboboxOption) => (
-                  <ComboboxItem key={item.value} value={item.value} className="text-xs">
-                    {item.label}
-                  </ComboboxItem>
-                )}
-              </ComboboxList>
-            </ComboboxContent>
-          </Combobox>
+        return (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel className="text-xs" htmlFor={id}>
+              {label}
+            </FieldLabel>
 
-          {description && !fieldState.invalid && (
-            <FieldDescription className="text-muted-foreground text-sm">
-              {description}
-            </FieldDescription>
-          )}
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
-      )}
+            <Combobox
+              items={options}
+              value={selected}
+              onValueChange={(option: ComboboxOption | null) =>
+                field.onChange(option?.value ?? "")
+              }
+              itemToStringValue={(option: ComboboxOption) => option.label}
+              disabled={disabled}
+            >
+              <ComboboxInput
+                id={id}
+                placeholder={placeholder}
+                aria-invalid={fieldState.invalid}
+                onBlur={field.onBlur}
+                style={ltr ? { direction: "ltr" } : {}}
+                className="text-xs"
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>{emptyText}</ComboboxEmpty>
+                <ComboboxList>
+                  {(item: ComboboxOption) => (
+                    <ComboboxItem
+                      key={item.value}
+                      value={item}
+                      className="text-xs"
+                      style={ltr ? { direction: "ltr" } : {}}
+                    >
+                      {item.label}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
+
+            {description && !fieldState.invalid && (
+              <FieldDescription className="text-muted-foreground text-sm">
+                {description}
+              </FieldDescription>
+            )}
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        );
+      }}
     />
   );
 }

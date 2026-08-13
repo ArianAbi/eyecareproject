@@ -32,8 +32,8 @@ model Invoice {
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
-  
-  amount Int
+
+  amount      Int
   invoiceCode String @unique
 
   createdAt DateTime @default(now())
@@ -43,6 +43,8 @@ model MasterCategory {
   id     String  @id @default(uuid())
   name   String
   active Boolean @default(true)
+
+  type ProductType @default(LENS)
 
   subCategory SubCategory[]
 
@@ -55,7 +57,7 @@ model SubCategory {
   name        String
   description String
 
-  masterCategoryId String         @unique
+  masterCategoryId String
   masterCategory   MasterCategory @relation(fields: [masterCategoryId], references: [id])
 
   products Product[]

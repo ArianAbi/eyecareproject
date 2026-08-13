@@ -3,21 +3,21 @@
 import { revalidatePath } from "next/cache"
 import { ActionError } from "../action-error"
 import prisma from "../db"
+import { ProductType } from "@/generated/prisma/enums"
 
-export async function ADMIN_CreateMasterCategoryAction(data: FormData) {
+export async function ADMIN_CreateMasterCategoryAction(name: string, type: ProductType) {
     try {
-        const name = data.get("name")
-
         if (!name) throw new ActionError({ error: "نام دسته بندی الزامیست" })
 
         const result = await prisma.masterCategory.create({
             data: {
-                name: name.toString()
+                name: name,
+                type: type
             }
         })
- 
+
         revalidatePath(`/admin/mater-category`)
-        
+
         return { success: true, data: result }
     } catch (err) {
         console.log(err);
@@ -27,7 +27,16 @@ export async function ADMIN_CreateMasterCategoryAction(data: FormData) {
 
 export async function ADMIN_GetMasterCategorys() {
     try {
-        const data = await prisma.masterCategory.findMany()
+        const data = await prisma.masterCategory.findMany({
+            include: {
+                subCategory: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            }
+        })
         return { data, success: true }
     } catch (err) {
         console.log(err);
@@ -40,8 +49,8 @@ export async function ADMIN_UpdateMasterCategorys(id: string, name: string, acti
         const data = await prisma.masterCategory.update({
             where: { id: id },
             data: {
-                name:name,
-                active:active
+                name: name,
+                active: active
             }
         })
 
