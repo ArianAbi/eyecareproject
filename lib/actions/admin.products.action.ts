@@ -12,8 +12,12 @@ export async function ADMIN_CreateProductsAction(
     price: string,
     type: ProductType,
     lensRange?: {
-        from: string,
-        to: string
+        positiveFromSph: number,
+        positiveToSph: number,
+        negativeFromSph: number,
+        negativeToSph: number
+        fromCyl: number,
+        toCyl: number,
     }
 ) {
     try {
@@ -30,10 +34,12 @@ export async function ADMIN_CreateProductsAction(
         if (lensRange !== undefined && data) {
             await prisma.lens.create({
                 data: {
-                    fromOd: lensRange.from,
-                    fromOs: lensRange.from,
-                    toOd: lensRange.to,
-                    toOs: lensRange.to,
+                    positiveFromSph:lensRange.positiveFromSph,
+                    positivToSph:lensRange.positiveToSph,
+                    negativeFromSph:lensRange.negativeFromSph,
+                    negativeToSph:lensRange.negativeToSph,
+                    fromCyl:lensRange.fromCyl,
+                    toCyl:lensRange.toCyl,
                     productId: data.id
                 }
             })

@@ -9,14 +9,24 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field";
-import { Control, Controller, FieldValues, Path } from "react-hook-form";
+import { Control, Controller, FieldPath, FieldValues } from "react-hook-form";
 
 interface ComboboxOption {
   label: string;
   value: string;
 }
 
-// ...props interface unchanged...
+interface FormFieldComboboxShorthandProps<TFieldValues extends FieldValues> {
+  name: FieldPath<TFieldValues>;
+  control: Control<TFieldValues>;
+  label: string;
+  options: ComboboxOption[];
+  placeholder?: string;
+  emptyText?: string;
+  description?: string;
+  disabled?: boolean;
+  ltr?: boolean;
+}
 
 export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   name,
@@ -36,7 +46,6 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState }) => {
-        // find the full option object matching the stored id
         const selected = options.find((o) => o.value === field.value) ?? null;
 
         return (
@@ -84,7 +93,9 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
                 {description}
               </FieldDescription>
             )}
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            {fieldState.invalid && fieldState.error && (
+              <FieldError errors={[fieldState.error]} />
+            )}
           </Field>
         );
       }}

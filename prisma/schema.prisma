@@ -123,11 +123,14 @@ model Lens {
   productId String  @unique
   product   Product @relation(fields: [productId], references: [id])
 
-  fromOd String
-  fromOs String
+  positiveFromSph Float
+  positivToSph    Float
 
-  toOd String
-  toOs String
+  negativeFromSph Float
+  negativeToSph   Float
+
+  fromCyl Float
+  toCyl   Float
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -147,6 +150,11 @@ model OrderBatch {
   updatedAt DateTime @updatedAt()
 }
 
+enum RawOrCutType {
+  RAW
+  CUT
+}
+
 model OrderItem {
   id String @id @default(uuid())
 
@@ -158,6 +166,8 @@ model OrderItem {
 
   customerNote String          @default("")
   status       OrderItemStatus @default(SUBMITIED)
+
+  rawOrCut RawOrCutType
 
   orderUpdate OrderUpdate[]
 
