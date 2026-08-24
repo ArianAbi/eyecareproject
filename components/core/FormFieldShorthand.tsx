@@ -1,5 +1,5 @@
 "use client"
-// components/form-field.tsx
+//FormFieldShorthand.tsx
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,6 +79,30 @@ export function FormFieldShorthand<TFieldValues extends FieldValues>(
               placeholder={placeholder}
               autoComplete={autoComplete}
               disabled={disabled}
+              value={
+                props.type === "number"
+                  ? field.value ?? 0
+                  : field.value ?? ""
+              }
+              onChange={(e) => {
+                if (props.type !== "number") {
+                  field.onChange(e.target.value);
+                  return;
+                }
+
+                const raw = e.target.value;
+
+                // User deleted everything
+                if (raw === "") {
+                  field.onChange(0);
+                  return;
+                }
+
+                // Prevent "02", "003", etc.
+                const normalized = raw.replace(/^0+(?=\d)/, "");
+
+                field.onChange(Number(normalized));
+              }}
             />
           )}
 

@@ -88,11 +88,11 @@ model Product {
   name        String
   description String
   active      Boolean @default(true)
-  price       String
+  price       BigInt
 
   type ProductType
 
-  categoryId  String      @unique
+  categoryId  String
   categoryRel SubCategory @relation(fields: [categoryId], references: [id])
 
   tags Tags[]
@@ -123,14 +123,14 @@ model Lens {
   productId String  @unique
   product   Product @relation(fields: [productId], references: [id])
 
-  positiveFromSph Float
-  positivToSph    Float
+  positiveFromSph String
+  positivToSph    String
 
-  negativeFromSph Float
-  negativeToSph   Float
+  negativeFromSph String
+  negativeToSph   String
 
-  fromCyl Float
-  toCyl   Float
+  fromCyl String
+  toCyl   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -9,15 +9,15 @@ export async function ADMIN_CreateProductsAction(
     name: string,
     description: string,
     categoryId: string,
-    price: string,
+    price: number,
     type: ProductType,
     lensRange?: {
-        positiveFromSph: number,
-        positiveToSph: number,
-        negativeFromSph: number,
-        negativeToSph: number
-        fromCyl: number,
-        toCyl: number,
+        positiveFromSph: string,
+        positiveToSph: string,
+        negativeFromSph: string,
+        negativeToSph: string,
+        fromCyl: string,
+        toCyl: string
     }
 ) {
     try {
@@ -34,20 +34,31 @@ export async function ADMIN_CreateProductsAction(
         if (lensRange !== undefined && data) {
             await prisma.lens.create({
                 data: {
-                    positiveFromSph:lensRange.positiveFromSph,
-                    positivToSph:lensRange.positiveToSph,
-                    negativeFromSph:lensRange.negativeFromSph,
-                    negativeToSph:lensRange.negativeToSph,
-                    fromCyl:lensRange.fromCyl,
-                    toCyl:lensRange.toCyl,
+                    positiveFromSph: lensRange.positiveFromSph,
+                    positivToSph: lensRange.positiveToSph,
+                    negativeFromSph: lensRange.negativeFromSph,
+                    negativeToSph: lensRange.negativeToSph,
+                    fromCyl: lensRange.fromCyl,
+                    toCyl: lensRange.toCyl,
                     productId: data.id
                 }
             })
         }
 
+        revalidatePath('/admin/products')
         return { data, success: true }
     } catch (err) {
-        throw new ActionError({ error: "failed to create master category, check console" })
+        console.error("ADMIN_CreateProductsAction failed:", err);
+
+        if (err instanceof Error) {
+            throw new ActionError({
+                error: `Failed to create product: ${err.message}`,
+            });
+        }
+
+        throw new ActionError({
+            error: "Failed to create product: Unknown error",
+        });
     }
 }
 

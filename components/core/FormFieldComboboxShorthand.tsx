@@ -24,6 +24,7 @@ interface FormFieldComboboxShorthandProps<TFieldValues extends FieldValues> {
   placeholder?: string;
   emptyText?: string;
   description?: string;
+  emptySnapValue?: string,
   disabled?: boolean;
   ltr?: boolean;
 }
@@ -37,6 +38,7 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   emptyText = "موردی یافت نشد",
   description,
   disabled = false,
+  emptySnapValue,
   ltr = false
 }: FormFieldComboboxShorthandProps<TFieldValues>) {
   const id = `form-${name}`;
@@ -57,9 +59,13 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
             <Combobox
               items={options}
               value={selected}
-              onValueChange={(option: ComboboxOption | null) =>
-                field.onChange(option?.value ?? "")
-              }
+              onValueChange={(option: ComboboxOption | null) => {
+                if (!option) {
+                  field.onChange(emptySnapValue ?? "");
+                  return;
+                }
+                field.onChange(option.value);
+              }}
               itemToStringValue={(option: ComboboxOption) => option.label}
               disabled={disabled}
             >

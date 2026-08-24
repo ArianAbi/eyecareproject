@@ -8,8 +8,10 @@ import { toast } from "@/components/ui/toast";
 import { ProductType, SubCategory } from "@/generated/prisma/client";
 import { parseActionError } from "@/lib/action-error";
 import { ADMIN_CreateProductsAction } from "@/lib/actions/admin.products.action";
-import { AllLensRanges } from "@/lib/lens-range";
+import { NegativeLensRanges, PositiveLensRanges } from "@/lib/lens-range";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import * as z from "zod"
 
@@ -18,39 +20,43 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
         name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
         description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
         type: z.string(),
-        price: z.string(),
+        price: z.number(),
         categoryId: z.string({ error: "زیرمجموعه الزامیست" }).min(1, { error: "زیرمجموعه الزامیست" }),
         lens: z.object({
-            positiveFromSph: z.number().min(0).max(20),
-            positiveToSph: z.number().min(0).max(20),
-            negativeFromSph: z.number().min(0).max(-20),
-            negativeToSph: z.number().min(0).max(-20),
-            fromCyl: z.number().min(0).max(-6),
-            toCyl: z.number().min(0).max(-6),
+            positiveFromSph: z.string(),
+            positiveToSph: z.string(),
+            negativeFromSph: z.string(),
+            negativeToSph: z.string(),
+            fromCyl: z.string(),
+            toCyl: z.string()
         })
     })
 
     type formType = z.infer<typeof schema>
 
-    const { control, handleSubmit, formState, getValues } = useForm<formType>({
+    const { control, handleSubmit, formState, watch } = useForm<formType>({
         resolver: zodResolver(schema),
         mode: 'onChange',
         defaultValues: {
             name: "",
             description: "",
             categoryId: "",
-            price: "",
+            price: 0,
             type: "LENS",
             lens: {
-                positiveFromSph: 0,
-                positiveToSph: 0,
-                negativeFromSph: 0,
-                negativeToSph: 0,
-                fromCyl: 0,
-                toCyl: 0
+                positiveFromSph: "0.00",
+                positiveToSph: "0.00",
+                negativeFromSph: "0.00",
+                negativeToSph: "0.00",
+                fromCyl: "0.00",
+                toCyl: "0.00",
             }
         }
     })
+
+    const price = watch("price")
+
+    const route = useRouter()
 
     const onSubmit = handleSubmit(async values => {
         try {
@@ -71,10 +77,14 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
             )
 
             toast.add({
-                title: "دسته بندی محصول اضافه شد",
+                title: "محصول اضافه شد",
                 type: "success",
             })
+
+            route.push(`/admin/products`)
         } catch (err) {
+            console.log(err);
+            
             const { error } = parseActionError(err)
 
             if (error) {
@@ -85,7 +95,6 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                 })
             }
             else {
-                console.log(err);
                 toast.add({
                     title: "unknown error, check console"
                 })
@@ -113,14 +122,29 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                 options={categorys.map(o => ({ label: o.name, value: o.id }))}
             />
 
-            <FormFieldShorthand
-                control={control}
-                placeholder="قیمت"
-                label="قیمت به تومان"
-                name="price"
-                type="number"
-                disabled={formState.isSubmitting}
-            />
+            <div>
+                <FormFieldShorthand
+                    control={control}
+                    placeholder="قیمت"
+                    label="قیمت به تومان"
+                    name="price"
+                    type="number"
+                    disabled={formState.isSubmitting}
+                />
+
+                {
+                    price > 0 &&
+                    <div className="flex gap-1 mt-2 text-sm">
+                        <div>
+                            {price.toLocaleString()}
+                        </div>
+
+                        <div className="text-emerald-500 font-semibold">
+                            تومان
+                        </div>
+                    </div>
+                }
+            </div>
 
             <div className="col-span-2 gap-2 my-2 grid grid-cols-2 border-2 p-2 rounded-lg">
                 <div className="col-span-2">محدوده</div>
@@ -140,7 +164,8 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                                 name="lens.positiveFromSph"
                                 label="نمره مثبت از"
                                 ltr
-                                options={AllLensRanges.map(range => {
+                                emptySnapValue="0.00"
+                                options={PositiveLensRanges.map(range => {
                                     const rangeText = `${range.sign}${range.value}`
                                     return { label: rangeText, value: rangeText }
                                 })}
@@ -153,8 +178,9 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                                 control={control}
                                 name="lens.positiveToSph"
                                 label="تا"
+                                emptySnapValue="0.00"
                                 ltr
-                                options={AllLensRanges.map(range => {
+                                options={PositiveLensRanges.map(range => {
                                     const rangeText = `${range.sign}${range.value}`
                                     return { label: rangeText, value: rangeText }
                                 })}
@@ -169,8 +195,9 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                                 control={control}
                                 name="lens.negativeFromSph"
                                 label="نمره منفی از"
+                                emptySnapValue="0.00"
                                 ltr
-                                options={AllLensRanges.map(range => {
+                                options={NegativeLensRanges.map(range => {
                                     const rangeText = `${range.sign}${range.value}`
                                     return { label: rangeText, value: rangeText }
                                 })}
@@ -183,8 +210,9 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                                 control={control}
                                 name="lens.negativeToSph"
                                 label="تا"
+                                emptySnapValue="0.00"
                                 ltr
-                                options={AllLensRanges.map(range => {
+                                options={NegativeLensRanges.map(range => {
                                     const rangeText = `${range.sign}${range.value}`
                                     return { label: rangeText, value: rangeText }
                                 })}
@@ -203,8 +231,9 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                                 control={control}
                                 name="lens.fromCyl"
                                 label="سیلندر از"
+                                emptySnapValue="0.00"
                                 ltr
-                                options={AllLensRanges.map(range => {
+                                options={NegativeLensRanges.map(range => {
                                     const rangeText = `${range.sign}${range.value}`
                                     return { label: rangeText, value: rangeText }
                                 })}
@@ -217,8 +246,9 @@ export default function AdminCreateProductForm({ categorys }: { categorys: SubCa
                                 control={control}
                                 name="lens.toCyl"
                                 label="تا"
+                                emptySnapValue="0.00"
                                 ltr
-                                options={AllLensRanges.map(range => {
+                                options={NegativeLensRanges.map(range => {
                                     const rangeText = `${range.sign}${range.value}`
                                     return { label: rangeText, value: rangeText }
                                 })}

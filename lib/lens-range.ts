@@ -45,17 +45,29 @@ const ranges = [
 export type LensRangeValueType = typeof ranges[number]
 
 // we go up with 0.25 intervals so one whole number takes 4 steps and we go from -10 to +10
-function Construct(sign: "-" | "+", maxNumber = 10) {
+function Construct(sign: "-" | "+", maxNumber = 10, noReverseSort = true) {
     const values = Array((maxNumber * 4)).fill(0).map((_unset, _index) => {
         const startingPoint = 10
 
         if (sign == "-") {
-            const value = {
-                sign: sign,
-                value: (startingPoint - _index / 4).toFixed(2)
-            }
+            if (noReverseSort) {
 
-            return value
+                const value = {
+                    sign: sign,
+                    value: Math.abs((0 + 0.25 + _index / 4)).toFixed(2)
+                }
+
+                return value
+            }
+            else {
+
+                const value = {
+                    sign: sign,
+                    value: (startingPoint - _index / 4).toFixed(2)
+                }
+
+                return value
+            }
         }
         else {
             const value = {
@@ -72,4 +84,6 @@ function Construct(sign: "-" | "+", maxNumber = 10) {
 
 export type LensRangeItemType = { sign: "-" | "+", value: LensRangeValueType }
 
-export const AllLensRanges = [...Construct("-"), { sign: "-", value: "0.00" }, ...Construct("+")]
+export const AllLensRanges = [...Construct("-"), { sign: "", value: "0.00" }, ...Construct("+")]
+export const NegativeLensRanges = [{ sign: "", value: "0.00" }, ...Construct("-")]
+export const PositiveLensRanges = [{ sign: "", value: "0.00" }, ...Construct("+")]
