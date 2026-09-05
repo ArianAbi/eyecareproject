@@ -176,6 +176,8 @@ model OrderItem {
   osSph String
   osCyl String
 
+  aux String @default("0")
+
   orderBatchId String
   orderBatch   OrderBatch @relation(fields: [orderBatchId], references: [id])
 

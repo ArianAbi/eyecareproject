@@ -42,24 +42,28 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
     const schema = z.object({
         od: z.object({
             sph: z.string(),
-            cyl: z.string()
+            cyl: z.string(),
+            aux: z.string()
         }),
         os: z.object({
             sph: z.string(),
-            cyl: z.string()
+            cyl: z.string(),
+            aux: z.string()
         })
     })
 
-    const { control, watch,setValue } = useForm({
+    const { control, watch, setValue } = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
             od: {
                 sph: "0.00",
-                cyl: "0.00"
+                cyl: "0.00",
+                aux: "0"
             },
             os: {
                 sph: "0.00",
-                cyl: "0.00"
+                cyl: "0.00",
+                aux: "0"
             }
         }
     })
@@ -162,6 +166,7 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                                 <th style={{ minWidth: "50px" }}></th>
                                 <th>SPH</th>
                                 <th>CYL</th>
+                                <th>AUX</th>
                                 <th style={{ minWidth: "0px" }}></th>
                             </tr>
                         </thead>
@@ -206,8 +211,24 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                                     />
                                 </td>
 
+                                {/* AUX */}
+                                <td className={`px-1 ${parseFloat(watch().od.cyl) == 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <FormFieldComboboxShorthand
+                                        control={control}
+                                        name="od.aux"
+                                        placeholder=""
+                                        label=""
+                                        ltr
+                                        emptySnapValue="0"
+                                        options={Array(180).fill("S").map((_, _index) => {
+                                            return { label: `${_index + 1}`, value: `${_index + 1}` }
+                                        })}
+                                        filter={lensFilter}
+                                    />
+                                </td>
+
                                 <td className={`${odOnly ? 'pointer-events-none opacity-50' : ''}`}>
-                                    <CornerUpLeft size={18}/>
+                                    <CornerUpLeft size={18} />
                                 </td>
                             </tr>
 
@@ -254,13 +275,30 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                                     />
                                 </td>
 
+                                {/* AUX */}
+                                <td className={`px-1 ${parseFloat(watch().os.cyl) == 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <FormFieldComboboxShorthand
+                                        control={control}
+                                        name="os.aux"
+                                        placeholder=""
+                                        label=""
+                                        ltr
+                                        emptySnapValue="0"
+                                        options={Array(180).fill("S").map((_, _index) => {
+                                            return { label: `${_index + 1}`, value: `${_index + 1}` }
+                                        })}
+                                        filter={lensFilter}
+                                    />
+                                </td>
+
                                 <td className={`${odOnly ? 'pointer-events-none opacity-50' : ''}`}>
                                     <Button size="icon"
-                                    variant={"outline"}
-                                    onClick={()=>{
-                                        setValue('os.sph',watch().od.sph)
-                                        setValue('os.cyl',watch().od.cyl)
-                                    }}
+                                        variant={"outline"}
+                                        onClick={() => {
+                                            setValue('os.sph', watch().od.sph)
+                                            setValue('os.cyl', watch().od.cyl)
+                                            setValue('os.aux', watch().od.aux)
+                                        }}
                                     >
                                         <Copy />
                                     </Button>
