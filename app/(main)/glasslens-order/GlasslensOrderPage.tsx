@@ -2,6 +2,7 @@
 
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand"
 import LensProductItem from "@/components/LensProductItem"
+import { toast } from "@/components/ui/toast"
 import { Lens, Prisma, Product, SubCategory, Tags } from "@/generated/prisma/client"
 import { IsInRange } from "@/lib/is-in-range"
 import { lensFilter } from "@/lib/lens-filter"
@@ -59,19 +60,42 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
         }) => {
             setProductsState(prev => prev.map((product): ProductWithAvailability => {
                 let _product = { ...product }
-
-                const odSph = values.od?.sph
-
-                const lensSphRange = {
-                    positiveFrom: product.lens ? product.lens.positiveFromSph : "0.00",
-                    positiveTo: product.lens ? product.lens.positivToSph : "0.00",
-                    negativeFrom: product.lens ? product.lens.negativeFromSph : "0.00",
-                    negativeTo: product.lens ? product.lens.negativeToSph : "0.00",
+                const odValue = {
+                    sph: values.od?.sph ?? "0.00",
+                    cyl: values.od?.cyl ?? "0.00",
+                }
+                const osValue = {
+                    sph: values.os?.sph ?? "0.00",
+                    cyl: values.os?.cyl ?? "0.00",
                 }
 
-                const available = odSph ? IsInRange(odSph, lensSphRange) : true
+                const lensRange = {
+                    sphPositiveFrom: product.lens ? product.lens.positiveFromSph : "0.00",
+                    sphPositiveTo: product.lens ? product.lens.positivToSph : "0.00",
+                    sphNegativeFrom: product.lens ? product.lens.negativeFromSph : "0.00",
+                    sphNegativeTo: product.lens ? product.lens.negativeToSph : "0.00",
+                    cylFrom: product.lens ? product.lens.fromCyl : "0.00",
+                    cylTo: product.lens ? product.lens.toCyl : "0.00",
+                }
 
-                _product.available = available ?? true
+                const odAvailability = IsInRange(odValue, lensRange)
+                const osAvailability = IsInRange(osValue, lensRange)
+
+                if (!odAvailability || !osAvailability) {
+                    toast.add({
+                        type: "Error",
+                        title: "در تحلیل نمرات مشکلی پیش آمد",
+                        description: "Range Conversion retured NaN"
+                    })
+
+                    _product.available = false
+                    return _product
+                }
+
+                const available = (odAvailability.sphInRange && odAvailability.cylInRange)
+                    && (osAvailability.sphInRange && osAvailability.cylInRange)
+
+                _product.available = available
                 return _product
             }))
         }
@@ -80,7 +104,9 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
         // run once immediately so initial state reflects default form values
         checkAvailability(watch())
 
-        const subscription = watch((values) => checkAvailability(values))
+        const subscription = watch((values) => {
+            checkAvailability(values)
+        })
 
         return () => subscription.unsubscribe()
     }, [watch])
@@ -178,7 +204,7 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
             <div className="flex gap-2 justify-between">
                 {
                     categorys.map(cate => {
-                        return <button className="bg-white/0 border-2 rounded-lg text-center py-1 w-1/3">
+                        return <button key={cate.id} className="bg-white/0 border-2 rounded-lg text-center py-1 w-1/3">
                             {cate.name}
                         </button>
                     })

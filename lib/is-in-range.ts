@@ -1,37 +1,63 @@
 export function IsInRange(
-    value: string,
+    value: {
+        sph:string,
+        cyl:string
+    },
     range: {
-        positiveFrom: string
-        positiveTo: string
-        negativeFrom: string
-        negativeTo: string
+        sphPositiveFrom: string
+        sphPositiveTo: string
+        sphNegativeFrom: string
+        sphNegativeTo: string,
+        cylFrom: string,
+        cylTo: string,
+
     }
 ) { 
-    const numberValue = parseFloat(value)
+    const sphNumberValue = parseFloat(value.sph)
+    const cylNumberValue = parseFloat(value.cyl)
 
-    if(isNaN(numberValue)) {
-        console.log(numberValue);
+    let sphInRange = false
+    let cylInRange = false
+    
+    if(isNaN(sphNumberValue)) {
+        console.log(sphNumberValue);
         console.log("Not a number");
         return
     }
 
-    if(numberValue === 0){
-        const positiveMin = parseFloat(range.positiveFrom)
-        const negativeMin = parseFloat(range.negativeFrom)
-
-        return numberValue === positiveMin || numberValue === negativeMin
+    if(isNaN(cylNumberValue)) {
+        console.log(sphNumberValue);
+        console.log("Not a number");
+        return
     }
 
-    if(numberValue > 0){
-        const minRange = Math.min(parseFloat(range.positiveFrom),parseFloat(range.positiveTo))
-        const maxRange = Math.max(parseFloat(range.positiveFrom),parseFloat(range.positiveTo))
+    if(sphNumberValue === 0){
+        const positiveMin = parseFloat(range.sphPositiveFrom)
+        const negativeMin = parseFloat(range.sphNegativeFrom)
 
-        return numberValue >= minRange && numberValue <= maxRange
-    }else{
-        const minRange = parseFloat(range.negativeFrom)
-        const maxRange = parseFloat(range.negativeTo)
-
-        return numberValue <= minRange && numberValue >= maxRange
+        sphInRange = sphNumberValue === positiveMin || sphNumberValue === negativeMin
     }
 
+    if(sphNumberValue > 0){
+        const minRange = Math.min(parseFloat(range.sphPositiveFrom),parseFloat(range.sphPositiveTo))
+        const maxRange = Math.max(parseFloat(range.sphPositiveFrom),parseFloat(range.sphPositiveTo))
+
+        sphInRange = sphNumberValue >= minRange && sphNumberValue <= maxRange
+    }else if(sphNumberValue < 0){
+        const minRange = parseFloat(range.sphNegativeFrom)
+        const maxRange = parseFloat(range.sphNegativeTo)
+
+        sphInRange= sphNumberValue <= minRange && sphNumberValue >= maxRange
+    }
+
+    // cyl check
+    const cylMin = parseFloat(range.cylTo)
+    const cylMax = parseFloat(range.cylFrom)
+
+    cylInRange = cylNumberValue <= cylMax && cylNumberValue >= cylMin
+
+    return {
+        sphInRange,
+        cylInRange
+    }
 }
