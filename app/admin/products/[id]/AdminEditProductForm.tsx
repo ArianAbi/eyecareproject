@@ -3,20 +3,32 @@
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldTagsShorthand } from "@/components/core/FormFieldTagsShorthand";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { ProductType, SubCategory, Tags } from "@/generated/prisma/client";
+import type { Prisma, ProductType, SubCategory, Tags } from "@/generated/prisma/client";
 import { parseActionError } from "@/lib/action-error";
-import { ADMIN_CreateProductsAction } from "@/lib/actions/admin.products.action";
+import { ADMIN_UpdateProduct } from "@/lib/actions/admin.products.action";
 import { lensFilter } from "@/lib/lens-filter";
 import { NegativeLensRanges, PositiveLensRanges } from "@/lib/lens-range";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import * as z from "zod"
 
-export default function AdminCreateProductForm({ categorys, tags }: { categorys: SubCategory[], tags: Tags[] }) {
+export default function AdminEditProductForm({ id, categorys, product, tags }: {
+    id: string,
+    categorys: SubCategory[],
+    product: Prisma.ProductGetPayload<{
+        include: {
+            lens: true,
+            tags: true
+        }
+    }>,
+    tags: Tags[]
+}) {
+
     const schema = z.object({
         name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
         description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
@@ -40,19 +52,41 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
         resolver: zodResolver(schema),
         mode: 'onChange',
         defaultValues: {
-            name: "",
-            description: "",
-            categoryId: "",
-            price: 0,
-            type: "LENS",
-            lens: {
-                positiveFromSph: "0.00",
-                positivToSph: "0.00",
-                negativeFromSph: "0.00",
-                negativeToSph: "0.00",
-                fromCyl: "0.00",
-                toCyl: "0.00",
-            }
+            name: product.name,
+            description: product.description,
+            categoryId: product.categoryId,
+            price: product.price,
+            type: product.type,
+            ...(product.tags ? 
+                {
+                    tags:product.tags.map(tag=>tag.id)
+                }
+                :
+                {}
+            ),
+            ...(product.lens ?
+                {
+                    lens: {
+                        positiveFromSph: product.lens.positiveFromSph,
+                        positivToSph: product.lens.positivToSph,
+                        negativeFromSph: product.lens.negativeFromSph,
+                        negativeToSph: product.lens.negativeToSph,
+                        fromCyl: product.lens.fromCyl,
+                        toCyl: product.lens.toCyl,
+                    }
+                }
+                :
+                {
+                    lens: {
+                        positiveFromSph: "0.00",
+                        positivToSph: "0.00",
+                        negativeFromSph: "0.00",
+                        negativeToSph: "0.00",
+                        fromCyl: "0.00",
+                        toCyl: "0.00",
+                    }
+                }
+            )
         }
     })
 
@@ -62,16 +96,17 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
 
     const onSubmit = handleSubmit(async values => {
         try {
-            await ADMIN_CreateProductsAction({
+
+            await ADMIN_UpdateProduct(id, {
                 name: values.name,
-                active:true,
                 description: values.description,
                 type: values.type as ProductType,
                 price: values.price,
                 categoryId: values.categoryId,
                 lens: values.lens,
-                tagIds: values.tags
-            })
+                tagIds:values.tags
+                // tagIds omitted on purpose — this form doesn't manage tags
+            });
 
             toast.add({
                 title: "محصول اضافه شد",
@@ -143,7 +178,6 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
                 }
             </div>
 
-
             {/* tags */}
             <div>
                 <FormFieldTagsShorthand
@@ -156,7 +190,6 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
                     label="تگ ها"
                 />
             </div>
-
 
             <div className="col-span-2 gap-2 my-2 grid grid-cols-2 border-2 p-2 rounded-lg">
                 <div className="col-span-2">محدوده</div>
@@ -292,10 +325,17 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
             <div className="mt-4 space-x-2 col-span-full">
                 <Button disabled={!formState.isValid || formState.isSubmitting} variant={"secondary"} type="submit">
                     <span>
-                        ساخت
+                        بروزرسانی
                     </span>
                     {formState.isSubmitting && <Spinner />}
                 </Button>
+
+                <Link
+                    href={`/admin/products`}
+                    className={buttonVariants({ variant: "outline" })}
+                >
+                    برگشت
+                </Link>
 
             </div>
         </form >

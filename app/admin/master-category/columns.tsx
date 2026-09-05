@@ -207,7 +207,7 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory & { subCategor
 
 const editSchema = z.object({
     name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
-    active: z.boolean()
+    active: z.boolean(),
 })
 
 function MasterCategoryEditBtn({ data }: { data: MasterCategory }) {
@@ -218,7 +218,7 @@ function MasterCategoryEditBtn({ data }: { data: MasterCategory }) {
         reValidateMode: "onChange",
         defaultValues: {
             name: data.name,
-            active: data.active
+            active: data.active,
         }
     })
 

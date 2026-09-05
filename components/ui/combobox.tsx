@@ -29,6 +29,7 @@ function ComboboxTrigger({
       data-slot="combobox-trigger"
       className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
       {...props}
+      tabIndex={-1}
     >
       {children}
       <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />

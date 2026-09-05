@@ -1,13 +1,12 @@
 "use client"
 
-import { colorOptionsType, colorSelectMap } from "@/components/core/FormFieldColorSelectShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
 import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { Lens, Prisma, Product, SubCategory } from "@/generated/prisma/client";
+import { MasterCategory, Product, SubCategory, Tags } from "@/generated/prisma/client";
 import { ActionError } from "@/lib/action-error";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
@@ -15,168 +14,66 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { ArrowRight, Check, PenIcon, TrashIcon, XIcon } from "lucide-react";
-import Link from "next/link";
+import { Check, PenIcon, TrashIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { colorSelectMap, colorOptionsType } from "./AdminCreateTags";
 
-// export const AdminProductsColumn: ColumnDef<Product & { lens: Lens | null }>[] = [
-export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
-    include: {
-        tags: true,
-        lens: true
-    }
-}>>[] = [
-        {
-            accessorKey: "edit",
-            header: "",
-            cell: ({ row }) => {
-                return <div className="space-x-2">
-                    <Link
-                        href={`/admin/products/${row.original.id}`}
-                        className={buttonVariants({ variant: "default" })}
-                    >
-                        Edit
-                    </Link>
+export const AdminTagsColumn: ColumnDef<Tags>[] = [
+    {
+        accessorKey: "edit",
+        header: "",
+        cell: ({ row }) => {
+            return <div className="space-x-2">
+                {/* <ProductCategoryEditBtn data={row.original} /> */}
+                Edit
+            </div>
+        }
+    },
+    {
+        accessorKey: "name",
+        header: "نام",
+        cell: ({ row }) => {
+            return <div className="flex gap-2">
+                <div className={cn(colorSelectMap[row.original.color as colorOptionsType["value"]], "size-4 rounded-full")}></div>
+
+                <div>
+                    {row.original.name}
                 </div>
-            }
-        },
-        {
-            accessorKey: "tags",
-            header: "تگ ها",
-            cell: ({ row }) => {
-
-                if (row.original.tags.length > 0) {
-
-                    return <div className="flex max-w-60 flex-wrap gap-1">
-                        {
-                            row.original.tags.map(tag => {
-                                return <div className={cn(colorSelectMap[tag.color as colorOptionsType['value']], "px-1 py-0.5 rounded-md w-fit text-[10px] font-semibold")}>
-                                    {tag.name}
-                                </div>
-                            })
-                        }
-                    </div>
-                } else {
-                    return <div className="w-full text-center text-white/60">
-                        بدون تگ
-                    </div>
+            </div>
+        }
+    },
+    // {
+    //     accessorKey: "products",
+    //     header: "محصولات متصل",
+    //     cell: ({ row }) => {
+    //         return <div>
+    //             {row.original.products.length}
+    //         </div>
+    //     }
+    // },
+    {
+        accessorKey: "createdAt",
+        header: "تاریخ ساخت",
+        cell: ({ row }) => {
+            return <div>
+                {
+                    format(row.original.createdAt, "yyyy/MM/dd")
                 }
-            }
-        },
-        {
-            accessorKey: "name",
-            header: "نام محصول",
-            cell: ({ row }) => {
-                return <div>{row.original.name}</div>
-            }
-        },
-        {
-            accessorKey: "type",
-            header: "نوع محصول",
-            cell: ({ row }) => {
-                if (row.original.type == 'LENS') {
-                    return <div className="w-fit rounded-md px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500">عدسی</div>
-                }
-                if (row.original.type == 'FRAME') {
-                    return <div className="w-fit rounded-md px-1.5 py-0.5 bg-emerald-500/20 border border-amber-500">فریم</div>
-                }
-            }
-        },
-        {
-            accessorKey: "description",
-            header: "توضیحات",
-            cell: ({ row }) => {
-                return <div className="max-w-32 overflow-hidden">
-                    {row.original.description}
-                </div>
-            }
-        },
-        // {
-        //     accessorKey: "",
-        //     header: "زیرمجموعه",
-        //     cell: ({ row }) => {
-        //         return <div className="bg-gray-500/20 border-2 border-gray-600/20 px-2 py-1 rounded-md w-fit">
-        //             {row.original.masterCategory.name}
-        //         </div>
-        //     }
-        // },
-        {
-            accessorKey: "price",
-            header: "قیمت",
-            cell: ({ row }) => {
-                return <div className="flex gap-1">
-                    <span>
-                        {row.original.price.toLocaleString()}
-                    </span>
-
-                    <span className="text-emerald-500 font-semibold">
-                        تومان
-                    </span>
-                </div>
-            }
-        },
-        {
-            accessorKey: "createdAt",
-            header: "تاریخ ساخت",
-            cell: ({ row }) => {
-                return <div>
-                    {
-                        format(row.original.createdAt, "yyyy/MM/dd")
-                    }
-                </div>
-            }
-        },
-        {
-            accessorKey: "",
-            header: "محدوده نمره",
-            cell: ({ row }) => {
-                if (row.original.lens) {
-                    return <div>
-                        <div>
-                            <span>cyl : </span>
-                            <span>
-                                <span>
-                                    {row.original.lens.fromCyl}
-                                </span>
-
-                                <span> / </span>
-
-                                <span>
-                                    {row.original.lens.toCyl}
-                                </span>
-                            </span>
-                        </div>
-                        <div>
-                            <span>sph : </span>
-                            <span>{row.original.lens.negativeToSph}</span>
-
-                            <span> / </span>
-
-                            <span>{row.original.lens.positivToSph}</span>
-                        </div>
-                    </div>
-                }
-            }
-        },
-        {
-            accessorKey: "delete",
-            header: "",
-            cell: ({ row }) => {
-                return <div className="space-x-2">
-                    {
-                        // row.original.products.length <= 0
-                        //     ? <ProductCategoryDeleteBtn data={row.original} />
-                        //     :
-                        //     <Button disabled variant={"destructive"}>
-                        //         <TrashIcon />
-                        //     </Button>
-                    }
-                </div>
-            }
-        },
-    ]
+            </div>
+        }
+    },
+    {
+        accessorKey: "delete",
+        header: "",
+        cell: ({ row }) => {
+            return <div className="space-x-2">
+                Delete
+            </div>
+        }
+    },
+]
 
 function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Product[] } }) {
     // const [inputV, setInputV] = useState("")

@@ -1,5 +1,6 @@
 "use client"
 
+import { colorOptionsType, colorSelectMap, FormFieldColorSelectShorthand } from "@/components/core/FormFieldColorSelectShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
 import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
@@ -10,6 +11,7 @@ import { MasterCategory, Product, SubCategory } from "@/generated/prisma/client"
 import { ActionError } from "@/lib/action-error";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
@@ -28,11 +30,19 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: M
             </div>
         }
     },
+
     {
         accessorKey: "name",
         header: "نام",
         cell: ({ row }) => {
-            return <div>{row.original.name}</div>
+                console.log(row.original);
+                
+            return <div className="flex gap-1">
+                <div className={cn(row.original.color ,"size-4 rounded-full")}></div>
+
+                <div>{row.original.name}</div>
+            </div>
+
         }
     },
     {
@@ -175,7 +185,8 @@ function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Pr
 
 const editSchema = z.object({
     name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
-    description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" })
+    description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
+    color: z.string()
 })
 
 function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
@@ -186,7 +197,8 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
         reValidateMode: "onChange",
         defaultValues: {
             name: data.name,
-            description: data.description
+            description: data.description,
+            color: data.color
         }
     })
 
@@ -194,7 +206,7 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
 
     const onSubmit = handleSubmit(async values => {
         try {
-            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description)
+            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description,values.color)
 
             toast.add({
                 title: "دسته بندی بروزرسانی شد",
@@ -246,6 +258,14 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
                         placeholder="توضیحات جدید"
                         disabled={formState.isSubmitting}
                         as="textarea"
+                    />
+
+                    <FormFieldColorSelectShorthand
+                        control={control}
+                        name="color"
+                        label="انتخاب رنگ"
+                        placeholder="انتخاب رنگ"
+                        disabled={formState.isSubmitting}
                     />
                 </div>
 

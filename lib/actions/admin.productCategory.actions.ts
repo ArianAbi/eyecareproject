@@ -48,13 +48,14 @@ export async function ADMIN_GetProductCategorys() {
     }
 }
 
-export async function ADMIN_UpdateProductCategorys(id: string, name: string, description: string) {
+export async function ADMIN_UpdateProductCategorys(id: string, name: string, description: string,color:string) {
     try {
         const data = await prisma.subCategory.update({
             where: { id: id },
             data: {
                 name: name,
-                description: description
+                description: description,
+                color:color
             }
         })
 

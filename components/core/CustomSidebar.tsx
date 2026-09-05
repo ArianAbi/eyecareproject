@@ -214,10 +214,10 @@ export const AdminSidebarData: SidebarDataType = {
           title: "لیست محصولات",
           path: `/admin/products`
         },
-        // {
-        //   title: "افزودن محصول",
-        //   path: `/admin/products`
-        // }
+        {
+          title:"تگ ها",
+          path: `/admin/products/tags`
+        }
       ]
     }
   ],
@@ -231,12 +231,12 @@ export const AdminSidebarData: SidebarDataType = {
 export const UserSidebarData: SidebarDataType = {
   menus: [
     {
-      group_title: "سفارشات",
+      group_title: "سفارش عدسی",
       icon: ReceiptIcon,
       items: [
         {
-          title: "سفارشات",
-          path: `/orders`
+          title: "سفارش عدسی",
+          path: `/glasslens-order`
         }
       ]
     }

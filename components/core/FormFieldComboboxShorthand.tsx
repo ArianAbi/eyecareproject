@@ -27,6 +27,7 @@ interface FormFieldComboboxShorthandProps<TFieldValues extends FieldValues> {
   emptySnapValue?: string,
   disabled?: boolean;
   ltr?: boolean;
+  filter?: (option: ComboboxOption, query: string) => boolean;
 }
 
 export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
@@ -39,7 +40,8 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   description,
   disabled = false,
   emptySnapValue,
-  ltr = false
+  ltr = false,
+  filter
 }: FormFieldComboboxShorthandProps<TFieldValues>) {
   const id = `form-${name}`;
 
@@ -52,28 +54,29 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
 
         return (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel className="text-xs" htmlFor={id}>
+            {label && <FieldLabel className="text-xs" htmlFor={id}>
               {label}
-            </FieldLabel>
+            </FieldLabel>}
 
             <Combobox
               items={options}
               value={selected}
               onValueChange={(option: ComboboxOption | null) => {
-                if (!option) {
-                  field.onChange(emptySnapValue ?? "");
-                  return;
+                if (option) {
+                  ;
+                  field.onChange(option.value);
                 }
-                field.onChange(option.value);
               }}
               itemToStringValue={(option: ComboboxOption) => option.label}
               disabled={disabled}
+              filter={filter}
             >
               <ComboboxInput
                 id={id}
                 placeholder={placeholder}
                 aria-invalid={fieldState.invalid}
                 onBlur={field.onBlur}
+                onFocus={(e) => e.currentTarget.select()}
                 style={ltr ? { direction: "ltr" } : {}}
                 className="text-xs"
               />
