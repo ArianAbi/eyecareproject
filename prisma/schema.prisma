@@ -149,6 +149,8 @@ model OrderBatch {
 
   orderUpdate OrderUpdate[]
 
+  deliveryPrice Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
 }
@@ -161,10 +163,20 @@ enum RawOrCutType {
 model OrderItem {
   id String @id @default(uuid())
 
-  productId String  @unique
+  productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  orderBatchId String     @unique
+  purchasedPrice Int
+
+  cutPrice Int @default(0)
+
+  odSph String
+  odCyl String
+
+  osSph String
+  osCyl String
+
+  orderBatchId String
   orderBatch   OrderBatch @relation(fields: [orderBatchId], references: [id])
 
   customerNote String          @default("")

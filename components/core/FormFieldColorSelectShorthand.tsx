@@ -52,6 +52,18 @@ export const colorSelectMap = {
     transparent: "bg-transparent"
 } as const
 
+export const colorSelectMapBorder = {
+    gray: "border-gray-500",
+    red: "border-red-500",
+    emerald: "border-emerald-500",
+    cyan: "border-cyan-500",
+    blue: "border-blue-500",
+    purple: "border-purple-500",
+    taupe:"border-taupe-500",
+    amber: "border-amber-500",
+    transparent: "border-white/60"
+} as const
+
 export function FormFieldColorSelectShorthand<TFieldValues extends FieldValues>({
     name,
     control,

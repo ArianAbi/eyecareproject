@@ -38,7 +38,7 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: M
                 console.log(row.original);
                 
             return <div className="flex gap-1">
-                <div className={cn(row.original.color ,"size-4 rounded-full")}></div>
+                <div className={cn(colorSelectMap[row.original.color as colorOptionsType['value']] ,"border-2 border-white/60 size-4 rounded-full")}></div>
 
                 <div>{row.original.name}</div>
             </div>
