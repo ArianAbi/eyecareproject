@@ -14,6 +14,9 @@ export async function ADMIN_CreateProductsAction(
         type: ProductType;
         categoryId: string;
         tagIds: string[];
+        includesBag: boolean,
+        includesSpray: boolean,
+        includesCloth: boolean,
         lens: {
             positiveFromSph: string;
             positivToSph: string;
@@ -27,14 +30,17 @@ export async function ADMIN_CreateProductsAction(
     try {
         const data = await prisma.product.create({
             data: {
-                name:input.name,
-                description:input.description,
-                price:input.price,
-                type:input.type,
-                categoryId:input.categoryId,
+                name: input.name,
+                description: input.description,
+                price: input.price,
+                type: input.type,
+                categoryId: input.categoryId,
                 ...(input.tagIds !== undefined && {
                     tags: { connect: input.tagIds.map((tagId) => ({ id: tagId })) },
                 }),
+                includesBag: input.includesBag,
+                includesCleaningCloth: input.includesCloth,
+                includesCleaningSpray: input.includesSpray
             }
         })
 
@@ -75,6 +81,9 @@ export async function ADMIN_GetProducts() {
             include: {
                 lens: true,
                 tags: true
+            },
+            orderBy:{
+                createdAt:"asc"
             }
         })
         return { data, success: true }
@@ -131,6 +140,9 @@ export async function ADMIN_UpdateProduct(
         type?: ProductType;
         categoryId?: string;
         tagIds?: string[];
+        includesBag: boolean,
+        includesSpray: boolean,
+        includesCloth: boolean,
         lens?: {
             positiveFromSph: string;
             positivToSph: string;
@@ -142,10 +154,21 @@ export async function ADMIN_UpdateProduct(
     }
 ) {
     try {
-        const { tagIds, lens, ...scalarFields } = input;
+        const {
+            tagIds,
+            lens,
+            categoryId,
+            includesBag,
+            includesSpray,
+            includesCloth,
+            ...scalarFields
+        } = input;
 
-        const data: Prisma.ProductUncheckedUpdateInput = {
-            ...scalarFields, // categoryId works directly here
+        const data: Prisma.ProductUpdateInput = {
+            ...scalarFields,
+            ...(categoryId !== undefined && {
+                categoryRel: { connect: { id: categoryId } },
+            }),
             ...(tagIds !== undefined && {
                 tags: { set: tagIds.map((tagId) => ({ id: tagId })) },
             }),
@@ -155,6 +178,9 @@ export async function ADMIN_UpdateProduct(
                         ? { delete: true }
                         : { upsert: { create: lens, update: lens } },
             }),
+            includesBag,
+            includesCleaningSpray: includesSpray,
+            includesCleaningCloth: includesCloth,
         };
 
         const result = await prisma.product.update({
@@ -193,29 +219,25 @@ export async function ADMIN_UpdateProductCategorys(id: string, name: string, des
     }
 }
 
-export async function ADMIN_DeleteProductCategorys(id: string) {
+export async function ADMIN_DeleteProduct(id: string,lensId:string | null) {
     try {
-        const data = await prisma.subCategory.findFirst({
-            include: {
-                products: true
-            },
-            where: {
-                id: id
+        if(lensId){
+            await prisma.lens.delete({
+                where:{id:lensId}
+            })
+        }
+        
+        const data = await prisma.product.delete({
+            where:{
+                id
             }
         })
 
-        if (!data) throw new ActionError({ error: "failed to fetch this category data" })
-        if (data.products.length > 0) throw new ActionError({ error: "این دسته بندی محصول دارد و قابل حذف نیست" })
-
-        await prisma.subCategory.delete({
-            where: { id }
-        })
-
-        revalidatePath(`/admin/product-category`)
+        revalidatePath(`/admin/products`)
 
         return { success: true }
     } catch (err) {
         console.log(err);
-        throw new ActionError({ error: "failed to delete master categorys, check console" })
+        throw new ActionError({ error: "failed to delete product, check console" })
     }
 }

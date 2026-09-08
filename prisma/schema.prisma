@@ -106,6 +106,10 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
 
+  includesBag           Boolean @default(false)
+  includesCleaningSpray Boolean @default(false)
+  includesCleaningCloth Boolean @default(false)
+
   orderItem OrderItem[]
 }
 
@@ -176,7 +180,10 @@ model OrderItem {
   osSph String
   osCyl String
 
-  aux String @default("0")
+  odOnly Boolean @default(false)
+
+  odAux String @default("0")
+  osAux String @default("0")
 
   orderBatchId String
   orderBatch   OrderBatch @relation(fields: [orderBatchId], references: [id])

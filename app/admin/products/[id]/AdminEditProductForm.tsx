@@ -4,6 +4,7 @@ import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxS
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldTagsShorthand } from "@/components/core/FormFieldTagsShorthand";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import type { Prisma, ProductType, SubCategory, Tags } from "@/generated/prisma/client";
@@ -12,6 +13,7 @@ import { ADMIN_UpdateProduct } from "@/lib/actions/admin.products.action";
 import { lensFilter } from "@/lib/lens-filter";
 import { NegativeLensRanges, PositiveLensRanges } from "@/lib/lens-range";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Handbag, SprayCan, TowelRack } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -43,12 +45,15 @@ export default function AdminEditProductForm({ id, categorys, product, tags }: {
             negativeToSph: z.string(),
             fromCyl: z.string(),
             toCyl: z.string()
-        })
+        }),
+        includesBag: z.boolean(),
+        includesSpray: z.boolean(),
+        includesCloth: z.boolean(),
     })
 
     type formType = z.infer<typeof schema>
 
-    const { control, handleSubmit, formState, watch } = useForm<formType>({
+    const { control, handleSubmit, formState, watch, setValue } = useForm<formType>({
         resolver: zodResolver(schema),
         mode: 'onChange',
         defaultValues: {
@@ -57,9 +62,12 @@ export default function AdminEditProductForm({ id, categorys, product, tags }: {
             categoryId: product.categoryId,
             price: product.price,
             type: product.type,
-            ...(product.tags ? 
+            includesBag: product.includesBag,
+            includesCloth: product.includesCleaningCloth,
+            includesSpray: product.includesCleaningSpray,
+            ...(product.tags ?
                 {
-                    tags:product.tags.map(tag=>tag.id)
+                    tags: product.tags.map(tag => tag.id)
                 }
                 :
                 {}
@@ -104,7 +112,10 @@ export default function AdminEditProductForm({ id, categorys, product, tags }: {
                 price: values.price,
                 categoryId: values.categoryId,
                 lens: values.lens,
-                tagIds:values.tags
+                tagIds: values.tags,
+                includesBag: values.includesBag,
+                includesCloth: values.includesCloth,
+                includesSpray: values.includesSpray,
                 // tagIds omitted on purpose — this form doesn't manage tags
             });
 
@@ -309,6 +320,59 @@ export default function AdminEditProductForm({ id, categorys, product, tags }: {
                 </div>
             </div>
 
+            {/* packaging inclusions */}
+            <div className="col-span-full flex justify-around my-2 border py-3 rounded-lg">
+                {/* handbag */}
+                <div className="grid grid-cols-2 center gap-1">
+                    <Checkbox
+                        className="size-5"
+                        checked={watch().includesBag}
+                        onCheckedChange={(e) => {
+                            setValue('includesBag', e)
+                        }}
+                    />
+
+                    <div className={watch().includesBag ? 'stroke-white' : 'stroke-gray-400'}>
+                        <Handbag stroke="inherit" size={26} />
+                    </div>
+
+                    <div className={`col-span-2 ${watch().includesBag ? 'text-white' : 'text-gray-400'}`}>ساکدستی</div>
+                </div>
+
+                {/* spray */}
+                <div className="grid grid-cols-2 center gap-1">
+                    <Checkbox
+                        className="size-5"
+                        checked={watch().includesSpray}
+                        onCheckedChange={(e) => {
+                            setValue('includesSpray', e)
+                        }}
+                    />
+
+                    <div className={watch().includesSpray ? 'stroke-white' : 'stroke-gray-400'}>
+                        <SprayCan stroke="inherit" size={26} />
+                    </div>
+
+                    <div className={`col-span-2 ${watch().includesSpray ? 'text-white' : 'text-gray-400'}`}>اسپری</div>
+                </div>
+
+                {/* cloth */}
+                <div className="grid grid-cols-2 center gap-1">
+                    <Checkbox
+                        className="size-5"
+                        checked={watch().includesCloth}
+                        onCheckedChange={(e) => {
+                            setValue('includesCloth', e)
+                        }}
+                    />
+
+                    <div className={watch().includesCloth ? 'stroke-white' : 'stroke-gray-400'}>
+                        <TowelRack stroke="inherit" size={26} />
+                    </div>
+
+                    <div className={`col-span-2 ${watch().includesCloth ? 'text-white' : 'text-gray-400'}`}>دستمال</div>
+                </div>
+            </div>
 
 
             <div className="col-span-full">

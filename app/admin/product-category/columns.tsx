@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { Check, PenIcon, TrashIcon, XIcon } from "lucide-react";
+import { BanIcon, Check, Handbag, PenIcon, SprayCan, TowelRack, TrashIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
@@ -67,7 +67,7 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: M
         accessorKey: "products",
         header: "محصولات متصل",
         cell: ({ row }) => {
-            return <div>
+            return <div className="w-full text-center">
                 {row.original.products.length}
             </div>
         }

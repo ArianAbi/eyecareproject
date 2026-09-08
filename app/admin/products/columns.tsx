@@ -11,11 +11,12 @@ import { Lens, Prisma, Product, SubCategory } from "@/generated/prisma/client";
 import { ActionError } from "@/lib/action-error";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
+import { ADMIN_DeleteProduct } from "@/lib/actions/admin.products.action";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { ArrowRight, Check, PenIcon, TrashIcon, XIcon } from "lucide-react";
+import { ArrowRight, BanIcon, Check, Handbag, PenIcon, SprayCan, TowelRack, TrashIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,15 @@ export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
         lens: true
     }
 }>>[] = [
+        {
+            accessorKey: "delete",
+            header: "",
+            cell: ({ row }) => {
+                return <div className="space-x-2">
+                    <ProductDeleteBtn product={row.original} lensId={row.original.lens ? row.original.lens.id : null}/>
+                </div>
+            }
+        },
         {
             accessorKey: "edit",
             header: "",
@@ -44,15 +54,19 @@ export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
         },
         {
             accessorKey: "tags",
-            header: "تگ ها",
+            header: () => {
+                return <div className="text-center">
+                    تگ ها
+                </div>
+            },
             cell: ({ row }) => {
 
                 if (row.original.tags.length > 0) {
 
-                    return <div className="flex max-w-60 flex-wrap gap-1">
+                    return <div className="flex max-w-28 justify-center flex-wrap gap-1">
                         {
                             row.original.tags.map(tag => {
-                                return <div className={cn(colorSelectMap[tag.color as colorOptionsType['value']], "px-1 py-0.5 rounded-md w-fit text-[10px] font-semibold")}>
+                                return <div key={tag.id} className={cn(colorSelectMap[tag.color as colorOptionsType['value']], "px-1 py-0.5 rounded-md w-fit text-[10px] font-semibold")}>
                                     {tag.name}
                                 </div>
                             })
@@ -85,14 +99,53 @@ export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
             }
         },
         {
-            accessorKey: "description",
-            header: "توضیحات",
+            accessorKey: "packagingInclusion",
+            header: () => {
+                return <div className="text-center">
+                    بسته بندی
+                </div>
+            },
             cell: ({ row }) => {
-                return <div className="max-w-32 overflow-hidden">
-                    {row.original.description}
+                const includesBag = row.original.includesBag
+                const includesSpray = row.original.includesCleaningSpray
+                const includesCloth = row.original.includesCleaningCloth
+
+                return <div className="w-full text-center flex justify-between gap-1">
+                    <div className="relative">
+                        {!includesBag && <div className="absolute z-10 stroke-red-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <BanIcon strokeWidth={2.5} stroke="inherit" />
+                        </div>}
+
+                        <Handbag className={`${!includesBag ? 'stroke-gray-200 scale-85' : 'stroke-white'}`} stroke="inherit" />
+                    </div>
+
+                    <div className="relative">
+                        {!includesCloth && <div className="absolute z-10 stroke-red-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <BanIcon strokeWidth={2.5} stroke="inherit" />
+                        </div>}
+
+                        <TowelRack className={`${!includesCloth ? 'stroke-gray-200 scale-85' : 'stroke-white'}`} stroke="inherit" />
+                    </div>
+
+                    <div className="relative">
+                        {!includesSpray && <div className="absolute z-10 stroke-red-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <BanIcon strokeWidth={2.5} stroke="inherit" />
+                        </div>}
+
+                        <SprayCan className={`${!includesSpray ? 'stroke-gray-200 scale-85' : 'stroke-white'}`} stroke="inherit" />
+                    </div>
                 </div>
             }
         },
+        // {
+        //     accessorKey: "description",
+        //     header: "توضیحات",
+        //     cell: ({ row }) => {
+        //         return <div className="max-w-32 overflow-hidden">
+        //             {row.original.description}
+        //         </div>
+        //     }
+        // },
         // {
         //     accessorKey: "",
         //     header: "زیرمجموعه",
@@ -160,49 +213,23 @@ export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
                 }
             }
         },
-        {
-            accessorKey: "delete",
-            header: "",
-            cell: ({ row }) => {
-                return <div className="space-x-2">
-                    {
-                        // row.original.products.length <= 0
-                        //     ? <ProductCategoryDeleteBtn data={row.original} />
-                        //     :
-                        //     <Button disabled variant={"destructive"}>
-                        //         <TrashIcon />
-                        //     </Button>
-                    }
-                </div>
-            }
-        },
     ]
 
-function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Product[] } }) {
+function ProductDeleteBtn({ product ,lensId}: { product: Product ,lensId:string | null}) {
     // const [inputV, setInputV] = useState("")
     const [loading, setLoading] = useState(false)
     const [disabled, setDisabled] = useState(false)
-    const containsProducts = data.products.length > 0
 
     const [open, setOpen] = useState(false)
 
     async function onDelete() {
         try {
-            if (data.products.length > 0) throw new ActionError({ error: "در این دسته بندی محصول هست و قابل حذف نیست" })
-            // if (disabled || inputV !== validationPhrase) {
-            //     toast.add({
-            //         title: "متن تایپ شده صحیح نیست",
-            //         type: "warning"
-            //     })
-            //     return
-            // }
-
             setLoading(true)
 
-            await ADMIN_DeleteProductCategorys(data.id)
+            await ADMIN_DeleteProduct(product.id,lensId)
 
             toast.add({
-                title: "دسته بندی حذف شد",
+                title: "محصول حذف شد",
                 type: "success"
             })
 
@@ -231,7 +258,7 @@ function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Pr
                         حذف
                     </span>
                     <span>
-                        {" " + data.name}
+                        {" " + product.name}
                     </span>
                 </AlertDialogTitle>
 
@@ -244,7 +271,7 @@ function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Pr
 
             <div className="flex flex-col gap-2">
                 <div className="space-x-3 mt-3">
-                    <Button onClick={onDelete} disabled={containsProducts || loading || disabled} variant={"destructive"}>
+                    <Button onClick={onDelete} disabled={loading || disabled} variant={"destructive"}>
                         <span>
                             حذف
                         </span>
@@ -252,99 +279,6 @@ function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Pr
                     </Button>
 
                     <AlertDialogCancel variant={"default"}>
-                        لغو
-                    </AlertDialogCancel>
-                </div>
-            </div>
-        </AlertDialogContent>
-    </AlertDialog>
-}
-
-const editSchema = z.object({
-    name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
-    description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" })
-})
-
-function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
-
-    const { handleSubmit, formState, control } = useForm({
-        resolver: zodResolver(editSchema),
-        mode: "onChange",
-        reValidateMode: "onChange",
-        defaultValues: {
-            name: data.name,
-            description: data.description
-        }
-    })
-
-    const [open, setOpen] = useState(false)
-
-    const onSubmit = handleSubmit(async values => {
-        try {
-            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description)
-
-            toast.add({
-                title: "دسته بندی بروزرسانی شد",
-                type: "success"
-            })
-
-            setOpen(false)
-        } catch (err) {
-            toast.add({
-                title: "خطا در بروزرسانی",
-                type: "error"
-            })
-            console.log(err);
-
-        }
-    })
-
-    return <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger className={buttonVariants({ variant: "edit" })}>
-            <PenIcon />
-        </AlertDialogTrigger>
-
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>
-                    <span>
-                        بروزرسانی
-                    </span>
-                    <span>
-                        {" " + data.name}
-                    </span>
-                </AlertDialogTitle>
-            </AlertDialogHeader>
-
-            <div className="flex flex-col gap-2">
-                <div className="space-y-2">
-                    <FormFieldShorthand
-                        control={control}
-                        name="name"
-                        label="نام جدید"
-                        placeholder="نام جدید"
-                        disabled={formState.isSubmitting}
-                    />
-
-                    <FormFieldShorthand
-                        control={control}
-                        name="description"
-                        label="توضیحات جدید"
-                        placeholder="توضیحات جدید"
-                        disabled={formState.isSubmitting}
-                        as="textarea"
-                    />
-                </div>
-
-                <div className="space-x-3 mt-3">
-                    <Button onClick={onSubmit} disabled={formState.isSubmitting} variant={"edit"}>
-                        <span>
-                            بروزرسانی
-                        </span>
-                        {formState.isSubmitting && <Spinner />}
-                    </Button>
-
-                    <AlertDialogCancel disabled={formState.isSubmitting} variant={"default"}>
                         لغو
                     </AlertDialogCancel>
                 </div>

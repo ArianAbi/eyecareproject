@@ -14,7 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { colorOptionsType, colorSelectMap } from "@/app/admin/products/tags/AdminCreateTags"
+import { colorOptionsType, colorSelectMap } from "./FormFieldColorSelectShorthand"
 
 type Option = {
     label: string
