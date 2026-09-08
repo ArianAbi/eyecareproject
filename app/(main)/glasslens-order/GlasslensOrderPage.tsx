@@ -1,20 +1,21 @@
 "use client"
 
-import { colorOptionsType, colorSelectMap, colorSelectMapBorder } from "@/components/core/FormFieldColorSelectShorthand"
+import { CategoryDialog } from "@/components/core/CategoryDialog"
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand"
 import LensProductItem from "@/components/LensProductItem"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTrigger } from "@/components/ui/popover"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
-import { Lens, OrderItem, Prisma, Product, SubCategory, Tags } from "@/generated/prisma/client"
+import { Prisma, Tags } from "@/generated/prisma/client"
 import { IsInRange } from "@/lib/is-in-range"
 import { lensFilter } from "@/lib/lens-filter"
 import { AllLensRanges, NegativeLensRanges } from "@/lib/lens-range"
 import { LensProductType } from "@/types/lens-product"
 import { OrderProductItemType } from "@/types/order"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Copy, CornerUpLeft } from "lucide-react"
+import { Copy, CornerUpLeft, Trash } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -24,7 +25,16 @@ type ProductWithAvailability = LensProductType & { available: boolean }
 
 export default function GlasslensOrderPage({ products, categorys, tags }: {
     products: LensProductType[],
-    categorys: Prisma.SubCategoryGetPayload<{ include: { products: true } }>[],
+    categorys: Prisma.SubCategoryGetPayload<{
+        include: {
+            products: {
+                include: {
+                    lens: true,
+                    tags: true
+                }
+            }
+        }
+    }>[],
     tags: Tags[]
 }) {
 
@@ -125,7 +135,11 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
     }, [watch, odOnly])
 
     function AddItemToOrder(item: OrderProductItemType) {
+        // const newItem = {...item}
+        // newItem.od.aux = newItem.odAux
+        // newItem.os.aux = newItem.osAux
         setOrderProductItems(prev => [item, ...prev])
+
     }
 
     function RemoveItemFromOrder(index: number) {
@@ -134,31 +148,32 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
 
     return (
         <div className="border p-3 space-y-2 rounded-md">
-            <section className="flex gap-2 p-2 border border-white/50 border-dashed rounded-lg w-full items-end justify-between ">
+            <section className="flex flex-col-reverse lg:flex-row gap-2 p-2 border border-white/50 border-dashed rounded-lg w-full items-end justify-between ">
 
                 {/* categorys */}
-                <div className="flex gap-2 justify-between basis-3/5">
+                <div className="flex w-full gap-2 justify-between xl:basis-3/5">
                     {
                         categorys.map(cate => {
-                            return <button
-                                onClick={() => setSelectedCategory(cate.id)}
+                            return <CategoryDialog
                                 key={cate.id}
-                                className={`cursor-pointer border-2 rounded-lg text-center py-1 w-1/3 overflow-hidden relative group
-                            ${colorSelectMapBorder[cate.color as colorOptionsType['value']]}`}
-                            >
-                                <div className={`z-[-1] ${colorSelectMap[cate.color as colorOptionsType['value']]} transition-colors duration-500 
-                            ${selectedCategory == cate.id ? 'opacity-80' : 'opacity-20 group-hover:opacity-50'}
-                            size-full absolute left-0 top-0`}></div>
-                                <div className="z-10">
-                                    {cate.name}
-                                </div>
-                            </button>
+                                category={cate}
+                                AddToOrder={(orderItem) => {
+                                    AddItemToOrder(orderItem)
+                                }}
+                                range={
+                                    {
+                                        od: watch().od,
+                                        os: watch().os,
+                                        odOnly
+                                    }
+                                }
+                            />
                         })
                     }
                 </div>
 
                 {/* inputs */}
-                <div className="basis-2/5">
+                <div className="xl:basis-2/5">
                     <table dir="ltr">
                         <thead>
                             <tr>
@@ -318,8 +333,10 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                             <TableRow>
                                 <TableHead></TableHead>
                                 <TableHead>عنوان</TableHead>
-                                <TableHead>نمره</TableHead>
-                                <TableHead>قیمت</TableHead>
+                                <TableHead className="text-center">آکس</TableHead>
+                                <TableHead className="text-center">نمره</TableHead>
+                                <TableHead className="text-center">قیمت</TableHead>
+                                <TableHead></TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -327,9 +344,40 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                             {
                                 orderProductItems.map((order, _i) => {
                                     return <TableRow key={order.id + _i}>
-                                        <TableCell>{_i + 1}</TableCell>
+                                        <TableCell className="text-base font-bold">{_i + 1}</TableCell>
                                         <TableCell>
                                             {order.name}
+                                        </TableCell>
+
+                                        <TableCell className="flex flex-col justify-center items-center">
+                                            <span style={{ direction: "ltr" }}>
+                                                <span>OD : </span>
+                                                {parseFloat(order.od.cyl) < 0 ?
+                                                    <span>
+                                                        {order.od.aux} deg
+                                                    </span>
+                                                    :
+                                                    <span>
+                                                        ندارد
+                                                    </span>
+                                                }
+                                            </span>
+
+                                            {!order.odOnly &&
+                                                <span style={{ direction: "ltr" }}>
+                                                    <span>OS : </span>
+
+                                                    {parseFloat(order.os.cyl) < 0 ?
+                                                        <span>
+                                                            {order.os.aux} deg
+                                                        </span>
+                                                        :
+                                                        <span>
+                                                            ندارد
+                                                        </span>
+                                                    }
+                                                </span>
+                                            }
                                         </TableCell>
 
                                         <TableCell>
@@ -339,22 +387,39 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                                                     <span>{order.od.sph}</span>
                                                     <span> {order.od.cyl}</span>
                                                 </span>
-                                                <span>
-                                                    <span>OS : </span>
-                                                    <span>{order.od.sph}</span>
-                                                    <span> {order.od.cyl}</span>
-                                                </span>
+
+                                                {
+                                                    !order.odOnly &&
+                                                    <span>
+                                                        <span>OS : </span>
+                                                        <span>{order.od.sph}</span>
+                                                        <span> {order.od.cyl}</span>
+                                                    </span>
+                                                }
                                             </div>
                                         </TableCell>
 
                                         <TableCell>
-                                            <span>
-                                                {order.price.toLocaleString() + " "}
-                                            </span>
+                                            {
+                                                order.odOnly ?
+                                                    <span>
+                                                        {(order.price / 2).toLocaleString() + " "}
+                                                    </span>
+                                                    :
+                                                    <span>
+                                                        {order.price.toLocaleString() + " "}
+                                                    </span>
+                                            }
 
                                             <span className="text-emerald-500 text-xs font-semibold">
                                                 تومان
                                             </span>
+                                        </TableCell>
+
+                                        <TableCell>
+                                            <RemoveOrderPopover onDelete={() => {
+                                                RemoveItemFromOrder(_i)
+                                            }} />
                                         </TableCell>
                                     </TableRow>
                                 })
@@ -362,26 +427,40 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                         </TableBody>
                     </Table>
                 </div>
-
-                {/* products */}
-                <div className="col-span-3 flex flex-col gap-1 justify-start p-2 border border-white/50 border-dashed rounded-lg">
-                    {
-                        productsState.filter(product => {
-                            if (product.categoryId === selectedCategory)
-                                return product
-                        }).map(product => {
-                            return <LensProductItem
-                                onClick={(product) => AddItemToOrder(product)}
-                                range={watch()}
-                                key={product.id}
-                                product={product}
-                            />
-                        })
-                    }
-                </div>
             </section>
 
 
         </div>
     )
+}
+
+function RemoveOrderPopover({ onDelete }: { onDelete: CallableFunction }) {
+    const [open, setOpen] = useState(false)
+
+    return <Popover open={open} onOpenChange={setOpen} >
+        <PopoverTrigger className={buttonVariants({ variant: "destructive" })}>
+            <Trash />
+        </PopoverTrigger>
+
+        <PopoverContent>
+            <PopoverHeader>
+                آیا از حذف سفارش مطمعن هستید؟
+            </PopoverHeader>
+
+            <div>
+                <Button variant={'destructive'} onClick={() => {
+                    onDelete()
+                    setOpen(false)
+                }}>
+                    حذف
+                </Button>
+
+                <Button variant={'outline'} onClick={() => {
+                    setOpen(false)
+                }}>
+                    لغو
+                </Button>
+            </div>
+        </PopoverContent>
+    </Popover>
 }
