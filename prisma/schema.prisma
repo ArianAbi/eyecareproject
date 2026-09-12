@@ -78,6 +78,7 @@ enum ProductType {
 enum OrderItemStatus {
   SUBMITIED
   LOCKED
+  APPROVED
   INPROCESS
   FINISHED
   SENT

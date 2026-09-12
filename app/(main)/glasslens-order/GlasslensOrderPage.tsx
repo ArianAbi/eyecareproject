@@ -20,6 +20,7 @@ import * as z from "zod"
 import CartOrderItem from "./CartOrderItem"
 import { AddItemToCartAction } from "@/lib/actions/cart.actions"
 import { useSession } from "next-auth/react"
+import SubmitOrderBtn from "./SubmitOrderBtn"
 
 
 type ProductWithAvailability = LensProductType & { available: boolean }
@@ -541,9 +542,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                         </tbody>
                     </table>
 
-                    <Button variant={"green"} className="w-full mt-auto">
-                        ثبت سفارش
-                    </Button>
+                   <SubmitOrderBtn />
                 </div>
             </section>
 

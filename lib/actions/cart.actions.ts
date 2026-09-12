@@ -4,6 +4,8 @@ import { Prisma } from "@/generated/prisma/client"
 import prisma from "@/lib/db"
 import { OrderProductItemType } from "@/types/order"
 import { ActionError } from "../action-error"
+import { auth } from "../Auth"
+import { revalidatePath } from "next/cache"
 
 export async function GetUserCartItemsAction(userId: string) {
     try {
@@ -90,5 +92,69 @@ export async function DeleteItemFromCartAction(userId: string, cartItemId: strin
         throw new ActionError({
             error: "Unknown Error"
         })
+    }
+}
+
+export async function SubmitCartOrderAction(deliveryPrice: number = 0) {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+        return { success: false, error: "حساب کاربری پیدا نشد" }
+    }
+
+    const userId = session.user.id
+
+    try {
+        const orderBatch = await prisma.$transaction(async (tx) => {
+            const cart = await tx.cart.findUnique({
+                where: { userId },
+                include: { cartItems: { include: { product: true } } },
+            })
+
+            if (!cart || cart.cartItems.length === 0) {
+                throw new Error("EMPTY_CART")
+            }
+
+            const batch = await tx.orderBatch.create({
+                data: {
+                    userId,
+                    deliveryPrice,
+                    orderItems: {
+                        create: cart.cartItems.map(item => ({
+                            productId: item.productId,
+                            purchasedPrice: item.odOnly
+                                ? Math.round(item.product.price / 2)
+                                : item.product.price,
+                            cutPrice: 0, // TODO: pull from Settings model once it exists
+                            status: "SUBMITIED",
+                            odSph: item.odSph,
+                            odCyl: item.odCyl,
+                            osSph: item.osSph,
+                            osCyl: item.osCyl,
+                            odOnly: item.odOnly,
+                            odAux: item.odAux,
+                            osAux: item.osAux,
+                            customerNote: item.customerNote,
+                            rawOrCut: item.rawOrCut,
+                        })),
+                    },
+                },
+                include: { orderItems: true },
+            })
+
+            await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
+
+            return batch
+        })
+
+        revalidatePath(`/glasslens-order`)
+        return { success: true, orderBatch }
+    } catch (err) {
+        if (err instanceof Error && err.message === "EMPTY_CART") {
+            return { success: false, error: "سبد خرید شما خالی است" }
+        }
+
+        console.error(err)
+        return { success: false, error: err instanceof Error ? err.message : "Unknown error" }
     }
 }
