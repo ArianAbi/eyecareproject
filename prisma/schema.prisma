@@ -25,6 +25,7 @@ model User {
   updatedAt DateTime     @updatedAt
   orders    OrderBatch[]
   invoices  Invoice[]
+  cart      Cart?
 }
 
 model Invoice {
@@ -90,7 +91,8 @@ model Product {
   name        String
   description String
   active      Boolean @default(true)
-  price       Int
+
+  price Int
 
   type ProductType
 
@@ -111,6 +113,7 @@ model Product {
   includesCleaningCloth Boolean @default(false)
 
   orderItem OrderItem[]
+  cartItems CartItem[]
 }
 
 model Tags {
@@ -143,10 +146,47 @@ model Lens {
   updatedAt DateTime @updatedAt
 }
 
+model Cart {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  cartItems CartItem[]
+
+  updatedAt DateTime @updatedAt()
+  createdAt DateTime @default(now())
+}
+
+model CartItem {
+  id String @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  odSph String
+  odCyl String
+  osSph String
+  osCyl String
+
+  odOnly Boolean @default(false)
+  odAux  String  @default("0")
+  osAux  String  @default("0")
+
+  rawOrCut RawOrCutType
+
+  customerNote String @default("")
+
+  cartId String
+  cart   Cart   @relation(fields: [cartId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
+
 model OrderBatch {
   id String @id @default(uuid())
 
-  userId String @unique
+  userId String
   user   User   @relation(fields: [userId], references: [id])
 
   orderItems OrderItem[]
@@ -157,6 +197,8 @@ model OrderBatch {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
+
+  @@index([userId])
 }
 
 enum RawOrCutType {

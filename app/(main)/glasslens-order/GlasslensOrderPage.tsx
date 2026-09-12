@@ -2,28 +2,29 @@
 
 import { CategoryDialog } from "@/components/core/CategoryDialog"
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand"
-import LensProductItem from "@/components/LensProductItem"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTrigger } from "@/components/ui/popover"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
-import { Prisma, Tags } from "@/generated/prisma/client"
+import { CartItem, Prisma, Tags } from "@/generated/prisma/client"
 import { IsInRange } from "@/lib/is-in-range"
 import { lensFilter } from "@/lib/lens-filter"
 import { AllLensRanges, NegativeLensRanges } from "@/lib/lens-range"
 import { LensProductType } from "@/types/lens-product"
-import { OrderProductItemType } from "@/types/order"
+import { OrderProductItemType, OrderProductItemWithStatus } from "@/types/order"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Copy, CornerUpLeft, Trash } from "lucide-react"
+import { Copy, CornerUpLeft, Handbag, SprayCan, TowelRack, Trash, XIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import CartOrderItem from "./CartOrderItem"
+import { AddItemToCartAction } from "@/lib/actions/cart.actions"
+import { useSession } from "next-auth/react"
 
 
 type ProductWithAvailability = LensProductType & { available: boolean }
 
-export default function GlasslensOrderPage({ products, categorys, tags }: {
+export default function GlasslensOrderPage({ products, categorys, tags, cartItems }: {
     products: LensProductType[],
     categorys: Prisma.SubCategoryGetPayload<{
         include: {
@@ -35,11 +36,44 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
             }
         }
     }>[],
-    tags: Tags[]
+    tags: Tags[],
+    cartItems: Prisma.CartItemGetPayload<{
+        include: {
+            product:true
+        }
+    }>[]
 }) {
+    const session = useSession()
+
+    const mappedItems: OrderProductItemWithStatus[] = cartItems.map(item => ({
+        ...item.product,
+        id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        // ...spread whatever other product fields OrderProductItemType expects
+
+        od: {
+            sph: item.odSph,
+            cyl: item.odCyl,
+            aux: item.odAux,
+        },
+        os: {
+            sph: item.osSph,
+            cyl: item.osCyl,
+            aux: item.osAux,
+        },
+        odOnly: item.odOnly,
+        rawOrCut: item.rawOrCut === "CUT",
+        customerNote: item.customerNote,
+
+        // status-tracking fields your extended type adds
+        tempId: item.id,          // reuse the real DB id as tempId, since it's already stable+unique
+        cartStatus: "success",    // it's already persisted, so it's not "pending"
+        cartItemId: item.id,
+    }))
 
     const [selectedCategory, setSelectedCategory] = useState("")
-    const [orderProductItems, setOrderProductItems] = useState<OrderProductItemType[]>([])
+    const [orderProductItems, setOrderProductItems] = useState<OrderProductItemWithStatus[]>(mappedItems)
 
     const [loading, setLoading] = useState(false)
 
@@ -134,12 +168,47 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
         return () => subscription.unsubscribe()
     }, [watch, odOnly])
 
-    function AddItemToOrder(item: OrderProductItemType) {
-        // const newItem = {...item}
-        // newItem.od.aux = newItem.odAux
-        // newItem.os.aux = newItem.osAux
-        setOrderProductItems(prev => [item, ...prev])
 
+    async function AddItemToOrder(item: OrderProductItemType) {
+        item.rawOrCut = false
+
+        const tempId = crypto.randomUUID()
+        const newItem: OrderProductItemWithStatus = { ...item, tempId, cartStatus: "pending" }
+
+        setOrderProductItems(prev => [newItem, ...prev])
+
+        const user = session.data?.user
+        if (!user || !user.id) {
+            toast.add({ type: "Error", title: "حساب کاربری پیدا نشد" })
+            setOrderProductItems(prev =>
+                prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
+            )
+            return
+        }
+
+        try {
+            const result = await AddItemToCartAction(user.id, item)
+
+            if (!result.success || !result.cartItem) {
+                toast.add({ type: "Error", title: "سفارش افزوده نشد" })
+                setOrderProductItems(prev =>
+                    prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
+                )
+                return
+            }
+
+            setOrderProductItems(prev =>
+                prev.map(i => i.tempId === tempId
+                    ? { ...i, cartStatus: "success", cartItemId: result.cartItem.id }
+                    : i
+                )
+            )
+        } catch {
+            toast.add({ type: "Error", title: "سفارش افزوده نشد" })
+            setOrderProductItems(prev =>
+                prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
+            )
+        }
     }
 
     function RemoveItemFromOrder(index: number) {
@@ -336,6 +405,7 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                                 <TableHead className="text-center">آکس</TableHead>
                                 <TableHead className="text-center">نمره</TableHead>
                                 <TableHead className="text-center">قیمت</TableHead>
+                                <TableHead className="text-center">تراش</TableHead>
                                 <TableHead></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -343,124 +413,141 @@ export default function GlasslensOrderPage({ products, categorys, tags }: {
                         <TableBody>
                             {
                                 orderProductItems.map((order, _i) => {
-                                    return <TableRow key={order.id + _i}>
-                                        <TableCell className="text-base font-bold">{_i + 1}</TableCell>
-                                        <TableCell>
-                                            {order.name}
-                                        </TableCell>
-
-                                        <TableCell className="flex flex-col justify-center items-center">
-                                            <span style={{ direction: "ltr" }}>
-                                                <span>OD : </span>
-                                                {parseFloat(order.od.cyl) < 0 ?
-                                                    <span>
-                                                        {order.od.aux} deg
-                                                    </span>
-                                                    :
-                                                    <span>
-                                                        ندارد
-                                                    </span>
-                                                }
-                                            </span>
-
-                                            {!order.odOnly &&
-                                                <span style={{ direction: "ltr" }}>
-                                                    <span>OS : </span>
-
-                                                    {parseFloat(order.os.cyl) < 0 ?
-                                                        <span>
-                                                            {order.os.aux} deg
-                                                        </span>
-                                                        :
-                                                        <span>
-                                                            ندارد
-                                                        </span>
-                                                    }
-                                                </span>
-                                            }
-                                        </TableCell>
-
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span>
-                                                    <span>OD : </span>
-                                                    <span>{order.od.sph}</span>
-                                                    <span> {order.od.cyl}</span>
-                                                </span>
-
-                                                {
-                                                    !order.odOnly &&
-                                                    <span>
-                                                        <span>OS : </span>
-                                                        <span>{order.od.sph}</span>
-                                                        <span> {order.od.cyl}</span>
-                                                    </span>
-                                                }
-                                            </div>
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {
-                                                order.odOnly ?
-                                                    <span>
-                                                        {(order.price / 2).toLocaleString() + " "}
-                                                    </span>
-                                                    :
-                                                    <span>
-                                                        {order.price.toLocaleString() + " "}
-                                                    </span>
-                                            }
-
-                                            <span className="text-emerald-500 text-xs font-semibold">
-                                                تومان
-                                            </span>
-                                        </TableCell>
-
-                                        <TableCell>
-                                            <RemoveOrderPopover onDelete={() => {
-                                                RemoveItemFromOrder(_i)
-                                            }} />
-                                        </TableCell>
-                                    </TableRow>
+                                    return <CartOrderItem
+                                        key={order.id + _i}
+                                        indexInList={_i}
+                                        listNumber={orderProductItems.length - _i}
+                                        orderItem={order}
+                                        updateOrderList={setOrderProductItems}
+                                    />
                                 })
                             }
                         </TableBody>
                     </Table>
+                </div>
+
+                <div className="col-span-3 rounded-lg p-2 max-h-fit sticky top-2 border border-dashed border-white/50 flex flex-col">
+                    <table className="text-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {/* Bags */}
+                            <tr>
+                                <td className="py-2">
+                                    ساکدستی
+                                </td>
+                                <td className="py-2">
+                                    <span className="flex items-center">
+                                        <span>
+                                            {orderProductItems.reduce((acc, curr) => {
+                                                if (curr.includesBag) {
+                                                    acc += 1
+                                                }
+
+                                                return acc
+                                            }, 0)}
+                                        </span>
+
+                                        <span>
+                                            <XIcon size={12} />
+                                        </span>
+
+                                        <span>
+                                            <Handbag size={18} />
+                                        </span>
+                                    </span>
+                                </td>
+                            </tr>
+
+                            {/* Spray */}
+                            <tr>
+                                <td className="py-2">
+                                    اسپری
+                                </td>
+                                <td className="py-2">
+                                    <span className="flex items-center">
+                                        <span>
+                                            {orderProductItems.reduce((acc, curr) => {
+                                                if (curr.includesCleaningSpray) {
+                                                    acc += 1
+                                                }
+
+                                                return acc
+                                            }, 0)}
+                                        </span>
+                                        <span>
+                                            <XIcon size={12} />
+                                        </span>
+
+                                        <span>
+                                            <SprayCan size={18} />
+                                        </span>
+                                    </span>
+                                </td>
+                            </tr>
+
+                            {/* Cloth */}
+                            <tr>
+                                <td className="py-2">
+                                    دستمال
+                                </td>
+                                <td className="py-2">
+                                    <span className="flex items-center">
+                                        <span>
+                                            {orderProductItems.reduce((acc, curr) => {
+                                                if (curr.includesCleaningCloth) {
+                                                    acc += 1
+                                                }
+
+                                                return acc
+                                            }, 0)}
+                                        </span>
+                                        <span>
+                                            <XIcon size={12} />
+                                        </span>
+
+                                        <span>
+                                            <TowelRack size={18} />
+                                        </span>
+                                    </span>
+                                </td>
+                            </tr>
+
+                            {/* order count */}
+                            <tr>
+                                <td className="pt-4">تعداد سفارش</td>
+                                <td className="pt-4">{orderProductItems.length}</td>
+                            </tr>
+
+                            {/* order price */}
+                            <tr>
+                                <td className="py-2">جمع قیمت</td>
+                                <td className="py-2">
+                                    <span>
+                                        {orderProductItems.reduce((acc, cur) => {
+                                            const _price = cur.odOnly ? cur.price / 2 : cur.price
+                                            return acc += _price
+                                        }, 0).toLocaleString()}
+                                    </span>
+
+                                    <span className="text-xs font-semibold text-emerald-500"> تومان</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <Button variant={"green"} className="w-full mt-auto">
+                        ثبت سفارش
+                    </Button>
                 </div>
             </section>
 
 
         </div>
     )
-}
-
-function RemoveOrderPopover({ onDelete }: { onDelete: CallableFunction }) {
-    const [open, setOpen] = useState(false)
-
-    return <Popover open={open} onOpenChange={setOpen} >
-        <PopoverTrigger className={buttonVariants({ variant: "destructive" })}>
-            <Trash />
-        </PopoverTrigger>
-
-        <PopoverContent>
-            <PopoverHeader>
-                آیا از حذف سفارش مطمعن هستید؟
-            </PopoverHeader>
-
-            <div>
-                <Button variant={'destructive'} onClick={() => {
-                    onDelete()
-                    setOpen(false)
-                }}>
-                    حذف
-                </Button>
-
-                <Button variant={'outline'} onClick={() => {
-                    setOpen(false)
-                }}>
-                    لغو
-                </Button>
-            </div>
-        </PopoverContent>
-    </Popover>
 }

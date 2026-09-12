@@ -6,6 +6,7 @@ import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { Noto_Sans_Arabic } from "next/font/google"
 import NextTopLoader from "nextjs-toploader"
 import { Toaster } from "@/components/ui/toast";
+import { SessionProvider } from "next-auth/react";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -42,12 +43,14 @@ export default function RootLayout({
     <html
       lang="en"
       dir="rtl"
-      className={cn("h-full dark", "antialiased",fontSans.variable)}
+      className={cn("h-full dark", "antialiased", fontSans.variable)}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextTopLoader />
         <DirectionProvider direction="rtl">
-          {children}
+          <SessionProvider>
+            {children}
+          </SessionProvider>
           <Toaster />
         </DirectionProvider>
       </body>
