@@ -125,7 +125,7 @@ export async function DeleteItemFromCartAction(userId: string, cartItemId: strin
     }
 }
 
-export async function SubmitCartOrderAction(deliveryPrice: number = 0) {
+export async function SubmitCartOrderAction(deliveryPrice: number = 0, customerNote: string = "") {
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -149,6 +149,8 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0) {
                 data: {
                     userId,
                     deliveryPrice,
+                    customerNote,
+                    status: "SUBMITIED",
                     orderItems: {
                         create: cart.cartItems.map(item => ({
                             productId: item.productId,
@@ -156,7 +158,6 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0) {
                                 ? Math.round(item.product.price / 2)
                                 : item.product.price,
                             cutPrice: 0, // TODO: pull from Settings model once it exists
-                            status: "SUBMITIED",
                             odSph: item.odSph,
                             odCyl: item.odCyl,
                             osSph: item.osSph,
@@ -164,7 +165,6 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0) {
                             odOnly: item.odOnly,
                             odAux: item.odAux,
                             osAux: item.osAux,
-                            customerNote: item.customerNote,
                             rawOrCut: item.rawOrCut,
                         })),
                     },
@@ -181,10 +181,14 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0) {
         return { success: true, orderBatch }
     } catch (err) {
         if (err instanceof Error && err.message === "EMPTY_CART") {
-            return { success: false, error: "سبد خرید شما خالی است" }
+            throw new ActionError({
+                error:"Empty Cart"
+            })
         }
 
         console.error(err)
-        return { success: false, error: err instanceof Error ? err.message : "Unknown error" }
+        throw new ActionError({
+            error:err instanceof Error ? err.message : "unknown error"
+        })
     }
 }

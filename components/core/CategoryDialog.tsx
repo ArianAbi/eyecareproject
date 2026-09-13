@@ -118,11 +118,7 @@ export function CategoryDialog({ category, range, AddToOrder }: {
 
             <div className="grid grid-cols-2 gap-2">
                 {
-                    category.products.filter(pro=>{
-                        const convertedProduct = ConvertToAvailableProduct(pro)
-                        
-                        if(convertedProduct.available) return pro
-                    }).map(product => {
+                    category.products.map(product => {
                         return <LensProductItem
                             key={product.id}
                             product={ConvertToAvailableProduct(product)}

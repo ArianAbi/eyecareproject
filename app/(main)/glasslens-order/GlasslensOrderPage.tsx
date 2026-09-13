@@ -2,7 +2,7 @@
 
 import { CategoryDialog } from "@/components/core/CategoryDialog"
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
@@ -21,9 +21,9 @@ import CartOrderItem from "./CartOrderItem"
 import { AddItemToCartAction } from "@/lib/actions/cart.actions"
 import { useSession } from "next-auth/react"
 import SubmitOrderBtn from "./SubmitOrderBtn"
-
-
-type ProductWithAvailability = LensProductType & { available: boolean }
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 export default function GlasslensOrderPage({ products, categorys, tags, cartItems }: {
     products: LensProductType[],
@@ -40,7 +40,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
     tags: Tags[],
     cartItems: Prisma.CartItemGetPayload<{
         include: {
-            product:true
+            product: true
         }
     }>[]
 }) {
@@ -65,7 +65,6 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
         },
         odOnly: item.odOnly,
         rawOrCut: item.rawOrCut === "CUT",
-        customerNote: item.customerNote,
 
         // status-tracking fields your extended type adds
         tempId: item.id,          // reuse the real DB id as tempId, since it's already stable+unique
@@ -73,16 +72,13 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
         cartItemId: item.id,
     }))
 
-    const [selectedCategory, setSelectedCategory] = useState("")
     const [orderProductItems, setOrderProductItems] = useState<OrderProductItemWithStatus[]>(mappedItems)
 
-    const [loading, setLoading] = useState(false)
+    useEffect(() => {
+        setOrderProductItems(mappedItems)
+    }, [cartItems])
 
     const [odOnly, setOdOnly] = useState(false)
-
-    const [productsState, setProductsState] = useState<ProductWithAvailability[]>(
-        products.map(p => ({ ...p, available: true }))
-    )
 
     const schema = z.object({
         od: z.object({
@@ -96,6 +92,8 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
             aux: z.string()
         })
     })
+
+    const [userNote, setUserNote] = useState("")
 
     const { control, watch, setValue } = useForm({
         resolver: zodResolver(schema),
@@ -112,63 +110,6 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
             }
         }
     })
-
-    useEffect(() => {
-        const checkAvailability = (values: {
-            od?: { sph?: string; cyl?: string }
-            os?: { sph?: string; cyl?: string }
-        }) => {
-            setProductsState(prev => prev.map((product): ProductWithAvailability => {
-                let _product = { ...product }
-                const odValue = {
-                    sph: values.od?.sph ?? "0.00",
-                    cyl: values.od?.cyl ?? "0.00",
-                }
-                const osValue = {
-                    sph: values.os?.sph ?? "0.00",
-                    cyl: values.os?.cyl ?? "0.00",
-                }
-
-                const lensRange = {
-                    sphPositiveFrom: product.lens ? product.lens.positiveFromSph : "0.00",
-                    sphPositiveTo: product.lens ? product.lens.positivToSph : "0.00",
-                    sphNegativeFrom: product.lens ? product.lens.negativeFromSph : "0.00",
-                    sphNegativeTo: product.lens ? product.lens.negativeToSph : "0.00",
-                    cylFrom: product.lens ? product.lens.fromCyl : "0.00",
-                    cylTo: product.lens ? product.lens.toCyl : "0.00",
-                }
-
-                const odAvailability = IsInRange(odValue, lensRange)
-                const osAvailability = odOnly ? { cylInRange: true, sphInRange: true } : IsInRange(osValue, lensRange)
-
-                if (!odAvailability || !osAvailability) {
-                    toast.add({
-                        type: "Error",
-                        title: "در تحلیل نمرات مشکلی پیش آمد",
-                        description: "Range Conversion retured NaN"
-                    })
-
-                    _product.available = false
-                    return _product
-                }
-
-                const available = (odAvailability.sphInRange && odAvailability.cylInRange)
-                    && (osAvailability.sphInRange && osAvailability.cylInRange)
-
-                _product.available = available
-                return _product
-            }))
-        }
-
-        checkAvailability(watch())
-
-        const subscription = watch((values) => {
-            checkAvailability(values)
-        })
-
-        return () => subscription.unsubscribe()
-    }, [watch, odOnly])
-
 
     async function AddItemToOrder(item: OrderProductItemType) {
         item.rawOrCut = false
@@ -542,7 +483,42 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                         </tbody>
                     </table>
 
-                   <SubmitOrderBtn disabled={orderProductItems.length <= 0} />
+                    <Dialog>
+                        <DialogTrigger className={cn('mb-2', buttonVariants({ variant: "boldOutline" }))}>
+                            {
+                                userNote == "" ?
+                                    <span>
+                                        افزودن توضیحات
+                                    </span>
+                                    :
+                                    <span>
+                                        تصحیح توضیحات
+                                    </span>
+                            }
+                        </DialogTrigger>
+
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>
+                                    توضیحات سفارش
+                                </DialogTitle>
+                            </DialogHeader>
+
+                            <Textarea
+                                value={userNote}
+                                onChange={e => setUserNote(e.target.value)}
+                            />
+
+                            <DialogClose className={buttonVariants({ variant: 'default' })}>
+                                تایید
+                            </DialogClose>
+                        </DialogContent>
+                    </Dialog>
+
+                    <SubmitOrderBtn
+                        customerNote={userNote}
+                        disabled={orderProductItems.length <= 0}
+                    />
                 </div>
             </section>
 

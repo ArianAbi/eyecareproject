@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BoxIcon, ChevronDown, Globe, Hammer, LayoutDashboard, LayoutList, ReceiptIcon, User, type LucideIcon } from "lucide-react"
+import { BoxIcon, ChevronDown, Clock, Globe, Hammer, LayoutDashboard, LayoutList, ReceiptIcon, User, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -191,6 +191,17 @@ export const AdminSidebarData: SidebarDataType = {
           path: `/admin/users`
         }
       ]
+    },
+    {
+      group_title: "سفارش ها",
+      icon: Clock,
+      items: [
+        {
+          title: "سفارش ها",
+          path: `/admin/orders`
+        }
+      ],
+      badge:2
     },
     {
       group_title: "دسته بندی ها",

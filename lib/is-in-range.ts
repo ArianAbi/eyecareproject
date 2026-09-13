@@ -39,9 +39,9 @@ export function IsInRange(
     }
 
     if(sphNumberValue > 0){
-        const minRange = Math.min(parseFloat(range.sphPositiveFrom),parseFloat(range.sphPositiveTo))
-        const maxRange = Math.max(parseFloat(range.sphPositiveFrom),parseFloat(range.sphPositiveTo))
-
+        const minRange = parseFloat(range.sphPositiveFrom)
+        const maxRange = parseFloat(range.sphPositiveTo)
+        
         sphInRange = sphNumberValue >= minRange && sphNumberValue <= maxRange
     }else if(sphNumberValue < 0){
         const minRange = parseFloat(range.sphNegativeFrom)

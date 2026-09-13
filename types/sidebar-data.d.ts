@@ -6,6 +6,7 @@ export interface SidebarDataType {
       title: string,
       path: string
     }[]     // if length === 1 -> single link, if > 1 -> collapsible
+    badge?:number
   }[],
   footer?: {
     title: string
