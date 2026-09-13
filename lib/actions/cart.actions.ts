@@ -65,8 +65,38 @@ export async function AddItemToCartAction(userId: string, orderItem: OrderProduc
 
         return { success: true, cartItem }
     } catch (err) {
-        console.error(err)
-        return { success: false, error: err instanceof Error ? err.message : "Unknown error" }
+        if (err instanceof Error) {
+            throw new ActionError({
+                error: err.message
+            })
+        }
+        throw new ActionError({
+            error: "unknown error"
+        })
+    }
+}
+
+export async function UpdateCartItemRawOrCutAction(itemId: string, RawOrCut: boolean) {
+    try {
+        const data = await prisma.cartItem.update({
+            where: {
+                id: itemId
+            },
+            data: {
+                rawOrCut: RawOrCut ? 'CUT' : 'RAW'
+            }
+        })
+
+        return { success: true, data }
+    } catch (err) {
+        if (err instanceof Error) {
+            throw new ActionError({
+                error: err.message
+            })
+        }
+        throw new ActionError({
+            error: "unknown error"
+        })
     }
 }
 

@@ -6,11 +6,11 @@ import { Popover, PopoverContent, PopoverHeader, PopoverTrigger } from "@/compon
 import { Spinner } from "@/components/ui/spinner"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
-import { DeleteItemFromCartAction } from "@/lib/actions/cart.actions"
+import { DeleteItemFromCartAction, UpdateCartItemRawOrCutAction } from "@/lib/actions/cart.actions"
 import type { OrderProductItemWithStatus } from "@/types/order"
 import { Trash } from "lucide-react"
 import { useSession } from "next-auth/react"
-import { Dispatch, SetStateAction, useState } from "react"
+import { Dispatch, SetStateAction, useOptimistic, useState, useTransition } from "react"
 
 export default function CartOrderItem({ indexInList, listNumber, orderItem, updateOrderList }: {
     indexInList: number,
@@ -20,14 +20,47 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
 }) {
     const user = useSession().data?.user
 
+    const [rawOrCut, setRawOrCut] = useState(orderItem.rawOrCut)
+    const [loading, setLoading] = useState(false)
+
+    async function ToggleRawOrCut(value: boolean) {
+        try {
+            if(!orderItem.cartItemId) {
+                throw new Error("این محصول به سبد خرید اضافه نشده")
+            }
+
+            setRawOrCut(value)
+            setLoading(true)
+
+            await UpdateCartItemRawOrCutAction(orderItem.cartItemId, value)
+        } catch (err) {
+            setRawOrCut(!value)
+            if (err instanceof Error) {
+                toast.add({
+                    type: "Error",
+                    description: err.message,
+                    title: "سفارش بروزرسانی نشد"
+                })
+            } else {
+                toast.add({
+                    type: "Error",
+                    description: "unkown error",
+                    title: "سفارش بروزرسانی نشد"
+                })
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return <>
         <TableRow>
             <TableCell className="text-base font-bold">
                 {
-                    orderItem.cartStatus == 'pending' && <Spinner />
+                    orderItem.cartStatus == 'pending' || loading && <Spinner />
                 }
                 {
-                    orderItem.cartStatus == 'success' && listNumber
+                    orderItem.cartStatus == 'success' && !loading && listNumber
                 }
             </TableCell>
             <TableCell>
@@ -107,15 +140,9 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
             <TableCell>
                 <div className="flex items-center gap-1">
                     <Checkbox
-                        checked={orderItem.rawOrCut}
-                        onCheckedChange={e => {
-                            updateOrderList(prev => {
-                                const newList = [...prev]
-                                newList[indexInList].rawOrCut = e
-
-                                return newList
-                            })
-                        }}
+                        checked={rawOrCut}
+                        onCheckedChange={ToggleRawOrCut}
+                        disabled={loading}
                     />
                 </div>
 
@@ -127,6 +154,7 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
                     <RemoveOrderPopover
                         userId={user.id}
                         cartItemId={orderItem.cartItemId}
+                        disabled={loading}
                         onDeleteFromList={() => {
                             updateOrderList(prev => {
                                 const newList = [...prev]
@@ -143,12 +171,14 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
 }
 
 
-function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList }: { userId: string, cartItemId: string | undefined, onDeleteFromList: CallableFunction }) {
+function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList, disabled = false }: { userId: string, cartItemId: string | undefined, onDeleteFromList: CallableFunction, disabled?: boolean }) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
 
     async function DeleteFromCart() {
         try {
+            if (disabled) return
+
             setLoading(true)
 
             if (cartItemId) {
@@ -171,7 +201,7 @@ function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList }: { userId: 
     }
 
     return <Popover open={open} onOpenChange={setOpen} >
-        <PopoverTrigger disabled={loading} className={buttonVariants({ variant: "destructive" })}>
+        <PopoverTrigger disabled={loading || disabled} className={buttonVariants({ variant: "destructive" })}>
             {loading ? <Spinner /> : <Trash />}
         </PopoverTrigger>
 

@@ -542,7 +542,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                         </tbody>
                     </table>
 
-                   <SubmitOrderBtn />
+                   <SubmitOrderBtn disabled={orderProductItems.length <= 0} />
                 </div>
             </section>
 
