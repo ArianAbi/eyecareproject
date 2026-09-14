@@ -43,7 +43,7 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
         accessorKey: "orderItems",
         header: () => <div className="text-center">تعداد سفارش ها</div>,
         cell: ({ row }) => {
-            return <div className="text-center">{row.original.orderItems.length}</div>
+            return <div className="text-center">{row.original._count.orderItems}</div>
         }
     },
     {

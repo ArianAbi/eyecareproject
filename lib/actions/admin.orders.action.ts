@@ -4,15 +4,14 @@ import { OrderItemStatus } from "@/generated/prisma/enums"
 import { ActionError } from "../action-error"
 import { auth } from "../Auth"
 import prisma from "../db"
+import { Prisma } from "@/generated/prisma/client"
 
 type ExtendedOrderStatus = OrderItemStatus | 'ALL'
 
-export async function ADMIN_GetOrdersAction({
-    status = 'ALL',
-    excludeStatus = false
-}: {
+export async function ADMIN_GetOrdersAction(filters: {
     status?: ExtendedOrderStatus,
-    excludeStatus?: boolean
+    excludeStatus?: boolean,
+    userId?: string | null
 }) {
     try {
         const session = await auth()
@@ -34,28 +33,26 @@ export async function ADMIN_GetOrdersAction({
             throw Error("you dont have permission")
         }
 
+        const whereFilter: Prisma.OrderBatchWhereInput = {}
+
+        //STATUS FILTER
+        if(filters.status !== 'ALL'){
+            whereFilter.status = filters.excludeStatus ? {not:filters.status} : filters.status
+        }else{
+            whereFilter.status = {}
+        }
+
+        // USER FILTER
+        if(filters.userId){
+            whereFilter.userId = filters.userId
+        }
+
         const data = await prisma.orderBatch.findMany({
-            ...(status !== 'ALL'
-                ?
-                excludeStatus ?
-                    {
-                        where: {
-                            NOT: status
-                        }
-                    }
-                    :
-                    {
-                        where: {
-                            status
-                        }
-                    }
-                :
-                {}
-            ),
+            where: whereFilter,
             include: {
-                orderItems: {
+                _count: {
                     select: {
-                        _count: true
+                        orderItems: true
                     }
                 },
                 user: {

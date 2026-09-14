@@ -2,11 +2,22 @@ import { DataTable } from "@/components/ui/data-table";
 import { ADMIN_GetOrdersAction } from "@/lib/actions/admin.orders.action"
 import { AdminOrdersColumn } from "./column";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Suspense } from "react";
+import TableLoading from "@/components/core/TableLoading";
+import { AdminUserSearchFilter } from "@/components/core/AdminUserSearchFilter";
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({searchParams}:{searchParams:Promise<{
+    userId:string
+}>}) {
+    const params = await searchParams
+
+    const extractedId = params.userId ? JSON.parse(params.userId).value : null
+
     const submitedOrdersOnly = await ADMIN_GetOrdersAction({
-        status: 'SUBMITIED'
+        status: 'SUBMITIED',
+        userId: extractedId ?? null
     })
+
 
     return <>
         <Tabs>
@@ -18,14 +29,31 @@ export default async function AdminOrdersPage() {
             <div className="border border-dashed rounded-lg p-3">
 
                 <TabsContent value="submitted">
+                    <div className="w-44 space-y-1">
+                        <AdminUserSearchFilter 
+                        initialValue={params.userId}
+                        paramKey="userId" 
+                        />
+                    </div>
+
                     <DataTable data={submitedOrdersOnly.data} columns={AdminOrdersColumn} />
                 </TabsContent>
 
                 <TabsContent value="rest">
-                    EMPTY
-                    {/* <DataTable data={submitedOrdersOnly.data} columns={AdminOrdersColumn} /> */}
+                    <Suspense fallback={<TableLoading />}>
+                        <RestOfOrders />
+                    </Suspense>
                 </TabsContent>
             </div>
         </Tabs>
     </>
+}
+
+async function RestOfOrders() {
+    const restOfOrders = await ADMIN_GetOrdersAction({
+        status: 'SUBMITIED',
+        excludeStatus: true
+    })
+
+    return <DataTable data={restOfOrders.data} columns={AdminOrdersColumn} />
 }

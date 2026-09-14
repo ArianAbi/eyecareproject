@@ -10,15 +10,23 @@ export function OrderCountProvider({ children }: { children: React.ReactNode }) 
   const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
+    let skipToastFlag = false
+
     const eventSource = new EventSource("/api/orders/order-stream")
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data)
       setCount(data.count)
+
+      if (!skipToastFlag) {
+        skipToastFlag = true
+        return
+      }
+
       toast.add({
-        type:"Info",
-        title:"سفارش جدید ثبت شد",
-        timeout:1500
+        type: "Info",
+        title: "سفارش جدید ثبت شد",
+        timeout: 1500
       })
     }
 
