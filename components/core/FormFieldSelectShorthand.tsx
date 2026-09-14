@@ -1,5 +1,6 @@
 "use client"
 // components/core/FormFieldSelectShorthand.tsx
+import { useRef } from "react";
 import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field";
 import {
   Select,
@@ -25,6 +26,25 @@ interface FormFieldSelectShorthandProps<TFieldValues extends FieldValues> {
   disabled?: boolean;
 }
 
+// finds the next focusable element in DOM/tab order after `current` and focuses it
+function focusNextElement(current: HTMLElement) {
+  const focusable = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(
+    (el) =>
+      !el.hasAttribute("disabled") &&
+      el.tabIndex !== -1 &&
+      el.offsetParent !== null // excludes hidden elements
+  );
+
+  const index = focusable.indexOf(current);
+  if (index > -1 && index + 1 < focusable.length) {
+    focusable[index + 1].focus();
+  }
+}
+
 export function FormFieldSelectShorthand<TFieldValues extends FieldValues>({
   name,
   control,
@@ -35,13 +55,14 @@ export function FormFieldSelectShorthand<TFieldValues extends FieldValues>({
   disabled = false,
 }: FormFieldSelectShorthandProps<TFieldValues>) {
   const id = `form-${name}`;
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   return (
     <Controller
       name={name}
       control={control}
       render={({ field, fieldState }) => {
-        const selected = options.find(opt => opt.value === field.value);
+        const selected = options.find((opt) => opt.value === field.value);
 
         return (
           <Field data-invalid={fieldState.invalid}>
@@ -54,13 +75,28 @@ export function FormFieldSelectShorthand<TFieldValues extends FieldValues>({
               onValueChange={field.onChange}
               disabled={disabled}
             >
-              <SelectTrigger id={id} className="text-xs" aria-invalid={fieldState.invalid}>
+              <SelectTrigger
+                ref={triggerRef}
+                id={id}
+                className="text-xs"
+                aria-invalid={fieldState.invalid}
+              >
                 <SelectValue placeholder={placeholder}>
                   {selected ? selected.label : placeholder}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                {options.map(opt => (
+
+              <SelectContent
+                onSelect={() => {
+                  // prevent Radix's default: refocusing the trigger button
+                  // e.preventDefault();
+
+                  if (triggerRef.current) {
+                    focusNextElement(triggerRef.current);
+                  }
+                }}
+              >
+                {options.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value} className="text-xs">
                     {opt.label}
                   </SelectItem>

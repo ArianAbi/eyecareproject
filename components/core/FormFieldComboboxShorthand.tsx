@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react";
 import {
   Combobox,
   ComboboxContent,
@@ -30,6 +31,25 @@ interface FormFieldComboboxShorthandProps<TFieldValues extends FieldValues> {
   filter?: (option: ComboboxOption, query: string) => boolean;
 }
 
+function getNextFocusableElement(current: HTMLElement): HTMLElement | null {
+  const focusable = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(
+    (el) =>
+      !el.hasAttribute("disabled") &&
+      el.tabIndex !== -1 &&
+      el.offsetParent !== null
+  );
+
+  const index = focusable.indexOf(current);
+  if (index > -1 && index + 1 < focusable.length) {
+    return focusable[index + 1];
+  }
+  return null;
+}
+
 export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   name,
   control,
@@ -44,6 +64,10 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   filter
 }: FormFieldComboboxShorthandProps<TFieldValues>) {
   const id = `form-${name}`;
+  const inputRef = useRef<HTMLInputElement>(null);
+  // tracks whether a value was actually committed on this close
+  // (vs. Escape/click-outside), so we only redirect focus on real selection
+  const justSelectedRef = useRef(false);
 
   return (
     <Controller
@@ -63,15 +87,31 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
               value={selected}
               onValueChange={(option: ComboboxOption | null) => {
                 if (option) {
-                  ;
+                  justSelectedRef.current = true;
                   field.onChange(option.value);
+                }
+              }}
+              onOpenChange={(open: boolean) => {
+                if (!open && justSelectedRef.current) {
+                  justSelectedRef.current = false;
+
+                  // wait a tick so Base UI's own internal focus-return
+                  // (input) happens first, then override it
+                  requestAnimationFrame(() => {
+                    if (inputRef.current) {
+                      const next = getNextFocusableElement(inputRef.current);
+                      next?.focus();
+                    }
+                  });
                 }
               }}
               itemToStringValue={(option: ComboboxOption) => option.label}
               disabled={disabled}
               filter={filter}
+              autoHighlight
             >
               <ComboboxInput
+                ref={inputRef}
                 id={id}
                 placeholder={placeholder}
                 aria-invalid={fieldState.invalid}
