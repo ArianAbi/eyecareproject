@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BoxIcon, ChevronDown, Clock, Globe, Hammer, LayoutDashboard, LayoutList, ReceiptIcon, User, type LucideIcon } from "lucide-react"
+import { BoxIcon, ChevronDown, Clock, Globe, Hammer, LayoutDashboard, LayoutList, List, ReceiptIcon, User, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -22,6 +22,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { SidebarDataType } from "@/types/sidebar-data"
+import { useOrderCount } from "@/app/admin/AdminProviders"
+import { toast } from "../ui/toast"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,7 +37,8 @@ export interface SidebarNavItem {
 export interface SidebarNavGroup {
   group_title: string
   icon: LucideIcon
-  items: SidebarNavItem[]
+  items: SidebarNavItem[],
+  badgeFn?: SidebarDataType['menus'][0]['badgeFn']
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +87,20 @@ export function CustomSidebar({ data, header, footer = false, ...props }: AppSid
 // Single item (no sub-menu) — label falls back to the first item's title
 // ---------------------------------------------------------------------------
 
+function SidebarBadge({ badgeFn }: { badgeFn?: () => number | null }) {
+  if(!badgeFn) return
+
+  const count = badgeFn()
+
+  if (!count) return
+
+  if (count <= 0) return
+
+  return <div className="grid place-items-center size-4 text-xs rounded-full bg-red-500 z-50 absolute right-0.5 top-0">
+    {count}
+  </div>
+}
+
 function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
   const pathname = usePathname()
   const item = group.items[0]
@@ -94,7 +111,9 @@ function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
     <SidebarMenuItem>
       <SidebarMenuButton isActive={isActive} tooltip={item.title}
         render={
-          <Link href={item.path}>
+          <Link href={item.path} className="relative overflow-visible">
+            <SidebarBadge badgeFn={group.badgeFn} />
+
             <Icon />
             <span>{item.title}</span>
           </Link>
@@ -113,7 +132,7 @@ function SidebarFooterItem({ title, icon, path }: { title: string, icon: LucideI
     <SidebarMenuItem>
       <SidebarMenuButton isActive={isActive} tooltip={title}
         render={
-          <Link href={path}>
+          <Link href={path} className="relative">
             <Icon />
             <span>{title}</span>
           </Link>
@@ -140,7 +159,9 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
     >
       <CollapsibleTrigger
         render={
-          <SidebarMenuButton isActive={isGroupActive} tooltip={group.group_title}>
+          <SidebarMenuButton isActive={isGroupActive} tooltip={group.group_title} className="relative overflow-visible">
+            <SidebarBadge badgeFn={group.badgeFn} />
+
             <Icon />
             <span>{group.group_title}</span>
             <ChevronDown className="mr-auto transition-transform -rotate-90 " />
@@ -201,7 +222,7 @@ export const AdminSidebarData: SidebarDataType = {
           path: `/admin/orders`
         }
       ],
-      badge:2
+      badgeFn: useOrderCount
     },
     {
       group_title: "دسته بندی ها",
@@ -226,7 +247,7 @@ export const AdminSidebarData: SidebarDataType = {
           path: `/admin/products`
         },
         {
-          title:"تگ ها",
+          title: "تگ ها",
           path: `/admin/products/tags`
         }
       ]
@@ -248,6 +269,16 @@ export const UserSidebarData: SidebarDataType = {
         {
           title: "سفارش عدسی",
           path: `/glasslens-order`
+        }
+      ]
+    },
+    {
+      group_title: "سفارش ها",
+      icon: List,
+      items: [
+        {
+          title: "سفارش ها",
+          path: `/orders`
         }
       ]
     }

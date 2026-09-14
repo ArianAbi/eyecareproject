@@ -52,7 +52,7 @@ export const AdminUserColumns: ColumnDef<Omit<User, "password" | "updatedAt">>[]
     },
     {
         accessorKey: "createdAt",
-        header: "تاریخ ساخت اکانت",
+        header: "تاریخ ساخت",
         cell: ({ row }) => {
             return format(row.original.createdAt, "yyyy/MM/dd")
         }

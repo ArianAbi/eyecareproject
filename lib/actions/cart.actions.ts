@@ -174,6 +174,14 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0, customerN
 
             await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
 
+            prisma.orderBatch.count({
+                where:{
+                    status:'SUBMITIED'
+                }
+            }).then(value=>{
+                orderEventEmitter?.emit('newOrder',value)
+            })
+
             return batch
         })
 

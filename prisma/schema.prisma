@@ -196,6 +196,8 @@ model OrderBatch {
 
   customerNote String @default("")
 
+  orederIdentification Int @unique @default(autoincrement())
+
   status       OrderItemStatus @default(SUBMITIED)
 
   createdAt DateTime @default(now())

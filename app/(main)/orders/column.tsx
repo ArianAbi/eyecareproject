@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { MasterCategory } from "@/generated/prisma/client";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_GetOrdersAction } from "@/lib/actions/admin.orders.action";
+import { GetOrdersAction } from "@/lib/actions/orders.action";
 import { cn } from "@/lib/utils";
 import { ActionData } from "@/types/actions";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,25 +26,18 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-type AdminOrderActionType = ActionData<typeof ADMIN_GetOrdersAction>[0]
+type OrderActionType = ActionData<typeof GetOrdersAction>[0]
 
-export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
+export const OrdersColumn: ColumnDef<OrderActionType>[] = [
     {
-        accessorKey: "user",
-        header: "کاربر",
+        accessorKey: "orederIdentification",
+        header: () => <div className="text-center">شناسه</div>,
         cell: ({ row }) => {
-            return <Link
-                className="underline"
-                href={`/admin/users/${row.original.id}`}>
-                {row.original.user.username}
-            </Link>
-        }
-    },
-    {
-        accessorKey: "orderItems",
-        header: () => <div className="text-center">تعداد سفارش ها</div>,
-        cell: ({ row }) => {
-            return <div className="text-center">{row.original.orderItems.length}</div>
+            return <div className="text-center">
+                {
+                    row.original.orederIdentification
+                }
+            </div>
         }
     },
     {
@@ -55,42 +49,6 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
             return <div>{
                 row.original.status
             }</div>
-        }
-    },
-    {
-        accessorKey: "customerNote",
-        header: () => <div>
-            یاداشت مشتری
-        </div>,
-        cell: ({ row }) => {
-            if (!row.original.customerNote) return <div className="px-4 italic">
-                یاداشت ندارد
-            </div>
-
-            return <Dialog>
-                <DialogTrigger className={buttonVariants({ variant: 'default' })}>
-                    یاداشت مشتری
-                </DialogTrigger>
-
-                <DialogContent>
-                    <ScrollArea className="max-h-40 mt-4">
-                        {row.original.customerNote}
-                    </ScrollArea>
-
-                    <Button variant={'default'}>بستن</Button>
-                </DialogContent>
-            </Dialog>
-        }
-    },
-    {
-        accessorKey: "orederIdentification",
-        header: ()=><div className="text-center">شناسه</div>,
-        cell: ({ row }) => {
-            return <div className="text-center">
-                {
-                    row.original.orederIdentification
-                }
-            </div>
         }
     },
     {

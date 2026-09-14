@@ -5,12 +5,13 @@ export interface SidebarDataType {
     items: {
       title: string,
       path: string
+      badgeFn?: () => number | null
     }[]     // if length === 1 -> single link, if > 1 -> collapsible
-    badge?:number
+    badgeFn?: () => number | null
   }[],
   footer?: {
     title: string
     icon: LucideIcon
-    path:string
+    path: string
   }
 }[]
