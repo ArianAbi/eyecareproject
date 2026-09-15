@@ -113,8 +113,8 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
                         !orderItem.odOnly &&
                         <span>
                             <span>OS : </span>
-                            <span>{orderItem.od.sph}</span>
-                            <span> {orderItem.od.cyl}</span>
+                            <span>{orderItem.os.sph}</span>
+                            <span> {orderItem.os.cyl}</span>
                         </span>
                     }
                 </div>

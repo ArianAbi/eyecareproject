@@ -76,13 +76,11 @@ enum ProductType {
 }
 
 enum OrderItemStatus {
-  SUBMITIED
-  LOCKED
+  PENDING
   APPROVED
   INPROCESS
   FINISHED
   SENT
-  DELIVERED
   ONHOLD
 }
 
@@ -198,7 +196,7 @@ model OrderBatch {
 
   orederIdentification Int @unique @default(autoincrement())
 
-  status       OrderItemStatus @default(SUBMITIED)
+  status       OrderItemStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()

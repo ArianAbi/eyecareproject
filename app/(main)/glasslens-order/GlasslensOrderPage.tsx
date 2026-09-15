@@ -153,10 +153,6 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
         }
     }
 
-    function RemoveItemFromOrder(index: number) {
-        setOrderProductItems(prev => prev.filter((_, i) => i !== index))
-    }
-
     return (
         <div className="border p-3 space-y-2 rounded-md">
             <section className="flex flex-col-reverse lg:flex-row gap-2 p-2 border border-white/50 border-dashed rounded-lg w-full items-end justify-between ">

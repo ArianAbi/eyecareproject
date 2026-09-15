@@ -94,6 +94,7 @@ export function AdminUserSearchFilter({
     <Combobox
       items={options}
       value={selected}
+      autoHighlight
       onValueChange={(option: UserOption | null) => {
 
         if (paramKey && option) {

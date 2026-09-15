@@ -1,14 +1,45 @@
 "use client"
 
-import { Tabs as TabsPrimitive } from "@base-ui/react/tabs"
+import { useSearchParamsUtil } from "@/hooks/useSearchParams"
+import { Tabs as TabsPrimitive, TabsRootChangeEventDetails } from "@base-ui/react/tabs"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
+import { usePathname, useSearchParams } from "next/navigation"
+import { useRouter } from "next/router"
+import { useCallback } from "react"
+
+interface TabsProps extends TabsPrimitive.Root.Props {
+  paramKey?: string
+}
+
+interface TabsProps extends TabsPrimitive.Root.Props {
+  paramKey?: string
+}
 
 function Tabs({
   className,
   orientation = "horizontal",
+  paramKey,
+  value,
+  defaultValue,
+  onValueChange,
   ...props
-}: TabsPrimitive.Root.Props) {
+}: TabsProps) {
+  const { get, set } = useSearchParamsUtil()
+
+  const paramValue = paramKey ? get(paramKey) : null
+  
+const resolvedValue = paramKey
+    ? paramValue ?? (defaultValue as string | undefined) ?? ""
+    : value
+
+  const handleValueChange = useCallback((newValue: any, eventDetails: TabsRootChangeEventDetails) => {
+    if (paramKey) {
+      set(paramKey, newValue as string)
+    }
+    onValueChange?.(newValue, eventDetails)
+  }, [paramKey, set, onValueChange])
+
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
@@ -17,6 +48,9 @@ function Tabs({
         "group/tabs flex gap-2 data-horizontal:flex-col",
         className
       )}
+      value={resolvedValue}
+      defaultValue={paramKey ? undefined : defaultValue}
+      onValueChange={handleValueChange}
       {...props}
     />
   )

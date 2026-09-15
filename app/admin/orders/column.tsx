@@ -14,12 +14,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { MasterCategory } from "@/generated/prisma/client";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_GetOrdersAction } from "@/lib/actions/admin.orders.action";
+import { OrderStatusFarsi } from "@/lib/order-status-farsi-map";
 import { cn } from "@/lib/utils";
 import { ActionData } from "@/types/actions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { Check, PenIcon, TrashIcon, XIcon } from "lucide-react";
+import { Check, EyeIcon, PenIcon, TrashIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,12 +30,23 @@ type AdminOrderActionType = ActionData<typeof ADMIN_GetOrdersAction>[0]
 
 export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
     {
+        accessorKey: "id",
+        header: "",
+        cell: ({ row }) => {
+            return <Link
+                className={buttonVariants({variant:'default',size:'sm'})}
+                href={`/admin/orders/${row.original.id}`}>
+                <EyeIcon />
+            </Link>
+        }
+    },
+    {
         accessorKey: "user",
         header: "کاربر",
         cell: ({ row }) => {
             return <Link
                 className="underline"
-                href={`/admin/users/${row.original.id}`}>
+                href={`/admin/users/${row.original.userId}`}>
                 {row.original.user.username}
             </Link>
         }
@@ -48,13 +60,15 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
     },
     {
         accessorKey: "status",
-        header: () => <div>
+        header: () => <div className="text-center">
             وضعیت
         </div>,
         cell: ({ row }) => {
-            return <div>{
-                row.original.status
-            }</div>
+            const { text, bg } = OrderStatusFarsi(row.original.status)
+            return <div className="flex items-center justify-center">
+                <div className={cn(bg,'size-3 rounded-full me-1')}></div>
+                <span>{text}</span>
+            </div>
         }
     },
     {
@@ -84,7 +98,7 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
     },
     {
         accessorKey: "orederIdentification",
-        header: ()=><div className="text-center">شناسه</div>,
+        header: () => <div className="text-center">شناسه</div>,
         cell: ({ row }) => {
             return <div className="text-center">
                 {
