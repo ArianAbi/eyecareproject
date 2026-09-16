@@ -9,8 +9,10 @@ import Link from "next/link"
 import { useState } from "react"
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckIcon, XIcon } from "lucide-react";
+import { ArrowRight, CheckIcon, XIcon } from "lucide-react";
 import { colorOptionsType, colorSelectMap } from "@/components/core/FormFieldColorSelectShorthand";
+import { buttonVariants } from "@/components/ui/button";
+import { OrderTable } from "@/components/OrderTable";
 
 export default function AdminSingleOrderItem({ data }: { data: NonNullable<ActionData<typeof ADMIN_GetSingleOrder>> }) {
 
@@ -18,6 +20,15 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
     const [selectedStatus, setSelectedStatus] = useState<OrderItemStatus>('APPROVED')
 
     return <>
+        <Link
+            className={buttonVariants({ variant: 'outline' }) + ' mb-2'}
+            href={`/admin/orders`}
+        >
+            <ArrowRight />
+            <span>
+                سفارش ها
+            </span>
+        </Link>
         <section className="border flex justify-between rounded-lg border-dashed p-3">
             {/* right items */}
             <section className="space-y-2 text-sm">
@@ -104,120 +115,9 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
             <h2 className="mb-2">لیست سفارش ها</h2>
 
             <div className="border rounded-lg">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>نام محصول</TableHead>
-                            <TableHead className="text-center">دسته بندی</TableHead>
-                            <TableHead>تک چشم</TableHead>
-                            <TableHead>آکس</TableHead>
-                            <TableHead>نمره</TableHead>
-                            <TableHead>تراش</TableHead>
-                            <TableHead>قیمت</TableHead>
-                        </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
-                        {data.orderItems.map(item => {
-                            return <TableRow>
-                                <TableCell>
-                                    {item.product.name}
-                                </TableCell>
-
-                                <TableCell>
-                                    <div className="text-center flex items-center justify-center gap-1">
-                                        <div className={cn(
-                                            colorSelectMap[item.product.categoryRel.color as colorOptionsType['value']],
-                                            'size-3 rounded-full'
-                                        )}></div>
-                                        {item.product.categoryRel.name}
-                                    </div>
-                                </TableCell>
-
-                                <TableCell>
-                                    {item.odOnly
-                                        ?
-                                        <CheckIcon className="stroke-emerald-500" stroke="inherit" />
-                                        :
-                                        <XIcon className="stroke-red-500" stroke="inherit" />
-                                    }
-                                </TableCell>
-
-                                <TableCell>
-                                    {/* AUX */}
-                                    <div className="flex flex-col items-start">
-                                        <span style={{ direction: "ltr" }}>
-                                            <span>OD : </span>
-                                            {parseFloat(item.odCyl) < 0 ?
-                                                <span>
-                                                    {item.odAux} deg
-                                                </span>
-                                                :
-                                                <span>
-                                                    ندارد
-                                                </span>
-                                            }
-                                        </span>
-
-                                        {!item.odOnly &&
-                                            <span style={{ direction: "ltr" }}>
-                                                <span>OS : </span>
-
-                                                {parseFloat(item.osCyl) < 0 ?
-                                                    <span>
-                                                        {item.osAux} deg
-                                                    </span>
-                                                    :
-                                                    <span>
-                                                        ندارد
-                                                    </span>
-                                                }
-                                            </span>
-                                        }
-                                    </div>
-                                </TableCell>
-
-                                <TableCell>
-                                    {/* sph & cyl */}
-                                    <div className="flex flex-col">
-                                        <span>
-                                            <span>OD : </span>
-                                            <span>{item.odSph}</span>
-                                            <span> {item.odCyl}</span>
-                                        </span>
-
-                                        {
-                                            !item.odOnly &&
-                                            <span>
-                                                <span>OS : </span>
-                                                <span>{item.osSph}</span>
-                                                <span> {item.osCyl}</span>
-                                            </span>
-                                        }
-                                    </div>
-                                </TableCell>
-
-                                <TableCell>
-                                    {
-                                        item.rawOrCut == 'RAW'
-                                            ?
-                                            <span>ندارد</span>
-                                            :
-                                            <span className="text-emerald-500">دارد</span>
-                                    }
-                                </TableCell>
-
-                                <TableCell>
-                                    {item.purchasedPrice.toLocaleString() + " "}
-                                    <span className="text-xs text-emerald-500 font-semibold">
-                                        تومان
-                                    </span>
-                                </TableCell>
-                            </TableRow>
-                        })
-                        }
-                    </TableBody>
-                </Table>
+                <OrderTable 
+                data={data.orderItems}
+                />
             </div>
         </section>
     </>
