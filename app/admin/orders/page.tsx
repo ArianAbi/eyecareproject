@@ -6,6 +6,14 @@ import { Suspense } from "react";
 import TableLoading from "@/components/core/TableLoading";
 import { AdminUserSearchFilter } from "@/components/core/AdminUserSearchFilter";
 import CustomPagination from "@/components/core/CustomPagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AdminOrderDataTableWrapper from "./AdminOrderDataTableWrapper";
+import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { FilterIcon } from "lucide-react";
+import { DateFilter } from "@/components/core/DateFilter";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export default async function AdminOrdersPage({ searchParams }: {
     searchParams: Promise<{
@@ -18,7 +26,7 @@ export default async function AdminOrdersPage({ searchParams }: {
 
     const extractedId = params.userId ? JSON.parse(params.userId).value : null
 
-    const submitedOrdersOnly = await ADMIN_GetOrdersAction({
+    const pendingOrdersOnly = await ADMIN_GetOrdersAction({
         status: 'PENDING',
         userId: extractedId ?? null,
         page: params.pendingPage
@@ -26,7 +34,7 @@ export default async function AdminOrdersPage({ searchParams }: {
 
 
     return <>
-        <Tabs paramKey="tab">
+        <Tabs defaultValue={'submitted'} paramKey="tab">
             <TabsList >
                 <TabsTrigger value="submitted">در انتظار تایید</TabsTrigger>
                 <TabsTrigger value="rest">سایر سفارش ها</TabsTrigger>
@@ -35,24 +43,55 @@ export default async function AdminOrdersPage({ searchParams }: {
             <div className="border border-dashed rounded-lg p-3">
 
                 <TabsContent value="submitted">
-                    <div className="w-44 space-y-1">
-                        <AdminUserSearchFilter
-                            initialValue={params.userId}
-                            paramKey="userId"
-                        />
-                    </div>
+                    <Sheet>
+                        <SheetTrigger className={buttonVariants({variant:'default',size:'sm'})}>
+                                <span>فیلتر</span>
+                                <FilterIcon />
+                        </SheetTrigger>
 
-                    <DataTable data={submitedOrdersOnly.data} columns={AdminOrdersColumn} />
+                        <SheetContent
+                        dir="rtl"
+                        style={{maxWidth:'250px'}}
+                        >
+                            <SheetHeader>
+                                <SheetTitle>فیلتر ها</SheetTitle>
+                            </SheetHeader>
+
+                            <div className="grid flex-1 auto-rows-min gap-6 px-4">
+                                <div className="w-full space-y-1">
+                                    <AdminUserSearchFilter
+                                        initialValue={params.userId}
+                                        paramKey="userId"
+                                    />
+                                </div>
+
+                                <div className="w-full space-y-1">
+                                    <DateFilter 
+                                    paramKey="date"
+                                    />
+                                </div>
+                            </div>
+
+                            <SheetFooter>
+                                <SheetClose className={cn(buttonVariants({variant:'default',size:'sm'}))}>
+                                    بستن
+                                </SheetClose>
+                            </SheetFooter>
+                        </SheetContent>
+                    </Sheet>
+
+
+                    <DataTable data={pendingOrdersOnly.data} columns={AdminOrdersColumn} />
 
                     <CustomPagination
                         paramKey="pendingPage"
-                        total={submitedOrdersOnly.total}
+                        total={pendingOrdersOnly.total}
                     />
                 </TabsContent>
 
                 <TabsContent value="rest">
                     <Suspense fallback={<TableLoading />}>
-                        <RestOfOrders restPage={params.restPage}/>
+                        <RestOfOrders restPage={params.restPage} />
                     </Suspense>
                 </TabsContent>
             </div>
@@ -61,7 +100,7 @@ export default async function AdminOrdersPage({ searchParams }: {
     </>
 }
 
-async function RestOfOrders({restPage}:{restPage?:number}) {
+async function RestOfOrders({ restPage }: { restPage?: number }) {
 
     const restOfOrders = await ADMIN_GetOrdersAction({
         status: 'PENDING',
@@ -71,8 +110,10 @@ async function RestOfOrders({restPage}:{restPage?:number}) {
 
     return <>
         <span>{restPage}</span>
-        <DataTable data={restOfOrders.data} columns={AdminOrdersColumn} />
 
+        <AdminOrderDataTableWrapper
+            data={restOfOrders.data}
+        />
         <CustomPagination
             paramKey="pendingPage"
             total={restOfOrders.total}

@@ -6,6 +6,7 @@ import { auth } from "../Auth"
 import prisma from "../db"
 import { Prisma } from "@/generated/prisma/client"
 import { PaginationObjectDB } from "../pagination-object"
+import { revalidatePath } from "next/cache"
 
 type ExtendedOrderStatus = OrderItemStatus | 'ALL'
 
@@ -107,15 +108,15 @@ export async function ADMIN_GetSingleOrder(id: string) {
                     include: {
                         product: {
                             select: {
-                                id:true,
+                                id: true,
                                 includesBag: true,
                                 includesCleaningCloth: true,
                                 includesCleaningSpray: true,
                                 name: true,
-                                categoryRel:{
-                                    select:{
-                                        color:true,
-                                        name:true
+                                categoryRel: {
+                                    select: {
+                                        color: true,
+                                        name: true
                                     }
                                 }
                             },
@@ -131,6 +132,34 @@ export async function ADMIN_GetSingleOrder(id: string) {
                 }
             }
         })
+
+        return { sucess: true, data }
+    } catch (err) {
+        if (err instanceof Error) {
+            throw new ActionError({
+                error: err.message
+            })
+        }
+        throw new ActionError({
+            error: "get orders admin:unknown error"
+        })
+    }
+}
+
+export async function ADMIN_UpdateOrderStatus({
+    id, newStatus
+}: { id: string, newStatus: OrderItemStatus }) {
+    try {
+        const data = await prisma.orderBatch.update({
+            where: {
+                id
+            },
+            data: {
+                status: newStatus
+            }
+        })
+
+        revalidatePath('/admin/orders')
 
         return { sucess: true, data }
     } catch (err) {

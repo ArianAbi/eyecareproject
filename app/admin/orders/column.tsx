@@ -4,6 +4,7 @@ import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
 import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,7 @@ import { ActionData } from "@/types/actions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { Check, EyeIcon, PenIcon, TrashIcon, XIcon } from "lucide-react";
+import { Check, CheckIcon, EyeIcon, PenIcon, TrashIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -30,11 +31,49 @@ type AdminOrderActionType = ActionData<typeof ADMIN_GetOrdersAction>[0]
 
 export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
     {
+        id: "select",
+        header: ({ table }) => {
+            const meta = table.options.meta
+            if (meta?.isBulkActionPending) {
+                return <Spinner className="size-4" />
+            }
+            return (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    indeterminate={
+                        table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="انتخاب همه"
+                />
+            )
+        },
+        cell: ({ row, table }) => {
+            const meta = table.options.meta
+            const status = meta?.getRowStatus(row.id) ?? "idle"
+
+            if (status === "pending") return <Spinner className="size-4" />
+            if (status === "success") return <CheckIcon className="size-4 text-emerald-500" />
+            if (status === "error") return <XIcon className="size-4 text-destructive" />
+
+            return (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    disabled={meta?.isBulkActionPending}
+                    aria-label="انتخاب ردیف"
+                />
+            )
+        },
+        enableSorting: false,
+        enableHiding: false,
+    },
+    {
         accessorKey: "id",
         header: "",
         cell: ({ row }) => {
             return <Link
-                className={buttonVariants({variant:'default',size:'sm'})}
+                className={buttonVariants({ variant: 'default', size: 'sm' })}
                 href={`/admin/orders/${row.original.id}`}>
                 <EyeIcon />
             </Link>
@@ -66,7 +105,7 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
         cell: ({ row }) => {
             const { text, bg } = OrderStatusFarsi(row.original.status)
             return <div className="flex items-center justify-center">
-                <div className={cn(bg,'size-3 rounded-full me-1')}></div>
+                <div className={cn(bg, 'size-3 rounded-full me-1')}></div>
                 <span>{text}</span>
             </div>
         }

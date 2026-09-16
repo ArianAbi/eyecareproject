@@ -1,6 +1,6 @@
 'use client'
 
-import { ADMIN_GetSingleOrder } from "@/lib/actions/admin.orders.action";
+import { ADMIN_GetSingleOrder, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
 import { ActionData } from "@/types/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { OrderItemStatus } from "@/generated/prisma/enums"
@@ -8,16 +8,52 @@ import { OrderStatusFarsi } from "@/lib/order-status-farsi-map"
 import Link from "next/link"
 import { useState } from "react"
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, CheckIcon, XIcon } from "lucide-react";
-import { colorOptionsType, colorSelectMap } from "@/components/core/FormFieldColorSelectShorthand";
-import { buttonVariants } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { OrderTable } from "@/components/OrderTable";
+import { toast } from "@/components/ui/toast";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminSingleOrderItem({ data }: { data: NonNullable<ActionData<typeof ADMIN_GetSingleOrder>> }) {
 
     const statusValues = Object.values(OrderItemStatus)
     const [selectedStatus, setSelectedStatus] = useState<OrderItemStatus>('APPROVED')
+
+    const [loading, setLoading] = useState(false)
+
+    const updateDisabled = selectedStatus === data.status
+
+    const router = useRouter()
+
+    async function UpdateOrderStatus() {
+        try{
+            setLoading(true)
+
+            await ADMIN_UpdateOrderStatus({
+                id:data.id,
+                newStatus:selectedStatus
+            })
+
+            toast.add({
+                type:"Success",
+                title:"وضعیت سفارش بروزرسانی شد"
+            })
+
+            router.push('/admin/orders')
+        }catch(err){
+            if(err instanceof Error){
+                toast.add({
+                    type:"Error",
+                    title:err.message
+                })
+            }
+            toast.add({
+                type:"Error",
+                title:"updating status failed:Unknown"
+            })
+        }
+    }
 
     return <>
         <Link
@@ -107,6 +143,17 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
                         </Select>
                     </span>
                 </div>
+
+                <Button
+                    onClick={UpdateOrderStatus}
+                    disabled={updateDisabled || loading}
+                    variant={'green'}
+                >
+                    <span>
+                    بروزرسانی
+                    </span>
+                    {loading && <Spinner />}
+                </Button>
             </section>
 
         </section >
@@ -115,8 +162,8 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
             <h2 className="mb-2">لیست سفارش ها</h2>
 
             <div className="border rounded-lg">
-                <OrderTable 
-                data={data.orderItems}
+                <OrderTable
+                    data={data.orderItems}
                 />
             </div>
         </section>
