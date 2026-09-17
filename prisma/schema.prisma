@@ -28,18 +28,6 @@ model User {
   cart      Cart?
 }
 
-model Invoice {
-  id String @id @default(uuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  amount      Int
-  invoiceCode String @unique
-
-  createdAt DateTime @default(now())
-}
-
 model MasterCategory {
   id     String  @id @default(uuid())
   name   String
@@ -101,8 +89,6 @@ model Product {
   tags Tags[]
 
   lens Lens?
-
-  customFields CustomField[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
@@ -178,6 +164,8 @@ model CartItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
+
+  @@index([productId])
 }
 
 model OrderBatch {
@@ -196,7 +184,7 @@ model OrderBatch {
 
   orederIdentification Int @unique @default(autoincrement())
 
-  status       OrderItemStatus @default(PENDING)
+  status OrderItemStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
@@ -239,6 +227,8 @@ model OrderItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
+
+  @@index([productId])
 }
 
 model OrderUpdate {
@@ -257,14 +247,34 @@ model OrderUpdate {
   createdAt DateTime @default(now())
 }
 
-model CustomField {
-  productId String  @unique
-  product   Product @relation(fields: [productId], references: [id])
+enum InvoicePaymentType {
+  CREDIT
+  CASH
+}
 
-  name        String
-  description String?
-  value       String
+enum InvoiceStatus {
+  PENDING
+  WAITING_FOR_APPORVAL
+  PAID
+  CANCELED
+}
+
+model Invoice {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id],onDelete: Restrict)
+
+  paymentType InvoicePaymentType
+  amount      Int
+
+  dueDate DateTime?
+
+  status InvoiceStatus @default(PENDING)
+
+  invoiceNumber Int @unique @default(autoincrement())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

@@ -2,13 +2,13 @@
 
 import { IsInRange } from "@/lib/is-in-range";
 import type { LensProductType } from "@/types/lens-product";
-import { OrderProductItemType } from "@/types/order";
+import { CartItemProductItemType } from "@/types/order";
 import Image from "next/image";
 
 export default function LensProductItem({ product, range, onItemClick }: {
     product: LensProductType & { available: boolean },
     range: { od: { sph: string, cyl: string, aux: string }, os: { sph: string, cyl: string, aux: string }, odOnly: boolean },
-    onItemClick: (product: OrderProductItemType) => void
+    onItemClick: (product: CartItemProductItemType) => void
 }) {
 
     const lensRange = {

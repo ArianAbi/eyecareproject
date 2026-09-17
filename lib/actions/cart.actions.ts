@@ -2,21 +2,24 @@
 
 import { Prisma } from "@/generated/prisma/client"
 import prisma from "@/lib/db"
-import { OrderProductItemType } from "@/types/order"
 import { ActionError } from "../action-error"
 import { auth } from "../Auth"
 import { revalidatePath } from "next/cache"
+import { CartItemProductItemType } from "@/types/order"
 
 export async function GetUserCartItemsAction(userId: string) {
     try {
         const data = await prisma.cart.findUnique({
             where: {
-                userId
+                userId,
             },
             include: {
                 cartItems: {
                     include: {
                         product: true
+                    },
+                    orderBy:{
+                        createdAt:'desc'
                     }
                 }
             }
@@ -34,7 +37,7 @@ export async function GetUserCartItemsAction(userId: string) {
     }
 }
 
-export async function AddItemToCartAction(userId: string, orderItem: OrderProductItemType) {
+export async function AddItemToCartAction(userId: string, orderItem: CartItemProductItemType) {
     const { od, os, odOnly, rawOrCut, ...product } = orderItem
 
     try {
@@ -78,6 +81,8 @@ export async function AddItemToCartAction(userId: string, orderItem: OrderProduc
 
 export async function UpdateCartItemRawOrCutAction(itemId: string, RawOrCut: boolean) {
     try {
+        console.log('Update Item Id : ',itemId);
+        
         const data = await prisma.cartItem.update({
             where: {
                 id: itemId
@@ -150,7 +155,7 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0, customerN
                     userId,
                     deliveryPrice,
                     customerNote,
-                    status: "SUBMITIED",
+                    status: "PENDING",
                     orderItems: {
                         create: cart.cartItems.map(item => ({
                             productId: item.productId,
@@ -176,7 +181,7 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0, customerN
 
             prisma.orderBatch.count({
                 where:{
-                    status:'SUBMITIED'
+                    status:'PENDING'
                 }
             }).then(value=>{
                 orderEventEmitter?.emit('newOrder',value)

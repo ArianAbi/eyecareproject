@@ -3,6 +3,8 @@ import { Button, buttonVariants } from "../ui/button";
 import { auth } from "@/lib/Auth";
 import LogoutBtn from "../LogoutBtn";
 import { SidebarTrigger } from "../ui/sidebar";
+import { User } from "@/generated/prisma/client";
+import prisma from "@/lib/db";
 
 export default async function Header({sidebar=false}) {
     const session = await auth()
@@ -32,7 +34,13 @@ export default async function Header({sidebar=false}) {
             }
 
             {session &&
-                <LogoutBtn />
+            // <pre>
+            //     {JSON.stringify(session.user)}
+            // </pre>
+                <LogoutBtn
+                username={session.user.username}
+                credit={session.user.credit}
+                />
             }
             </div>
         </header>

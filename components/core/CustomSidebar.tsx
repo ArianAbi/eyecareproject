@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BoxIcon, ChevronDown, Clock, Globe, Hammer, LayoutDashboard, LayoutList, List, ReceiptIcon, User, type LucideIcon } from "lucide-react"
+import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, Globe, Hammer, LayoutDashboard, LayoutList, List, ReceiptIcon, User, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -88,7 +88,7 @@ export function CustomSidebar({ data, header, footer = false, ...props }: AppSid
 // ---------------------------------------------------------------------------
 
 function SidebarBadge({ badgeFn }: { badgeFn?: () => number | null }) {
-  if(!badgeFn) return
+  if (!badgeFn) return
 
   const count = badgeFn()
 
@@ -251,6 +251,16 @@ export const AdminSidebarData: SidebarDataType = {
           path: `/admin/products/tags`
         }
       ]
+    },
+    {
+      group_title: "صورتحساب ها",
+      icon: BanknoteArrowUp,
+      items: [
+        {
+          title: "صورتحساب ها",
+          path: `/invoices`
+        }
+      ]
     }
   ],
   footer: {
@@ -279,6 +289,16 @@ export const UserSidebarData: SidebarDataType = {
         {
           title: "سفارش ها",
           path: `/orders`
+        }
+      ]
+    },
+    {
+      group_title: "صورتحساب ها",
+      icon: BanknoteArrowUp,
+      items: [
+        {
+          title: "صورتحساب ها",
+          path: `/invoices`
         }
       ]
     }

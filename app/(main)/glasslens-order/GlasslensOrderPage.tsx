@@ -11,7 +11,7 @@ import { IsInRange } from "@/lib/is-in-range"
 import { lensFilter } from "@/lib/lens-filter"
 import { AllLensRanges, NegativeLensRanges } from "@/lib/lens-range"
 import { LensProductType } from "@/types/lens-product"
-import { OrderProductItemType, OrderProductItemWithStatus } from "@/types/order"
+import { CartItemProductItemType, OrderProductItemWithStatus } from "@/types/order"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Copy, CornerUpLeft, Handbag, SprayCan, TowelRack, Trash, XIcon } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -24,6 +24,7 @@ import SubmitOrderBtn from "./SubmitOrderBtn"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 export default function GlasslensOrderPage({ products, categorys, tags, cartItems }: {
     products: LensProductType[],
@@ -111,7 +112,9 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
         }
     })
 
-    async function AddItemToOrder(item: OrderProductItemType) {
+    const router = useRouter()
+
+    async function AddItemToOrder(item: CartItemProductItemType) {
         item.rawOrCut = false
 
         const tempId = crypto.randomUUID()
@@ -139,12 +142,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                 return
             }
 
-            setOrderProductItems(prev =>
-                prev.map(i => i.tempId === tempId
-                    ? { ...i, cartStatus: "success", cartItemId: result.cartItem.id }
-                    : i
-                )
-            )
+            router.refresh()
         } catch {
             toast.add({ type: "Error", title: "سفارش افزوده نشد" })
             setOrderProductItems(prev =>

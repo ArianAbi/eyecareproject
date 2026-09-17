@@ -7,7 +7,7 @@ import { colorOptionsType, colorSelectMap, colorSelectMapBorder } from "./FormFi
 import LensProductItem from "../LensProductItem"
 import { IsInRange } from "@/lib/is-in-range"
 import { toast } from "../ui/toast"
-import { OrderProductItemType } from "@/types/order"
+import { CartItemProductItemType } from "@/types/order"
 
 export function CategoryDialog({ category, range, AddToOrder }: {
     category: Prisma.SubCategoryGetPayload<{
@@ -33,7 +33,7 @@ export function CategoryDialog({ category, range, AddToOrder }: {
         },
         odOnly: boolean
     }
-    AddToOrder: (orderItem: OrderProductItemType) => void
+    AddToOrder: (orderItem: CartItemProductItemType) => void
 }) {
     const [open, setOpen] = useState(false)
 
