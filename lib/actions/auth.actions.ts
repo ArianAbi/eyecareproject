@@ -1,9 +1,12 @@
 "use server"
 
+import { writeAudit } from "../audit"
+
 import prisma from "@/lib/db"
 import { signIn } from "../Auth"
 import { AuthError } from "next-auth"
 import { LoginSchema, SignupSchema } from "../schemas/auth.schema"
+import { hashPassword } from "../password"
 
 export async function CreateUserAction(username: string, number: string, password: string) {
 
@@ -22,12 +25,17 @@ export async function CreateUserAction(username: string, number: string, passwor
     }
 
     try {
-        const result = await prisma.user.create({
+        const passwordHash = await hashPassword(validateFields.data.password)
+        await prisma.$transaction(async tx => {
+        const user = await tx.user.create({
             data: {
                 username: validateFields.data.username,
                 number: validateFields.data.number,
-                password: validateFields.data.password,
+                password: passwordHash,
             }
+        })
+
+            await writeAudit(tx, user.id, "ACCOUNT_CREATED", "User", user.id)
         })
 
         await signIn('credentials', {

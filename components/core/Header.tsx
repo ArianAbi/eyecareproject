@@ -8,6 +8,7 @@ import prisma from "@/lib/db";
 
 export default async function Header({sidebar=false}) {
     const session = await auth()
+    const account = session?.user?.id ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { credit: true } }) : null
 
     return (
         <header className="w-full bg-background border-b-2 flex items-center justify-between px-3 py-4">
@@ -39,7 +40,7 @@ export default async function Header({sidebar=false}) {
             // </pre>
                 <LogoutBtn
                 username={session.user.username}
-                credit={session.user.credit}
+                credit={account?.credit ?? 0}
                 />
             }
             </div>

@@ -1,3 +1,5 @@
+import { InvoiceControls } from "@/components/core/InvoiceControls"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GetSingleInvoiceAction } from "@/lib/actions/invoices.action";
 import { InvoiceStatusFarsi, InvoicePaymentTypeFarsi } from "@/lib/invoice-status-farsi-map";
@@ -18,7 +20,8 @@ export default async function InvoiceDetailPage({ params }: {
 
     const { text, bg } = InvoiceStatusFarsi(invoice.data.status)
 
-    return <div className="p-3">
+    return <div className="p-3 space-y-4">
+        <Link href="/invoices" className="text-sm underline">بازگشت به صورتحساب‌ها</Link>
         <h2 className="mb-2">فاکتور شماره {invoice.data.invoiceNumber}</h2>
 
         <Card>
@@ -60,5 +63,7 @@ export default async function InvoiceDetailPage({ params }: {
                 </div>
             </CardContent>
         </Card>
+        {invoice.data.zarinpalRefId && <p>کد پیگیری: {invoice.data.zarinpalRefId}</p>}
+        {invoice.data.status === 'PENDING' && invoice.data.paymentType === 'CASH' && <InvoiceControls id={id} />}
     </div>
 }

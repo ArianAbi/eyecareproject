@@ -1,0 +1,37 @@
+things to do for now 
+
+some context => the website is using shadcn + base ui and i like to use shadcn as much as possiable
+
+before making actual changes first write tests based on the prompts and the things that i asked you to do then test your new code agains that
+custom side bar has a AdminSide bar and User Side bar. use that to add items to the side bar
+try to write you codes in simular style as my codes and use same naming convections
+and feel free to ask any quetions or tell me any suggestions that you have
+if you find any bug or wrong design write it in a bugs.md file
+
+the chenges that i want are written below
+
+-take a look at my prisma schema. add a ticket section that enabels users to add a tickets and the the admin can answer then. this goes on unitil the ticket is closed
+
+-the invoices section are not complete. complete them both on the user side and admin side
+
+-take a look at orders section on the users side. make improvements that you feel it needs to be better
+
+-the orders section on the admin panel also needs some improvements, the filters section in the submited tab are not complete, user filtering works but date filtering is not connected to the action so it actually does not take effect even tho the url params are getting set
+you can make the whole filtering section into a separete component and add it both in the pending tab and rest tab, also expand the filtering options
+
+-make a summery url on the admin side that shows various summerys. it could have many tabs but the default is orders where it shows the orders for to day in compact way but enough info is displayed there. admin could also look into other days order summerys
+the other tabs in the summerys could be financial summery with graph and stuff, tickets and etc (tickets and finical parts also have a seperate tabs in the side panel with dedicated pages for them)
+
+-add a log system that logs every neccessery inteaction both from the users and the admins, make a log page on the admin panel
+
+-feel free to add any other neccessery sections on the user side if its needed
+
+-add a isAdmin server action that checks for admins but dont connect it in any other action
+
+-make a landing page on the user side. this site is about a persian eyeglass lens diterbution for other stores (so a regular customer is not the taget)
+
+-make seo work for the usres section
+
+-any visual improvement would be great but dont do anything fancy or too custom
+
+-try not to make huge changes to /glasslesn-order page

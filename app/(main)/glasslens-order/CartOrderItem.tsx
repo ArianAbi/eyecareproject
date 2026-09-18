@@ -57,11 +57,12 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
         <TableRow>
             <TableCell className="text-base font-bold">
                 {
-                    orderItem.cartStatus == 'pending' || loading && <Spinner />
+                    (orderItem.cartStatus == 'pending' || loading) && <Spinner />
                 }
                 {
                     orderItem.cartStatus == 'success' && !loading && listNumber
                 }
+                {orderItem.cartStatus === 'error' && <span className="text-destructive" title="ذخیره نشد">!</span>}
             </TableCell>
             <TableCell>
                 {orderItem.name}
@@ -142,7 +143,7 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
                     <Checkbox
                         checked={rawOrCut}
                         onCheckedChange={ToggleRawOrCut}
-                        disabled={loading}
+                        disabled={loading || orderItem.cartStatus !== "success"}
                     />
                 </div>
 
@@ -154,7 +155,7 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
                     <RemoveOrderPopover
                         userId={user.id}
                         cartItemId={orderItem.cartItemId}
-                        disabled={loading}
+                        disabled={loading || orderItem.cartStatus === "pending"}
                         onDeleteFromList={() => {
                             updateOrderList(prev => {
                                 const newList = [...prev]
@@ -182,10 +183,9 @@ function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList, disabled = f
             setLoading(true)
 
             if (cartItemId) {
-                const data = await DeleteItemFromCartAction(userId, cartItemId)
-
-                onDeleteFromList()
+                await DeleteItemFromCartAction(userId, cartItemId)
             }
+            onDeleteFromList()
 
         } catch (err) {
             if (err instanceof Error) {

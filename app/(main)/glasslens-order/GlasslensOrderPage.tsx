@@ -19,12 +19,10 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import CartOrderItem from "./CartOrderItem"
 import { AddItemToCartAction } from "@/lib/actions/cart.actions"
-import { useSession } from "next-auth/react"
 import SubmitOrderBtn from "./SubmitOrderBtn"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
 
 export default function GlasslensOrderPage({ products, categorys, tags, cartItems }: {
     products: LensProductType[],
@@ -45,7 +43,6 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
         }
     }>[]
 }) {
-    const session = useSession()
 
     const mappedItems: OrderProductItemWithStatus[] = cartItems.map(item => ({
         ...item.product,
@@ -112,7 +109,6 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
         }
     })
 
-    const router = useRouter()
 
     async function AddItemToOrder(item: CartItemProductItemType) {
         item.rawOrCut = false
@@ -122,27 +118,20 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
 
         setOrderProductItems(prev => [newItem, ...prev])
 
-        const user = session.data?.user
-        if (!user || !user.id) {
-            toast.add({ type: "Error", title: "حساب کاربری پیدا نشد" })
-            setOrderProductItems(prev =>
-                prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
-            )
-            return
-        }
-
         try {
-            const result = await AddItemToCartAction(user.id, item)
+            const result = await AddItemToCartAction(item)
 
             if (!result.success || !result.cartItem) {
-                toast.add({ type: "Error", title: "سفارش افزوده نشد" })
+                toast.add({ type: "Error", title: "سفارش افزوده نشد", description: result.error })
                 setOrderProductItems(prev =>
                     prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
                 )
                 return
             }
 
-            router.refresh()
+            setOrderProductItems(prev => prev.map(i => i.tempId === tempId
+                ? { ...i, cartStatus: "success", cartItemId: result.cartItem.id }
+                : i))
         } catch {
             toast.add({ type: "Error", title: "سفارش افزوده نشد" })
             setOrderProductItems(prev =>
@@ -350,7 +339,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                             {
                                 orderProductItems.map((order, _i) => {
                                     return <CartOrderItem
-                                        key={order.id + _i}
+                                        key={order.tempId}
                                         indexInList={_i}
                                         listNumber={orderProductItems.length - _i}
                                         orderItem={order}
@@ -511,7 +500,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
 
                     <SubmitOrderBtn
                         customerNote={userNote}
-                        disabled={orderProductItems.length <= 0}
+                        disabled={orderProductItems.length <= 0 || orderProductItems.some(item => item.cartStatus !== "success")}
                     />
                 </div>
             </section>

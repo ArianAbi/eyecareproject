@@ -1,5 +1,8 @@
 "use server"
 
+import { writeAudit } from "../audit"
+import { orderEvents } from "../order-event"
+
 import { Prisma } from "@/generated/prisma/client"
 import prisma from "@/lib/db"
 import { ActionError } from "../action-error"
@@ -9,6 +12,9 @@ import { CartItemProductItemType } from "@/types/order"
 
 export async function GetUserCartItemsAction(userId: string) {
     try {
+        const session = await auth()
+        if (!session?.user?.id) throw new Error("ابتدا وارد حساب شوید")
+        userId = session.user.id
         const data = await prisma.cart.findUnique({
             where: {
                 userId,
@@ -37,7 +43,12 @@ export async function GetUserCartItemsAction(userId: string) {
     }
 }
 
-export async function AddItemToCartAction(userId: string, orderItem: CartItemProductItemType) {
+export async function AddItemToCartAction(orderItem: CartItemProductItemType) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false as const, error: "Please sign in again before adding items to your cart." }
+    }
+    const userId = session.user.id
     const { od, os, odOnly, rawOrCut, ...product } = orderItem
 
     try {
@@ -50,7 +61,7 @@ export async function AddItemToCartAction(userId: string, orderItem: CartItemPro
             })
 
             // create the cart item tied to it
-            return tx.cartItem.create({
+            const item = await tx.cartItem.create({
                 data: {
                     cartId: cart.id,
                     productId: product.id,
@@ -64,32 +75,35 @@ export async function AddItemToCartAction(userId: string, orderItem: CartItemPro
                     rawOrCut: rawOrCut ? "CUT" : "RAW",
                 },
             })
+            await writeAudit(tx, userId, "CART_ITEM_ADDED", "CartItem", item.id)
+            return item
         })
 
-        return { success: true, cartItem }
+        return { success: true as const, cartItem }
     } catch (err) {
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: err.message
-            })
-        }
-        throw new ActionError({
-            error: "unknown error"
-        })
+        console.error("Failed to add cart item", err)
+        return { success: false as const, error: "Could not save the cart item. Please try again." }
     }
 }
 
 export async function UpdateCartItemRawOrCutAction(itemId: string, RawOrCut: boolean) {
     try {
-        console.log('Update Item Id : ',itemId);
+        const session = await auth()
+        if (!session?.user?.id) throw new Error("ابتدا وارد حساب شوید")
         
-        const data = await prisma.cartItem.update({
+        const data = await prisma.$transaction(async tx => {
+        const item = await tx.cartItem.update({
             where: {
-                id: itemId
+                id: itemId,
+                cart: { userId: session.user.id }
             },
             data: {
                 rawOrCut: RawOrCut ? 'CUT' : 'RAW'
             }
+        })
+
+        await writeAudit(tx, session.user.id!, "CART_ITEM_UPDATED", "CartItem", itemId)
+        return item
         })
 
         return { success: true, data }
@@ -107,11 +121,19 @@ export async function UpdateCartItemRawOrCutAction(itemId: string, RawOrCut: boo
 
 export async function DeleteItemFromCartAction(userId: string, cartItemId: string) {
     try {
-        const deleted = await prisma.cartItem.delete({
+        const session = await auth()
+        if (!session?.user?.id) throw new Error("ابتدا وارد حساب شوید")
+        userId = session.user.id
+        const deleted = await prisma.$transaction(async tx => {
+        const item = await tx.cartItem.delete({
             where: {
                 id: cartItemId,
                 cart: { userId }, // ownership check baked into the query itself
             },
+        })
+
+        await writeAudit(tx, userId, "CART_ITEM_DELETED", "CartItem", cartItemId)
+        return item
         })
 
         return { success: true, cartItem: deleted }
@@ -135,6 +157,10 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0, customerN
 
     if (!session?.user?.id) {
         return { success: false, error: "حساب کاربری پیدا نشد" }
+    }
+
+    if (!Number.isSafeInteger(deliveryPrice) || deliveryPrice < 0 || deliveryPrice > 2147483647 || customerNote.length > 2000) {
+        throw new Error("اطلاعات سفارش نامعتبر است")
     }
 
     const userId = session.user.id
@@ -179,16 +205,16 @@ export async function SubmitCartOrderAction(deliveryPrice: number = 0, customerN
 
             await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
 
-            prisma.orderBatch.count({
-                where:{
-                    status:'PENDING'
-                }
-            }).then(value=>{
-                orderEventEmitter?.emit('newOrder',value)
-            })
+            await writeAudit(tx, userId, "ORDER_SUBMITTED", "OrderBatch", batch.id)
 
             return batch
-        })
+        }, { isolationLevel: 'Serializable' })
+
+        // Notify only after commit; notification failures must not undo a saved order.
+        try {
+            const count = await prisma.orderBatch.count({ where: { status: 'PENDING' } })
+            orderEvents.emit('newOrder', count)
+        } catch (error) { console.error('Order notification failed', error) }
 
         revalidatePath(`/glasslens-order`)
         return { success: true, orderBatch }

@@ -7,7 +7,7 @@ export function InvoiceStatusFarsi(status: InvoiceStatus): { text: string, bg: s
         case "PAID":
             return { text: "پرداخت شده", bg: "bg-emerald-500" }
         case "WAITING_FOR_APPORVAL":
-            return { text: "پرداخت شده", bg: "bg-cyan-500" }
+            return { text: "در انتظار تایید اعتبار", bg: "bg-cyan-500" }
         case "CANCELED":
             return { text: "لغو شده", bg: "bg-red-500" }
         default:

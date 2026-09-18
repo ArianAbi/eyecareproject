@@ -1,13 +1,22 @@
+import { auth } from "@/lib/Auth"
+import prisma from "@/lib/db"
+import { redirect } from "next/navigation"
+import type { Metadata } from "next"
+export const metadata: Metadata = { title: "مدیریت", robots: { index: false, follow: false } }
 import { AdminSidebarData, CustomSidebar } from "@/components/core/CustomSidebar";
 import Header from "@/components/core/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { OrderCountProvider } from "./AdminProviders";
 
-export default function AuthLayout({
+export default async function AuthLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const session = await auth()
+    if (!session?.user?.id) redirect('/login')
+    const account = await prisma.user.findUnique({ where: { id: session.user.id }, select: { admin: true } })
+    if (!account?.admin) redirect('/')
     return (
         <>
             <div className="relative">

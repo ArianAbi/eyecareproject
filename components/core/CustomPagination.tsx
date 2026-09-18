@@ -32,7 +32,7 @@ export default function CustomPagination({
 
     const currentPage = useMemo(() => {
         const raw = Number(searchParams.get(paramKey));
-        if (!raw || raw < 1) return 1;
+        if (!Number.isSafeInteger(raw) || raw < 1 || raw > 1000000) return 1;
         if (raw > totalPages) return totalPages;
         return raw;
     }, [searchParams, paramKey, totalPages]);

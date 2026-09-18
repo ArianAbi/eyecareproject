@@ -1,10 +1,15 @@
 "use server"
 
+import { requireAdmin } from "../access"
+import { writeAudit } from "../audit"
+
 import { ActionError } from "../action-error"
 import prisma from "../db"
 
 export async function ADMIN_GetUsersActions(){
     try{
+        await requireAdmin()
+
         const data = await prisma.user.findMany({
             omit:{
                 password:true,
@@ -31,6 +36,8 @@ export async function ADMIN_GetUsersActions(){
 
 export async function ADMIN_GetSingleUserAction(id:string){
     try{
+        await requireAdmin()
+
         const data = await prisma.user.findUnique({
             where:{
                 id
@@ -57,6 +64,8 @@ export async function ADMIN_GetSingleUserAction(id:string){
 
 export async function ADMIN_SearchUserAction(query:string){
     try{
+        await requireAdmin()
+
         const data = await prisma.user.findMany({
             where:{
                 OR:[

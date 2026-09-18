@@ -1,7 +1,10 @@
+import { writeAudit } from "./audit"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import NextAuth from "next-auth"
 import prisma from "./db"
 import Credentials from "next-auth/providers/credentials"
+import { LoginSchema } from "./schemas/auth.schema"
+import { verifyPassword } from "./password"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
@@ -17,23 +20,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 password: {}
             },
             authorize: async (credentials) => {
-                if (!credentials.username || !credentials.password) return null
+                const parsed = LoginSchema.safeParse(credentials)
+                if (!parsed.success) return null
 
-                // TODO: plaintext comparison for testing only — replace with bcrypt.compare before shipping
-                const user = await prisma.user.findFirst({
+                const user = await prisma.user.findUnique({
                     where: {
-                        username: credentials.username as string,
-                        password: credentials.password as string
+                        username: parsed.data.username
                     },
                     select: {
                         id: true,
                         username: true,
                         number: true,
-                        credit: true
+                        credit: true,
+                        password: true
                     }
                 })
 
                 if (!user) return null
+                if (!await verifyPassword(parsed.data.password, user.password)) return null
 
                 return {
                     id: String(user.id),
@@ -44,6 +48,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
         })
     ],
+    events: {
+        async signIn({ user }) {
+            if (user.id) await writeAudit(prisma, user.id, "SIGNED_IN", "User", user.id)
+        },
+        async signOut(message) {
+            if ('token' in message && typeof message.token?.id === 'string') {
+                await writeAudit(prisma, message.token.id, "SIGNED_OUT", "User", message.token.id)
+            }
+        },
+    },
     callbacks: {
         async jwt({ user, token }) {
             if (user) {

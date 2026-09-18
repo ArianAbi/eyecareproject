@@ -1,13 +1,12 @@
 "use server"
 
+import { orderWhere, type OrderFilters } from "../order-filters"
 import { ActionError } from "../action-error"
 import { auth } from "../Auth"
 import prisma from "../db"
 import { PaginationObjectDB, paginationSkipNumber } from "../pagination-object"
 
-export async function GetOrdersAction(filters: {
-    page?: number
-}) {
+export async function GetOrdersAction(filters: OrderFilters) {
     try {
         const session = await auth()
 
@@ -19,6 +18,7 @@ export async function GetOrdersAction(filters: {
 
             const orders = await tnx.orderBatch.findMany({
                 where: {
+                    ...orderWhere(filters),
                     userId: session.user.id
                 },
                 include: {
@@ -29,17 +29,19 @@ export async function GetOrdersAction(filters: {
                     },
                     orderItems: {
                         select: {
-                            purchasedPrice: true
+                            purchasedPrice: true,
+                            cutPrice: true
                         }
                     }
                 },
                 orderBy: {
-                    createdAt: 'desc'
+                    createdAt: filters.sort === 'oldest' ? 'asc' : 'desc'
                 },
                 ...(PaginationObjectDB(filters.page))
             })
             const total = await tnx.orderBatch.count({
                 where: {
+                    ...orderWhere(filters),
                     userId: session.user.id
                 }
             })

@@ -33,7 +33,7 @@ export default function CreateProductCategory() {
         data.append("name",values.name)
 
         try{
-            await ADMIN_CreateMasterCategoryAction(data)
+            await ADMIN_CreateMasterCategoryAction(values.name, "LENS")
             
             setAlertOpen(false)
 

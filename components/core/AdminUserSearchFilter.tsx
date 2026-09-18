@@ -38,7 +38,11 @@ export function AdminUserSearchFilter({
   const [options, setOptions] = useState<UserOption[]>([])
   const [loading, setLoading] = useState(false)
 
-  const parsedInitialValue = initialValue ? JSON.parse(initialValue) : null
+  let parsedInitialValue: UserOption | null = null
+  try {
+    const value = JSON.parse(initialValue ?? "null")
+    if (typeof value?.value === "string" && typeof value?.label === "string") parsedInitialValue = value
+  } catch { /* Ignore malformed URLs. */ }
 
   const [selected, setSelected] = useState<UserOption>({
     label: parsedInitialValue ? parsedInitialValue.label ?? '' : '',
@@ -77,6 +81,7 @@ export function AdminUserSearchFilter({
   const router = useRouter()
 
   const params = new URLSearchParams(searchParams.toString())
+  for (const page of ["page", "pendingPage", "restPage"]) params.delete(page)
 
   function ClearParamKey() {
     if (paramKey) {

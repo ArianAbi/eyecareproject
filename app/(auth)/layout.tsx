@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+export const metadata: Metadata = { title: "حساب همکاران", robots: { index: false, follow: false } }
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {Home} from "lucide-react"

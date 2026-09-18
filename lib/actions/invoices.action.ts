@@ -1,175 +1,89 @@
 "use server"
 
-import { ActionError } from "../action-error"
-import { auth } from "../Auth"
 import prisma from "../db"
+import { requireUser } from "../access"
+import { writeAudit } from "../audit"
 import { PaginationObjectDB } from "../pagination-object"
-import { zarinpalRequestPayment } from "../zarinpal"
+import { invoiceWhere, type InvoiceFilters } from "../invoice-filters"
+import { zarinpalRequestPayment, zarinpalVerifyPayment } from "../zarinpal"
+import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
-export async function GetInvoicesAction(filters: {
-    page?: number
-}) {
-    try {
-        const session = await auth()
-
-        if (!session || !session.user) {
-            throw Error("you are not logged in")
-        }
-
-        const data = await prisma.$transaction(async tnx => {
-
-            const invoices = await tnx.invoice.findMany({
-                where: {
-                    userId: session.user.id
-                },
-                orderBy: {
-                    createdAt: 'desc'
-                },
-                ...(PaginationObjectDB(filters.page))
-            })
-
-            const total = await tnx.invoice.count({
-                where: {
-                    userId: session.user.id
-                }
-            })
-
-            return { invoices, total }
-        })
-
-        return { success: true, data }
-    } catch (err) {
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: err.message
-            })
-        }
-        throw new ActionError({
-            error: "get invoices:unknown error"
-        })
-    }
+export async function GetInvoicesAction(filters: InvoiceFilters = {}) {
+    const user = await requireUser()
+    const where = { ...invoiceWhere(filters), userId: user.id }
+    const data = await prisma.$transaction(async tx => ({
+        invoices: await tx.invoice.findMany({ where, orderBy: { createdAt: 'desc' }, ...PaginationObjectDB(filters.page) }),
+        total: await tx.invoice.count({ where }),
+    }))
+    return { success: true, data }
 }
 
 export async function GetSingleInvoiceAction(id: string) {
-    try {
-        const session = await auth()
-
-        if (!session || !session.user.id) throw new ActionError({
-            error: "شما در هیچ حسابی لاگین نیستید"
-        })
-
-        const data = await prisma.invoice.findUnique({
-            where: {
-                id,
-                userId: session.user.id
-            }
-        })
-
-        return { success: true, data }
-    } catch (err) {
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: err.message
-            })
-        }
-        throw new ActionError({
-            error: "get single invoice:unknown error"
-        })
-    }
+    const user = await requireUser()
+    return { success: true, data: await prisma.invoice.findUnique({ where: { id, userId: user.id } }) }
 }
 
-// Creates a new invoice. CASH kicks off a ZarinPal payment session and returns
-// a redirect URL to the gateway. CREDIT just creates a PENDING invoice for an
-// admin to review later — no balance change happens until it's approved.
-export async function CreateInvoiceAction(input: {
-    amount: number
-    paymentType: "CASH" | "CREDIT"
-    orderBatchId?: string
-}) {
-    try {
-        const session = await auth()
-        if (!session || !session.user.id) {
-            throw new Error("شما در هیچ حسابی لاگین نیستید")
-        }
-
-        if (!input.amount || input.amount <= 0) {
-            throw new Error("مبلغ نامعتبر است")
-        }
-
-        // if (input.orderBatchId) {
-        //     const order = await prisma.orderBatch.findUnique({
-        //         where: {
-        //             id: input.orderBatchId,
-        //             userId: session.user.id
-        //         }
-        //     })
-        //     if (!order) throw new Error("سفارش یافت نشد")
-        // }
-
-        const invoice = await prisma.invoice.create({
-            data: {
-                userId: session.user.id,
-                amount: input.amount,
-                paymentType: input.paymentType,
-                status: input.paymentType == 'CREDIT' ? 'WAITING_FOR_APPORVAL' : 'PENDING'
-            }
-        })
-
-        return { success: true, data: invoice }
-    } catch (err) {
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: err.message
-            })
-        }
-        throw new ActionError({
-            error: "create invoice:unknown error"
-        })
+export async function CreateInvoiceAction(input: { amount: number, paymentType: "CASH" | "CREDIT", orderBatchId?: string }) {
+    const user = await requireUser()
+    const value = z.object({ amount: z.number().int().min(1000).max(2147483647), paymentType: z.enum(['CASH', 'CREDIT']) }).parse(input)
+    if (input.orderBatchId) {
+        const order = await prisma.orderBatch.findUnique({ where: { id: input.orderBatchId, userId: user.id }, select: { id: true } })
+        if (!order) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
     }
+    const data = await prisma.$transaction(async tx => {
+        const invoice = await tx.invoice.create({ data: { ...value, userId: user.id,
+            status: value.paymentType === 'CREDIT' ? 'WAITING_FOR_APPORVAL' : 'PENDING' } })
+        await writeAudit(tx, user.id, 'INVOICE_CREATED', 'Invoice', invoice.id, `${value.paymentType}: ${value.amount}`)
+        return invoice
+    })
+    revalidatePath('/invoices')
+    revalidatePath('/admin/invoices')
+    return { success: true, data }
 }
 
-// Re-initiates a ZarinPal payment session for an existing PENDING cash invoice
-// (e.g. the user's first attempt was canceled or failed on the gateway side).
 export async function PayInvoiceAction(invoiceId: string) {
-    try {
-        const session = await auth()
-        if (!session || !session.user.id) {
-            throw new Error("شما در هیچ حسابی لاگین نیستید")
-        }
+    const user = await requireUser()
+    const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId, userId: user.id } })
+    if (!invoice || invoice.status !== 'PENDING' || invoice.paymentType !== 'CASH') throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+    // Preserve the authority so concurrent clicks cannot overwrite a payable session.
+    if (invoice.zarinpalAuthority) return { success: true, redirectUrl: paymentUrl(invoice.zarinpalAuthority) }
+    const appUrl = process.env.APP_URL
+    if (!appUrl) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+    const { authority } = await zarinpalRequestPayment({ amountToman: invoice.amount,
+        description: `پرداخت فاکتور ${invoice.invoiceNumber}`, callbackUrl: new URL('/invoices/verify', appUrl).toString() })
+    const data = await prisma.$transaction(async tx => {
+        const result = await tx.invoice.updateMany({ where: { id: invoice.id, status: 'PENDING', zarinpalAuthority: null }, data: { zarinpalAuthority: authority } })
+        if (result.count) await writeAudit(tx, user.id, 'PAYMENT_STARTED', 'Invoice', invoice.id)
+        return tx.invoice.findUniqueOrThrow({ where: { id: invoice.id } })
+    })
+    if (data.status !== 'PENDING' || !data.zarinpalAuthority) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+    return { success: true, redirectUrl: paymentUrl(data.zarinpalAuthority) }
+}
 
-        const invoice = await prisma.invoice.findUnique({
-            where: {
-                id: invoiceId,
-                userId: session.user.id
-            }
-        })
+function paymentUrl(authority: string) {
+    const host = process.env.ZARINPAL_SANDBOX !== 'false' ? 'https://sandbox.zarinpal.com' : 'https://www.zarinpal.com'
+    return `${host}/pg/StartPay/${encodeURIComponent(authority)}`
+}
 
-        if (!invoice) throw new Error("فاکتور یافت نشد")
-        if (invoice.status !== "PENDING") throw new Error("این فاکتور قابل پرداخت نیست")
-        if (invoice.paymentType !== "CASH") throw new Error("این فاکتور اعتباری است و توسط ادمین بررسی می‌شود")
-
-        const callbackUrl = `${process.env.APP_URL}/invoices/verify`
-
-        const { authority, paymentUrl } = await zarinpalRequestPayment({
-            amountToman: invoice.amount,
-            description: `پرداخت فاکتور شماره ${invoice.invoiceNumber}`,
-            callbackUrl
-        })
-
-        await prisma.invoice.update({
-            where: { id: invoice.id },
-            data: { zarinpalAuthority: authority }
-        })
-
-        return { success: true, redirectUrl: paymentUrl }
-    } catch (err) {
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: err.message
-            })
-        }
-        throw new ActionError({
-            error: "pay invoice:unknown error"
-        })
-    }
+export async function VerifyInvoicePaymentAction(authority: string, status: string) {
+    const user = await requireUser()
+    if (!authority || authority.length > 200) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+    const invoice = await prisma.invoice.findUnique({ where: { zarinpalAuthority: authority, userId: user.id } })
+    if (!invoice || invoice.paymentType !== 'CASH') throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+    if (invoice.status === 'PAID') return { success: true, invoiceId: invoice.id }
+    if (status !== 'OK' || invoice.status !== 'PENDING') return { success: false, invoiceId: invoice.id }
+    const verified = await zarinpalVerifyPayment({ amountToman: invoice.amount, authority })
+    if (!verified.success) return { success: false, invoiceId: invoice.id }
+    await prisma.$transaction(async tx => {
+        const updated = await tx.invoice.updateMany({ where: { id: invoice.id, status: 'PENDING', zarinpalAuthority: authority },
+            data: { status: 'PAID', paidAt: new Date(), zarinpalRefId: String(verified.refId) } })
+        if (!updated.count) return
+        await tx.user.update({ where: { id: invoice.userId }, data: { credit: { increment: invoice.amount } } })
+        await writeAudit(tx, user.id, 'PAYMENT_VERIFIED', 'Invoice', invoice.id, String(invoice.amount))
+    })
+    revalidatePath('/invoices', 'layout')
+    revalidatePath('/admin/invoices', 'layout')
+    revalidatePath('/admin/summary')
+    return { success: true, invoiceId: invoice.id }
 }

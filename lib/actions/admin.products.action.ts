@@ -1,5 +1,8 @@
 "use server"
 
+import { requireAdmin } from "../access"
+import { writeAudit } from "../audit"
+
 import { revalidatePath } from "next/cache"
 import { ActionError } from "../action-error"
 import prisma from "../db"
@@ -28,7 +31,10 @@ export async function ADMIN_CreateProductsAction(
     }
 ) {
     try {
-        const data = await prisma.product.create({
+        const actor = await requireAdmin()
+        return await prisma.$transaction(async tx => {
+
+        const data = await tx.product.create({
             data: {
                 name: input.name,
                 description: input.description,
@@ -45,7 +51,7 @@ export async function ADMIN_CreateProductsAction(
         })
 
         if (input.lens && data) {
-            await prisma.lens.create({
+            await tx.lens.create({
                 data: {
                     positiveFromSph: input.lens.positiveFromSph,
                     positivToSph: input.lens.positivToSph,
@@ -58,8 +64,11 @@ export async function ADMIN_CreateProductsAction(
             })
         }
 
+        await writeAudit(tx, actor.id, "ADMIN_CreateProductsAction", "Product", data.id)
         revalidatePath('/admin/products')
         return { data, success: true }
+    
+        })
     } catch (err) {
         console.error("ADMIN_CreateProductsAction failed:", err);
 
@@ -77,6 +86,8 @@ export async function ADMIN_CreateProductsAction(
 
 export async function ADMIN_GetProducts() {
     try {
+        await requireAdmin()
+
         const data = await prisma.product.findMany({
             include: {
                 lens: true,
@@ -104,6 +115,8 @@ export async function ADMIN_GetProducts() {
 
 export async function ADMIN_GetSingleProduct(id: string) {
     try {
+        await requireAdmin()
+
         const data = await prisma.product.findFirst({
             include: {
                 lens: true,
@@ -154,6 +167,9 @@ export async function ADMIN_UpdateProduct(
     }
 ) {
     try {
+        const actor = await requireAdmin()
+        return await prisma.$transaction(async tx => {
+
         const {
             tagIds,
             lens,
@@ -183,12 +199,16 @@ export async function ADMIN_UpdateProduct(
             includesCleaningCloth: includesCloth,
         };
 
-        const result = await prisma.product.update({
+        const result = await tx.product.update({
             where: { id },
             data,
         });
 
+        await writeAudit(tx, actor.id, "ADMIN_UpdateProduct", "Product", result.id)
+        revalidatePath('/admin/products')
         return { success: true, data: result };
+         
+        })
     } catch (err) {
         console.error("ADMIN_UpdateProduct failed:", err);
 
@@ -202,7 +222,10 @@ export async function ADMIN_UpdateProduct(
 
 export async function ADMIN_UpdateProductCategorys(id: string, name: string, description: string) {
     try {
-        const data = await prisma.subCategory.update({
+        const actor = await requireAdmin()
+        return await prisma.$transaction(async tx => {
+
+        const data = await tx.subCategory.update({
             where: { id: id },
             data: {
                 name: name,
@@ -210,9 +233,12 @@ export async function ADMIN_UpdateProductCategorys(id: string, name: string, des
             }
         })
 
+        await writeAudit(tx, actor.id, "ADMIN_UpdateProductCategorys", "SubCategory", data.id)
         revalidatePath(`/admin/product-category`)
 
         return { data, success: true }
+    
+        })
     } catch (err) {
         console.log(err);
         throw new ActionError({ error: "failed to get product categorys, check console" })
@@ -221,21 +247,27 @@ export async function ADMIN_UpdateProductCategorys(id: string, name: string, des
 
 export async function ADMIN_DeleteProduct(id: string,lensId:string | null) {
     try {
+        const actor = await requireAdmin()
+        return await prisma.$transaction(async tx => {
+
         if(lensId){
-            await prisma.lens.delete({
+            await tx.lens.delete({
                 where:{id:lensId}
             })
         }
         
-        const data = await prisma.product.delete({
+        const data = await tx.product.delete({
             where:{
                 id
             }
         })
 
+        await writeAudit(tx, actor.id, "ADMIN_DeleteProduct", "Product", id)
         revalidatePath(`/admin/products`)
 
         return { success: true }
+    
+        })
     } catch (err) {
         console.log(err);
         throw new ActionError({ error: "failed to delete product, check console" })

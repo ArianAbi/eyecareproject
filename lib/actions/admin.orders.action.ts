@@ -1,5 +1,8 @@
 "use server"
 
+import { requireAdmin } from "../access"
+import { writeAudit } from "../audit"
+import { orderWhere, orderStatuses, type OrderFilters } from "../order-filters"
 import { OrderItemStatus } from "@/generated/prisma/enums"
 import { ActionError } from "../action-error"
 import { auth } from "../Auth"
@@ -8,50 +11,10 @@ import { Prisma } from "@/generated/prisma/client"
 import { PaginationObjectDB } from "../pagination-object"
 import { revalidatePath } from "next/cache"
 
-type ExtendedOrderStatus = OrderItemStatus | 'ALL'
-
-export async function ADMIN_GetOrdersAction(filters: {
-    status?: ExtendedOrderStatus,
-    excludeStatus?: boolean,
-    userId?: string | null,
-    page?: number
-}) {
+export async function ADMIN_GetOrdersAction(filters: OrderFilters) {
     try {
-        const session = await auth()
-
-        if (!session) {
-            throw Error("you are not logged in")
-        }
-
-        const loggedInUser = await prisma.user.findUnique({
-            where: {
-                id: session.user.id
-            },
-            select: {
-                admin: true
-            }
-        })
-
-        if (!loggedInUser || !loggedInUser.admin) {
-            throw Error("you dont have permission")
-        }
-
-        const whereFilter: Prisma.OrderBatchWhereInput = {}
-
-        //PAGINATION
-
-
-        //STATUS FILTER
-        if (filters.status !== 'ALL') {
-            whereFilter.status = filters.excludeStatus ? { not: filters.status } : filters.status
-        } else {
-            whereFilter.status = {}
-        }
-
-        // USER FILTER
-        if (filters.userId) {
-            whereFilter.userId = filters.userId
-        }
+        await requireAdmin()
+        const whereFilter = orderWhere(filters)
 
         const { data, total } = await prisma.$transaction(async tnx => {
             const data = await tnx.orderBatch.findMany({
@@ -71,7 +34,7 @@ export async function ADMIN_GetOrdersAction(filters: {
                     },
                 },
                 orderBy: {
-                    createdAt: 'desc'
+                    createdAt: filters.sort === 'oldest' ? 'asc' : 'desc'
                 },
             })
 
@@ -99,6 +62,7 @@ export async function ADMIN_GetOrdersAction(filters: {
 
 export async function ADMIN_GetSingleOrder(id: string) {
     try {
+        await requireAdmin()
         const data = await prisma.orderBatch.findUnique({
             where: {
                 id
@@ -150,14 +114,20 @@ export async function ADMIN_UpdateOrderStatus({
     id, newStatus
 }: { id: string, newStatus: OrderItemStatus }) {
     try {
-        const data = await prisma.orderBatch.update({
-            where: {
-                id
-            },
-            data: {
-                status: newStatus
-            }
+        const actor = await requireAdmin()
+        if (!orderStatuses.includes(newStatus)) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+        const data = await prisma.$transaction(async tx => {
+            const previous = await tx.orderBatch.findUniqueOrThrow({ where: { id } })
+            const order = await tx.orderBatch.update({ where: { id }, data: {
+                status: newStatus,
+                orderUpdate: { create: { updatedStatus: newStatus } },
+            } })
+            await writeAudit(tx, actor.id, "ORDER_STATUS_CHANGED", "OrderBatch", id, `${previous.status} -> ${newStatus}`)
+            return order
         })
+        revalidatePath(`/admin/orders/${id}`)
+        revalidatePath('/orders', 'layout')
+        revalidatePath('/admin/summary')
 
         revalidatePath('/admin/orders')
 

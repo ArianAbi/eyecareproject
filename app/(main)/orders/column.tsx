@@ -1,5 +1,7 @@
 "use client"
 
+import { calculateOrderTotal } from "@/lib/order-credit"
+
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
 import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
@@ -45,9 +47,7 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
         accessorKey: "total-price",
         header: () => <div className="text-center">مبلغ سفارش</div>,
         cell: ({ row }) => {
-            const total = row.original.orderItems.reduce((acc,current)=>{
-                return acc += current.purchasedPrice
-            },0)
+            const total = calculateOrderTotal(row.original)
             
             return <div className="text-center">
                 <span>

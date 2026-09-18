@@ -150,10 +150,12 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
   const pathname = usePathname()
   const Icon = group.icon
   const isGroupActive = group.items.some((item) => item.path === pathname)
+  const [open, setOpen] = React.useState(isGroupActive)
 
   return (
     <Collapsible
-      defaultOpen={isGroupActive}
+      open={open}
+      onOpenChange={setOpen}
       className="group/collapsible"
       render={<SidebarMenuItem />}
     >
@@ -193,6 +195,10 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
 
 export const AdminSidebarData: SidebarDataType = {
   menus: [
+    { group_title: "خلاصه مدیریت", icon: LayoutDashboard, items: [{ title: "خلاصه مدیریت", path: "/admin/summary" }] },
+    { group_title: "گزارش مالی", icon: BanknoteArrowUp, items: [{ title: "گزارش مالی", path: "/admin/financial" }] },
+    { group_title: "تیکت‌ها", icon: ReceiptIcon, items: [{ title: "تیکت‌ها", path: "/admin/tickets" }] },
+    { group_title: "گزارش فعالیت‌ها", icon: List, items: [{ title: "گزارش فعالیت‌ها", path: "/admin/logs" }] },
     {
       group_title: "داشبورد",
       icon: LayoutDashboard,
@@ -258,7 +264,7 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "صورتحساب ها",
-          path: `/invoices`
+          path: `/admin/invoices`
         }
       ]
     }
@@ -272,6 +278,8 @@ export const AdminSidebarData: SidebarDataType = {
 
 export const UserSidebarData: SidebarDataType = {
   menus: [
+    { group_title: "خانه", icon: Globe, items: [{ title: "خانه", path: "/" }] },
+    { group_title: "پشتیبانی", icon: ReceiptIcon, items: [{ title: "پشتیبانی و تیکت‌ها", path: "/tickets" }] },
     {
       group_title: "سفارش عدسی",
       icon: ReceiptIcon,

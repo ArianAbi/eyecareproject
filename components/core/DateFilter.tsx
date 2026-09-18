@@ -1,5 +1,6 @@
 "use client"
 
+import { parseDateFilterParam } from "@/lib/prisma-date-filter"
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { format as formatGregorian } from "date-fns"
@@ -33,7 +34,7 @@ export function DateFilter({
   label?: string
   disabled?: boolean
 }) {
-  const parsedInitial: DateFilterValue | null = initialValue
+  const parsedInitial: DateFilterValue | null = initialValue && parseDateFilterParam(initialValue)
     ? JSON.parse(initialValue)
     : null
 
@@ -41,13 +42,13 @@ export function DateFilter({
   // Reopening a previous range selection starts the checkbox checked.
   const [isRange, setIsRange] = useState(Boolean(parsedInitial?.to))
   const [single, setSingle] = useState<Date | undefined>(
-    parsedInitial ? new Date(parsedInitial.from) : undefined
+    parsedInitial ? new Date(`${parsedInitial.from}T00:00:00`) : undefined
   )
   const [range, setRange] = useState<DateRange | undefined>(
     parsedInitial
       ? {
-        from: new Date(parsedInitial.from),
-        to: parsedInitial.to ? new Date(parsedInitial.to) : undefined,
+        from: new Date(`${parsedInitial.from}T00:00:00`),
+        to: parsedInitial.to ? new Date(`${parsedInitial.to}T00:00:00`) : undefined,
       }
       : undefined
   )
@@ -63,6 +64,7 @@ export function DateFilter({
   function commit(value: DateFilterValue | null) {
     if (paramKey) {
       const params = new URLSearchParams(searchParams.toString())
+      for (const page of ["page", "pendingPage", "restPage"]) params.delete(page)
       if (value) params.set(paramKey, JSON.stringify(value))
       else params.delete(paramKey)
       router.push(`${pathname}?${params.toString()}`)

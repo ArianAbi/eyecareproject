@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form"
 import z from "zod"
 
 const schema = z.object({
-    amount: z.number().min(1000, "حداقل مبلغ ۱٬۰۰۰ تومان است"),
+    amount: z.number().int().max(2147483647).min(1000, "حداقل مبلغ ۱٬۰۰۰ تومان است"),
     paymentType: z.enum(["CASH", "CREDIT"])
 })
 
@@ -49,7 +49,6 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId }: {
                 ...(orderBatchId ? { orderBatchId: orderBatchId } : {})
             })
 
-            //TODO : creating a credit invoice throws a error
 
             toast.add({
                 type: "Success",
@@ -57,6 +56,7 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId }: {
             })
 
             setOpen(false)
+            router.push(`/invoices/${res.data.id}`)
             router.refresh()
         } catch (err) {
             setLoading(false)

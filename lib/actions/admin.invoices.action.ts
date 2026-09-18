@@ -1,104 +1,57 @@
 "use server"
 
-import { InvoiceWhereInput } from "@/generated/prisma/models"
-import { ActionError } from "../action-error"
-import { auth } from "../Auth"
 import prisma from "../db"
+import { requireAdmin } from "../access"
+import { writeAudit } from "../audit"
 import { PaginationObjectDB } from "../pagination-object"
+import { revalidatePath } from "next/cache"
+import { invoiceWhere, type InvoiceFilters } from "../invoice-filters"
 
-// TODO: replace this check with whatever your existing ADMIN_ actions use
-// (e.g. see ADMIN_UpdateMasterCategorys) — this assumes a `session.user.admin`
-// boolean that isn't currently in your NextAuth session type.
-async function requireAdmin() {
-    // const session = await auth()
-    // if (!session || !session.user.admin) {
-    //     throw new Error("شما دسترسی ادمین ندارید")
-    // }
-    // return session
-    const session = await auth()
-    if (!session) {
-        throw new Error("شما دسترسی ادمین ندارید")
-    }
-    return session
+export async function ADMIN_GetInvoicesAction(filters: InvoiceFilters = {}) {
+    await requireAdmin()
+    const where = invoiceWhere(filters)
+    const data = await prisma.$transaction(async tx => ({
+        invoices: await tx.invoice.findMany({ where, include: { user: { select: { id: true, username: true } } },
+            orderBy: { createdAt: 'desc' }, ...PaginationObjectDB(filters.page) }),
+        total: await tx.invoice.count({ where }),
+    }))
+    return { success: true, data }
 }
 
-export async function ADMIN_GetInvoicesAction(filters: {
-    page?: number
-    status?: "PENDING" | "PAID" | "CANCELED"
-}) {
-    try {
-        await requireAdmin()
-
-        // const where:InvoiceWhereInput = filters.status ? { : filters.status } : {}
-
-        const data = await prisma.$transaction(async tnx => {
-            const invoices = await tnx.invoice.findMany({
-                include: {
-                    user: { select: { id: true, username: true } }
-                },
-                orderBy: { createdAt: "desc" },
-                ...(PaginationObjectDB(filters.page))
-            })
-            const total = await tnx.invoice.count()
-            return { invoices, total }
-        })
-
-        return { success: true, data }
-    } catch (err) {
-        if (err instanceof Error) throw new ActionError({ error: err.message })
-        throw new ActionError({ error: "admin get invoices:unknown error" })
-    }
+export async function ADMIN_GetSingleInvoiceAction(id: string) {
+    await requireAdmin()
+    return prisma.invoice.findUnique({ where: { id }, include: { user: { select: { username: true } } } })
 }
 
-// Approves a PENDING invoice (CASH or CREDIT) and credits the user's balance.
-// Guarded so it can only ever fire once per invoice, even under concurrent calls.
 export async function ADMIN_ApproveInvoiceAction(invoiceId: string) {
-    try {
-        await requireAdmin()
-
-        const invoice = await prisma.$transaction(async tnx => {
-            const updated = await tnx.invoice.updateMany({
-                where: { id: invoiceId, status: "PENDING" },
-                data: { status: "PAID" }
-            })
-
-            if (updated.count === 0) {
-                throw new Error("این فاکتور قبلا بررسی شده یا یافت نشد")
-            }
-
-            const invoice = await tnx.invoice.findUniqueOrThrow({ where: { id: invoiceId } })
-
-            await tnx.user.update({
-                where: { id: invoice.userId },
-                data: { credit: { increment: invoice.amount } }
-            })
-
-            return invoice
+    const actor = await requireAdmin()
+    const invoice = await prisma.$transaction(async tx => {
+        const updated = await tx.invoice.updateMany({
+            where: { id: invoiceId, status: 'WAITING_FOR_APPORVAL', paymentType: 'CREDIT' },
+            data: { status: 'PAID', paidAt: new Date() },
         })
-
-        return { success: true, data: invoice }
-    } catch (err) {
-        if (err instanceof Error) throw new ActionError({ error: err.message })
-        throw new ActionError({ error: "admin approve invoice:unknown error" })
-    }
+        if (!updated.count) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+        const invoice = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } })
+        await tx.user.update({ where: { id: invoice.userId }, data: { credit: { increment: invoice.amount } } })
+        await writeAudit(tx, actor.id, 'INVOICE_APPROVED', 'Invoice', invoice.id, String(invoice.amount))
+        return invoice
+    })
+    revalidatePath('/admin/invoices', 'layout')
+    revalidatePath('/invoices', 'layout')
+    revalidatePath('/admin/summary')
+    return { success: true, data: invoice }
 }
 
 export async function ADMIN_RejectInvoiceAction(invoiceId: string) {
-    try {
-        await requireAdmin()
-
-        const updated = await prisma.invoice.updateMany({
-            where: { id: invoiceId, status: "PENDING" },
-            data: { status: "CANCELED" }
+    const actor = await requireAdmin()
+    await prisma.$transaction(async tx => {
+        const updated = await tx.invoice.updateMany({
+            where: { id: invoiceId, status: 'WAITING_FOR_APPORVAL', paymentType: 'CREDIT' }, data: { status: 'CANCELED' },
         })
-
-        if (updated.count === 0) {
-            throw new Error("این فاکتور قبلا بررسی شده یا یافت نشد")
-        }
-
-        return { success: true }
-    } catch (err) {
-        if (err instanceof Error) throw new ActionError({ error: err.message })
-        throw new ActionError({ error: "admin reject invoice:unknown error" })
-    }
+        if (!updated.count) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
+        await writeAudit(tx, actor.id, 'INVOICE_REJECTED', 'Invoice', invoiceId)
+    })
+    revalidatePath('/admin/invoices', 'layout')
+    revalidatePath('/invoices', 'layout')
+    return { success: true }
 }

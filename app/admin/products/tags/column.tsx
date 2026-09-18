@@ -18,7 +18,7 @@ import { Check, PenIcon, TrashIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
-import { colorSelectMap, colorOptionsType } from "./AdminCreateTags";
+import { colorSelectMap, colorOptionsType } from "@/components/core/FormFieldColorSelectShorthand";
 
 export const AdminTagsColumn: ColumnDef<Tags>[] = [
     {
@@ -178,7 +178,7 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
 
     const onSubmit = handleSubmit(async values => {
         try {
-            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description)
+            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description, data.color)
 
             toast.add({
                 title: "دسته بندی بروزرسانی شد",
