@@ -18,17 +18,43 @@ model User {
   number   String  @unique
   password String
   admin    Boolean @default(false)
-  address  String  @default("")
   credit   Int     @default(0)
 
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  orders    OrderBatch[]
-  invoices  Invoice[]
-  cart      Cart?
-  tickets   Ticket[]
+  address        String @default("")
+  nationalCode   String @default("")
+  managementName String @default("")
+  storeName      String @default("")
+
+  accountVerifyed Boolean @default(false)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  orders         OrderBatch[]
+  invoices       Invoice[]
+  cart           Cart?
+  tickets        Ticket[]
   ticketMessages TicketMessage[]
-  auditLogs AuditLog[]
+  auditLogs      AuditLog[]
+}
+
+enum NotificationType {
+  ALERT
+  WARNING
+  SUCCESS
+  ERROR
+  NOTIFY
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  title       String
+  description String
+  type        NotificationType
+
+  important Boolean @default(false)
+
+  createdAt DateTime @default(now())
 }
 
 model MasterCategory {
@@ -265,7 +291,7 @@ enum InvoiceStatus {
 model Invoice {
   id     String @id @default(uuid())
   userId String
-  user   User   @relation(fields: [userId], references: [id],onDelete: Restrict)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   paymentType InvoicePaymentType
   amount      Int
@@ -274,10 +300,10 @@ model Invoice {
 
   status InvoiceStatus @default(PENDING)
 
-  invoiceNumber Int @unique @default(autoincrement())
-  zarinpalAuthority String? @unique
-  zarinpalRefId String?
-  paidAt DateTime?
+  invoiceNumber     Int       @unique @default(autoincrement())
+  zarinpalAuthority String?   @unique
+  zarinpalRefId     String?
+  paidAt            DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -292,39 +318,42 @@ enum TicketStatus {
 }
 
 model Ticket {
-  id String @id @default(uuid())
-  subject String
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status TicketStatus @default(OPEN)
-  messages TicketMessage[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String          @id @default(uuid())
+  subject   String
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status    TicketStatus    @default(OPEN)
+  messages  TicketMessage[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
   @@index([userId, updatedAt])
   @@index([status, updatedAt])
 }
 
 model TicketMessage {
-  id String @id @default(uuid())
-  ticketId String
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorId String
-  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  fromAdmin Boolean @default(false)
-  message String
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  fromAdmin Boolean  @default(false)
+  message   String
   createdAt DateTime @default(now())
+
   @@index([ticketId, createdAt])
 }
 
 model AuditLog {
-  id String @id @default(uuid())
-  actorId String?
-  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
-  action String
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
   entityType String
-  entityId String?
-  detail String?
-  createdAt DateTime @default(now())
+  entityId   String?
+  detail     String?
+  createdAt  DateTime @default(now())
+
   @@index([createdAt])
   @@index([actorId, createdAt])
   @@index([entityType, createdAt])

@@ -1,24 +1,112 @@
-import { ADMIN_GetFinancialSummaryAction } from "@/lib/actions/admin.summary.action"
-import { Card, CardContent } from "../ui/card"
+"use client"
 
-export async function FinancialSummary({ day }: { day?: string }) {
-    const data = await ADMIN_GetFinancialSummaryAction(day)
-    const max = Math.max(1, ...data.series.map(row => Math.max(row.cash, row.credit)))
-    return <div className="space-y-5">
-        <p className="text-sm text-muted-foreground">۱۴ روز منتهی به روز انتخاب‌شده؛ پرداخت نقدی و اعتبار تاییدشده جداگانه نمایش داده می‌شوند. همه مبالغ به تومان است.</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[
-            ['پرداخت نقدی تاییدشده', data.cashTotal], ['اعتبار تاییدشده', data.creditTotal],
-            ['درخواست اعتبار در انتظار (همه روزها)', data.pendingAmount], ['موجودی فعلی کاربران', data.totalBalance],
-        ].map(([label, value]) => <Card key={label}><CardContent className="space-y-2 pt-5"><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-semibold">{Number(value).toLocaleString('fa-IR')}</p></CardContent></Card>)}</div>
-        <div className="rounded-lg border p-4"><h2 className="mb-4 font-semibold">روند پرداخت و اعتبار</h2>
-            <p className="mb-4 text-xs"><span className="text-emerald-500">■ نقدی</span> · <span className="text-blue-500">■ اعتبار</span></p>
-            <div className="space-y-3">{data.series.map(row => <div key={row.day} className="grid grid-cols-[5rem_1fr] items-center gap-3 text-xs">
-                <span>{new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric' }).format(new Date(`${row.day}T12:00:00Z`))}</span>
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2"><div className="h-2 min-w-px rounded bg-emerald-500" style={{ width: `${row.cash / max * 65}%` }} /><span>نقدی {row.cash.toLocaleString('fa-IR')}</span></div>
-                    <div className="flex items-center gap-2"><div className="h-2 min-w-px rounded bg-blue-500" style={{ width: `${row.credit / max * 65}%` }} /><span>اعتبار {row.credit.toLocaleString('fa-IR')}</span></div>
-                </div>
-            </div>)}</div>
-        </div>
-    </div>
+import { useEffect, useRef, useState } from "react"
+
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { FinancialAreaChart } from "./financial-area-chart" 
+import { FinancialRange,ADMIN_GetFinancialSummaryAction } from "@/lib/actions/admin.summary.action"
+// adjust this path to wherever ADMIN_GetFinancialSummaryAction lives
+
+
+type Summary = Awaited<ReturnType<typeof ADMIN_GetFinancialSummaryAction>>
+
+// Base UI's <SelectValue /> reads the trigger label from the `items` passed to <Select>
+const RANGE_ITEMS: { label: string; value: FinancialRange }[] = [
+  { label: "امروز", value: "today" },
+  { label: "این ماه", value: "this month" },
+  { label: "۱۲ ماه اخیر", value: "months" },
+  { label: "امسال", value: "this year" },
+  { label: "همه زمان‌ها", value: "all time" },
+]
+
+export function FinancialSummaryCard({
+  initialRange = "this month",
+  initialData,
+}: {
+  initialRange?: FinancialRange
+  initialData?: Summary
+}) {
+  const [range, setRange] = useState<FinancialRange>(initialRange)
+  const [data, setData] = useState<Summary | null>(initialData ?? null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const latest = useRef(0) // ignore out-of-order responses when the user switches quickly
+
+  async function load(next: FinancialRange) {
+    const id = ++latest.current
+    setLoading(true)
+    setError(false)
+    try {
+      const result = await ADMIN_GetFinancialSummaryAction(next)
+      if (id === latest.current) setData(result)
+    } catch {
+      if (id === latest.current) setError(true)
+    } finally {
+      if (id === latest.current) setLoading(false)
+    }
+  }
+
+  // fetch on mount only when the server didn't pass initialData
+  useEffect(() => {
+    if (!initialData) load(range)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function onRangeChange(value: FinancialRange | null) {
+    if (!value || value === range) return
+    setRange(value)
+    load(value)
+  }
+
+  return (
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle>خلاصه مالی</CardTitle>
+        <CardDescription>پرداخت‌های نقدی و اعتباری تأییدشده</CardDescription>
+        <CardAction>
+          <Select items={RANGE_ITEMS} value={range} onValueChange={onRangeChange}>
+            <SelectTrigger className="w-40" aria-label="بازه زمانی">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RANGE_ITEMS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardAction>
+      </CardHeader>
+
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+        {error ? (
+          <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
+            خطا در دریافت اطلاعات. دوباره تلاش کنید.
+          </div>
+        ) : data ? (
+          <div className={loading ? "opacity-50 transition-opacity" : "transition-opacity"}>
+            <FinancialAreaChart series={data.series} bucket={data.bucket} />
+          </div>
+        ) : (
+          <Skeleton className="h-[320px] w-full" />
+        )}
+      </CardContent>
+    </Card>
+  )
 }

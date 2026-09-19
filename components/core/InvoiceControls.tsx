@@ -24,7 +24,31 @@ export function InvoiceControls({ id, admin = false }: { id: string, admin?: boo
             } catch { setError('عملیات انجام نشد؛ دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.') }
         })
     }
-    return <div className="space-y-2"><div className="flex flex-wrap gap-2">
-        {admin ? <><Button disabled={pending} onClick={() => run('approve')}>تایید اعتبار</Button><Button disabled={pending} variant="outline" onClick={() => run('reject')}>رد درخواست</Button></> : <Button disabled={pending} onClick={() => run('pay')}>{pending ? 'اتصال به درگاه…' : 'پرداخت آنلاین'}</Button>}
-    </div>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>
+    return <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+            {admin ? <>
+                <Button
+                    disabled={pending}
+                    onClick={() => run('approve')}>
+                    تایید اعتبار
+                </Button>
+                <Button
+                    disabled={pending}
+                    variant="outline"
+                    onClick={() => run('reject')}>
+                    رد درخواست
+                </Button>
+            </>
+                :
+                <Button
+                    disabled={pending}
+                    onClick={() => run('pay')}>
+                    {pending ?
+                        'اتصال به درگاه…'
+                        :
+                        'پرداخت آنلاین'}
+                </Button>
+            }
+
+        </div>{error || true && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>
 }

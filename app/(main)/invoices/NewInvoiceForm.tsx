@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
+import { useSearchParamsUtil } from "@/hooks/useSearchParams"
 import { CreateInvoiceAction } from "@/lib/actions/invoices.action"
 import { cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,11 +24,15 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export function NewInvoiceForm({ defaultAmount, orderBatchId }: {
+export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defaultOpenParamKey }: {
     defaultAmount?: number
-    orderBatchId?: string
+    orderBatchId?: string,
+    defaultOpen?: boolean,
+    defaultOpenParamKey: string,
 }) {
     const [loading, setLoading] = useState(false)
+    const [open, setOpen] = useState(defaultOpen ?? false)
+    const { remove } = useSearchParamsUtil()
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -75,7 +80,11 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId }: {
 
     const amount = form.watch('amount')
 
-    const [open, setOpen] = useState(false)
+
+    function RemoveDefaultOpenParam() {
+
+        remove(defaultOpenParamKey)
+    }
 
     return <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'mb-2')}>
@@ -137,12 +146,12 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId }: {
                     </div>
 
                     <div className="grid grid-cols-2 mt-5 gap-1">
-                        <Button type="submit" disabled={loading} className="w-full" variant={'green'}>
+                        <Button onClick={RemoveDefaultOpenParam} type="submit" disabled={loading} className="w-full" variant={'green'}>
                             {loading ? <Spinner className="me-2" /> : null}
                             ثبت فاکتور
                         </Button>
 
-                        <AlertDialogCancel disabled={loading}>لغو</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => RemoveDefaultOpenParam()} disabled={loading}>لغو</AlertDialogCancel>
                     </div>
 
                 </form>
