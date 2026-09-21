@@ -1,0 +1,63 @@
+{
+  "productsCreatedThisRun": [
+    "تست عدسی روزانه 141155",
+    "تست عدسی بلوکات 141155"
+  ],
+  "results": [
+    {
+      "path": "/admin",
+      "url": "http://localhost:3000/admin",
+      "title": "مدیریت | ICN",
+      "hasApplicationError": false
+    },
+    {
+      "path": "/admin/users",
+      "url": "http://localhost:3000/admin/users",
+      "title": "مدیریت | ICN",
+      "hasApplicationError": false
+    },
+    {
+      "path": "/admin/analytics",
+      "url": "http://localhost:3000/admin/analytics",
+      "title": "آمار ورودی سایت",
+      "hasApplicationError": false
+    },
+    {
+      "path": "/admin/glasslens-order",
+      "url": "http://localhost:3000/admin/glasslens-order",
+      "title": "ثبت سفارش برای کاربر",
+      "hasApplicationError": false
+    },
+    {
+      "path": "/glasslens-order",
+      "url": "http://localhost:3000/glasslens-order",
+      "title": "ثبت سفارش عدسی | ICN",
+      "hasApplicationError": false
+    }
+  ],
+  "mobile": {
+    "viewport": 390,
+    "bodyWidth": 390,
+    "table": [
+      {
+        "width": 354,
+        "parentWidth": 354,
+        "parentOverflow": "auto"
+      },
+      {
+        "width": 600,
+        "parentWidth": 354,
+        "parentOverflow": "auto"
+      },
+      {
+        "width": 354,
+        "parentWidth": 370,
+        "parentOverflow": "visible"
+      }
+    ],
+    "sections": [
+      "none",
+      "372px"
+    ]
+  }
+}
