@@ -22,7 +22,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { SidebarDataType } from "@/types/sidebar-data"
-import { useOrderCount } from "@/app/admin/AdminProviders"
+import { useApprovalCount, useOrderCount } from "@/app/admin/AdminProviders"
 import { toast } from "../ui/toast"
 
 // ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ function SidebarBadge({ badgeFn }: { badgeFn?: () => number | null }) {
 
   if (count <= 0) return
 
-  return <div className="grid place-items-center size-4 text-xs rounded-full bg-red-500 z-50 absolute right-0.5 top-0">
+  return <div className="grid place-items-center min-w-4 h-4 px-1 text-xs text-white rounded-full bg-red-500 z-50 absolute right-0.5 top-0">
     {count}
   </div>
 }
@@ -212,6 +212,7 @@ export const AdminSidebarData: SidebarDataType = {
     {
       group_title: "مدیریت کاربران",
       icon: User,
+      badgeFn: useApprovalCount,
       items: [
         {
           title: "مدیریت کاربران",

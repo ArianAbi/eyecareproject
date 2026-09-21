@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "مدیریت", robots: { index: fals
 import { AdminSidebarData, CustomSidebar } from "@/components/core/CustomSidebar";
 import Header from "@/components/core/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { OrderCountProvider } from "./AdminProviders";
+import { ApprovalCountProvider, OrderCountProvider } from "./AdminProviders";
 
 export default async function AuthLayout({
     children,
@@ -17,12 +17,15 @@ export default async function AuthLayout({
     if (!session?.user?.id) redirect('/login')
     const account = await prisma.user.findUnique({ where: { id: session.user.id }, select: { admin: true } })
     if (!account?.admin) redirect('/')
+    const approvalCount = await prisma.user.count({ where: { userStatus: 'WAITING_FOR_APPROVAL' } })
     return (
         <>
             <div className="relative">
                 <SidebarProvider>
                     <OrderCountProvider>
+                        <ApprovalCountProvider count={approvalCount}>
                         <CustomSidebar
+                            admin
                             data={AdminSidebarData}
                             footer
                             header={
@@ -36,6 +39,7 @@ export default async function AuthLayout({
                             <Header sidebar />
                             <main className="p-3">{children}</main>
                         </div>
+                        </ApprovalCountProvider>
                     </OrderCountProvider>
                 </SidebarProvider>
             </div>

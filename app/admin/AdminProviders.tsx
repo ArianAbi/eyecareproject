@@ -5,6 +5,15 @@ import { toast } from "@/components/ui/toast"
 import { createContext, useContext, useEffect, useState } from "react"
 
 const OrderCountContext = createContext<number | null>(null)
+const ApprovalCountContext = createContext(0)
+
+export function ApprovalCountProvider({ count, children }: { count: number, children: React.ReactNode }) {
+  return <ApprovalCountContext.Provider value={count}>{children}</ApprovalCountContext.Provider>
+}
+
+export function useApprovalCount() {
+  return useContext(ApprovalCountContext)
+}
 
 export function OrderCountProvider({ children }: { children: React.ReactNode }) {
   const [count, setCount] = useState<number | null>(null)
