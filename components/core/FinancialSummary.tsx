@@ -63,9 +63,17 @@ export function FinancialSummaryCard({
 
   // fetch on mount only when the server didn't pass initialData
   useEffect(() => {
-    if (!initialData) load(range)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (initialData) return
+
+    const id = ++latest.current
+    ADMIN_GetFinancialSummaryAction(initialRange)
+      .then((result) => {
+        if (id === latest.current) setData(result)
+      })
+      .catch(() => {
+        if (id === latest.current) setError(true)
+      })
+  }, [initialData, initialRange])
 
   function onRangeChange(value: FinancialRange | null) {
     if (!value || value === range) return

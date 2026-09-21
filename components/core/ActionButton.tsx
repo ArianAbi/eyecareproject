@@ -31,7 +31,7 @@ export function ActionButton({ action, children }: { action: () => Promise<unkno
                                 router.refresh()
                                 setOpen(false)
                             }
-                            catch (err) {
+                            catch {
                                 toast.add({
                                     title: 'عملیات انجام نشد؛ وضعیت را بررسی و دوباره تلاش کنید.',
                                     type: "error"

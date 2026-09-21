@@ -1,28 +1,16 @@
 "use client"
 
-import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent } from "@/components/ui/alert-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { toast } from "@/components/ui/toast";
-import { Product, SubCategory, Tags } from "@/generated/prisma/client";
-import { ActionError } from "@/lib/action-error";
-import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
+import { Tags } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { PenIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import z from "zod";
 import { colorSelectMap, colorOptionsType } from "@/components/core/FormFieldColorSelectShorthand";
 
 export const AdminTagsColumn: ColumnDef<Tags>[] = [
     {
         accessorKey: "edit",
         header: "",
-        cell: ({ row }) => {
+        cell: () => {
             return <div className="space-x-2">
                 {/* <ProductCategoryEditBtn data={row.original} /> */}
                 Edit
@@ -65,7 +53,7 @@ export const AdminTagsColumn: ColumnDef<Tags>[] = [
     {
         accessorKey: "delete",
         header: "",
-        cell: ({ row }) => {
+        cell: () => {
             return <div className="space-x-2">
                 Delete
             </div>

@@ -55,6 +55,8 @@ export function DataTable<TData, TValue>({
 
   const columnVisibility: VisibilityState = { select: enableRowSelection }
 
+  // TanStack Table exposes mutable callback APIs that the React Compiler cannot memoize safely.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -64,7 +66,7 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     meta: {
       isBulkActionPending: isPending,
-      getRowStatus: (rowId: any) => rowStatus[rowId] ?? "idle",
+      getRowStatus: (rowId: string) => rowStatus[rowId] ?? "idle",
     },
   })
 

@@ -14,4 +14,4 @@ export interface SidebarDataType {
     icon: LucideIcon
     path: string
   }
-}[]
+}

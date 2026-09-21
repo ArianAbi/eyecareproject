@@ -1,4 +1,3 @@
-import { GetProductsAction } from "@/lib/actions/products.action"
 import GlasslensOrderPage from "./GlasslensOrderPage"
 import { GetProductCategorys } from "@/lib/actions/productCategory.action"
 import { GetTags } from "@/lib/actions/tags.action"
@@ -22,7 +21,6 @@ export default async function OrderPage() {
         }
     })
 
-    const products = await GetProductsAction()
     const categorys = await GetProductCategorys()
     const tags = await GetTags()
 

@@ -3,7 +3,6 @@
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Spinner } from "@/components/ui/spinner"
@@ -14,7 +13,7 @@ import { cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import z from "zod"
 
 const schema = z.object({
@@ -78,7 +77,8 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defau
         }
     }
 
-    const amount = form.watch('amount')
+    const amount = useWatch({ control: form.control, name: 'amount' })
+    const paymentType = useWatch({ control: form.control, name: 'paymentType' })
 
 
     function RemoveDefaultOpenParam() {
@@ -137,7 +137,7 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defau
                                 <Label htmlFor="credit">درخواست اعتبار</Label>
                             </div>
 
-                            {form.watch('paymentType') === 'CREDIT' &&
+                            {paymentType === 'CREDIT' &&
                                 <div className="text-wrap text-sm border-amber-600 bg-amber-500/20 border-2 p-2 rounded-md mt-1">
                                     پس از تایید کارشناسان به موجودی شما اضافه میشود و در آخر ماه با شما حساب میشود
                                 </div>

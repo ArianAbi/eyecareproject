@@ -9,12 +9,11 @@ import { toast } from "@/components/ui/toast"
 import { Prisma, Tags, UserVerifyType } from "@/generated/prisma/client"
 import { lensFilter } from "@/lib/lens-filter"
 import { AllLensRanges, NegativeLensRanges } from "@/lib/lens-range"
-import { LensProductType } from "@/types/lens-product"
 import { CartItemProductItemType, OrderProductItemWithStatus } from "@/types/order"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Copy, CornerUpLeft, Handbag, SprayCan, TowelRack, Trash, XIcon } from "lucide-react"
-import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { Copy, CornerUpLeft, Handbag, SprayCan, TowelRack, XIcon } from "lucide-react"
+import { useMemo, useState } from "react"
+import { useForm, useWatch } from "react-hook-form"
 import * as z from "zod"
 import CartOrderItem from "./CartOrderItem"
 import { AddItemToCartAction } from "@/lib/actions/cart.actions"
@@ -24,7 +23,7 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTr
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-export default function GlasslensOrderPage({ categorys, accountStatus, userCredit, tags, cartItems, adminUserId }: {
+export default function GlasslensOrderPage({ categorys, accountStatus, userCredit, cartItems, adminUserId }: {
     adminUserId?: string,
     categorys: Prisma.SubCategoryGetPayload<{
         include: {
@@ -46,7 +45,7 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
     }>[]
 }) {
 
-    const mappedItems: OrderProductItemWithStatus[] = cartItems.map(item => ({
+    const mappedItems: OrderProductItemWithStatus[] = useMemo(() => cartItems.map(item => ({
         ...item.product,
         id: item.product.id,
         name: item.product.name,
@@ -70,9 +69,10 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
         tempId: item.id,          // reuse the real DB id as tempId, since it's already stable+unique
         cartStatus: "success",    // it's already persisted, so it's not "pending"
         cartItemId: item.id,
-    }))
+    })), [cartItems])
 
     const [orderProductItems, setOrderProductItems] = useState<OrderProductItemWithStatus[]>(mappedItems)
+    const [sourceCartItems, setSourceCartItems] = useState(cartItems)
     const [pendingChanges, setPendingChanges] = useState(0)
     const [submitting, setSubmitting] = useState(false)
     const onCartPendingChange = (pending: boolean) => setPendingChanges(count => count + (pending ? 1 : -1))
@@ -84,9 +84,10 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
         return acc += price
     }, 0)
 
-    useEffect(() => {
+    if (sourceCartItems !== cartItems) {
+        setSourceCartItems(cartItems)
         setOrderProductItems(mappedItems)
-    }, [cartItems])
+    }
 
     const [odOnly, setOdOnly] = useState(false)
 
@@ -105,7 +106,7 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
 
     const [userNote, setUserNote] = useState("")
 
-    const { control, watch, setValue } = useForm({
+    const { control, setValue } = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
             od: {
@@ -120,6 +121,8 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
             }
         }
     })
+
+    const range = useWatch({ control }) as z.infer<typeof schema>
 
 
     async function AddItemToOrder(item: CartItemProductItemType) {
@@ -168,8 +171,8 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
                                 }}
                                 range={
                                     {
-                                        od: watch().od,
-                                        os: watch().os,
+                                        od: range.od,
+                                        os: range.os,
                                         odOnly
                                     }
                                 }
@@ -233,7 +236,7 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
                                 </td>
 
                                 {/* AUX */}
-                                <td className={`px-1 ${parseFloat(watch().od.cyl) == 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <td className={`px-1 ${parseFloat(range.od.cyl) == 0 ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <FormFieldComboboxShorthand
                                         control={control}
                                         name="od.aux"
@@ -297,7 +300,7 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
                                 </td>
 
                                 {/* AUX */}
-                                <td className={`px-1 ${parseFloat(watch().os.cyl) == 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <td className={`px-1 ${parseFloat(range.os.cyl) == 0 ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <FormFieldComboboxShorthand
                                         control={control}
                                         name="os.aux"
@@ -316,9 +319,9 @@ export default function GlasslensOrderPage({ categorys, accountStatus, userCredi
                                     <Button size="icon"
                                         variant={"outline"}
                                         onClick={() => {
-                                            setValue('os.sph', watch().od.sph)
-                                            setValue('os.cyl', watch().od.cyl)
-                                            setValue('os.aux', watch().od.aux)
+                                            setValue('os.sph', range.od.sph)
+                                            setValue('os.cyl', range.od.cyl)
+                                            setValue('os.aux', range.od.aux)
                                         }}
                                     >
                                         <Copy />

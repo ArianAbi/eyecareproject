@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { ActionData } from "@/types/actions";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { Check, CheckIcon, EyeIcon, XIcon } from "lucide-react";
+import { CheckIcon, EyeIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 
 type AdminOrderActionType = ActionData<typeof ADMIN_GetOrdersAction>[0]

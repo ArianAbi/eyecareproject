@@ -15,7 +15,7 @@ import { NegativeLensRanges, PositiveLensRanges } from "@/lib/lens-range";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Handbag, SprayCan, TowelRack } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod"
 
 export default function AdminCreateProductForm({ categorys, tags }: { categorys: SubCategory[], tags: Tags[] }) {
@@ -41,7 +41,7 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
 
     type formType = z.infer<typeof schema>
 
-    const { control, handleSubmit, formState, watch,setValue } = useForm<formType>({
+    const { control, handleSubmit, formState, setValue } = useForm<formType>({
         resolver: zodResolver(schema),
         mode: 'onChange',
         defaultValues: {
@@ -65,7 +65,8 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
         }
     })
 
-    const price = watch("price")
+    const formValues = useWatch({ control })
+    const price = formValues.price ?? 0
 
     const route = useRouter()
 
@@ -295,51 +296,51 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
                 <div className="grid grid-cols-2 center gap-1">
                     <Checkbox
                         className="size-5"
-                        checked={watch().includesBag}
+                        checked={formValues.includesBag}
                         onCheckedChange={(e) => {
                             setValue('includesBag', e)
                         }}
                     />
 
-                    <div className={watch().includesBag ? 'stroke-white' : 'stroke-gray-400'}>
+                    <div className={formValues.includesBag ? 'stroke-white' : 'stroke-gray-400'}>
                         <Handbag stroke="inherit" size={26} />
                     </div>
 
-                    <div className={`col-span-2 ${watch().includesBag ? 'text-white' : 'text-gray-400'}`}>ساکدستی</div>
+                    <div className={`col-span-2 ${formValues.includesBag ? 'text-white' : 'text-gray-400'}`}>ساکدستی</div>
                 </div>
 
                 {/* spray */}
                 <div className="grid grid-cols-2 center gap-1">
                     <Checkbox
                         className="size-5"
-                        checked={watch().includesSpray}
+                        checked={formValues.includesSpray}
                         onCheckedChange={(e) => {
                             setValue('includesSpray', e)
                         }}
                     />
 
-                    <div className={watch().includesSpray ? 'stroke-white' : 'stroke-gray-400'}>
+                    <div className={formValues.includesSpray ? 'stroke-white' : 'stroke-gray-400'}>
                         <SprayCan stroke="inherit" size={26} />
                     </div>
 
-                    <div className={`col-span-2 ${watch().includesSpray ? 'text-white' : 'text-gray-400'}`}>اسپری</div>
+                    <div className={`col-span-2 ${formValues.includesSpray ? 'text-white' : 'text-gray-400'}`}>اسپری</div>
                 </div>
 
                 {/* cloth */}
                 <div className="grid grid-cols-2 center gap-1">
                     <Checkbox
                         className="size-5"
-                        checked={watch().includesCloth}
+                        checked={formValues.includesCloth}
                         onCheckedChange={(e) => {
                             setValue('includesCloth', e)
                         }}
                     />
 
-                    <div className={watch().includesCloth ? 'stroke-white' : 'stroke-gray-400'}>
+                    <div className={formValues.includesCloth ? 'stroke-white' : 'stroke-gray-400'}>
                         <TowelRack stroke="inherit" size={26} />
                     </div>
 
-                    <div className={`col-span-2 ${watch().includesCloth ? 'text-white' : 'text-gray-400'}`}>دستمال</div>
+                    <div className={`col-span-2 ${formValues.includesCloth ? 'text-white' : 'text-gray-400'}`}>دستمال</div>
                 </div>
             </div>
 
