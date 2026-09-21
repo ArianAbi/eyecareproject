@@ -7,6 +7,7 @@ import { Noto_Sans_Arabic } from "next/font/google"
 import NextTopLoader from "nextjs-toploader"
 import { Toaster } from "@/components/ui/toast";
 import { SessionProvider } from "next-auth/react";
+import { TrafficTracker } from "@/components/core/TrafficTracker";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -50,6 +51,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextTopLoader />
+        <TrafficTracker />
         <DirectionProvider direction="rtl">
           <SessionProvider>
             {children}

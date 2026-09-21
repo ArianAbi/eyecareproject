@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCardPlus, Globe, Hammer, LayoutDashboard, LayoutList, List, ReceiptIcon, TicketIcon, User, UserIcon, type LucideIcon } from "lucide-react"
+import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCardPlus, Globe, Hammer, LayoutDashboard, LayoutList, List, PieChartIcon, ReceiptIcon, TicketIcon, User, UserIcon, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -207,6 +207,7 @@ export const AdminSidebarData: SidebarDataType = {
       ]
     },
     { group_title: "گزارش مالی", icon: BanknoteArrowUp, items: [{ title: "گزارش مالی", path: "/admin/financial" }] },
+    { group_title: "آمار ورودی سایت", icon: PieChartIcon, items: [{ title: "آمار ورودی سایت", path: "/admin/analytics" }] },
     { group_title: "تیکت‌ها", icon: TicketIcon, items: [{ title: "تیکت‌ها", path: "/admin/tickets" }] },
     { group_title: "گزارش فعالیت‌ها", icon: List, items: [{ title: "گزارش فعالیت‌ها", path: "/admin/logs" }] },
     {

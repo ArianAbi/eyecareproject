@@ -365,3 +365,13 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([entityType, createdAt])
 }
+
+model TrafficVisit {
+  sessionId      String   @id
+  source         String
+  referrerDomain String?
+  utmSource      String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt, source])
+}
