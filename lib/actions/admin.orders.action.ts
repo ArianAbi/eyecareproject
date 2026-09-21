@@ -5,9 +5,7 @@ import { writeAudit } from "../audit"
 import { orderWhere, orderStatuses, type OrderFilters } from "../order-filters"
 import { OrderItemStatus } from "@/generated/prisma/enums"
 import { ActionError } from "../action-error"
-import { auth } from "../Auth"
 import prisma from "../db"
-import { Prisma } from "@/generated/prisma/client"
 import { PaginationObjectDB } from "../pagination-object"
 import { revalidatePath } from "next/cache"
 
@@ -118,10 +116,12 @@ export async function ADMIN_UpdateOrderStatus({
         if (!orderStatuses.includes(newStatus)) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
         const data = await prisma.$transaction(async tx => {
             const previous = await tx.orderBatch.findUniqueOrThrow({ where: { id } })
-            const order = await tx.orderBatch.update({ where: { id }, data: {
-                status: newStatus,
-                orderUpdate: { create: { updatedStatus: newStatus } },
-            } })
+            const order = await tx.orderBatch.update({
+                where: { id }, data: {
+                    status: newStatus,
+                    orderUpdate: { create: { updatedStatus: newStatus } },
+                }
+            })
             await writeAudit(tx, actor.id, "ORDER_STATUS_CHANGED", "OrderBatch", id, `${previous.status} -> ${newStatus}`)
             return order
         })

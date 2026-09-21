@@ -59,7 +59,6 @@ export function FormFieldComboboxShorthand<TFieldValues extends FieldValues>({
   emptyText = "موردی یافت نشد",
   description,
   disabled = false,
-  emptySnapValue,
   ltr = false,
   filter
 }: FormFieldComboboxShorthandProps<TFieldValues>) {

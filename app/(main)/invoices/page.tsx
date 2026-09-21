@@ -1,8 +1,6 @@
 import { InvoiceList } from "@/components/core/InvoiceList"
 import { NewInvoiceForm } from "./NewInvoiceForm"
 import type { InvoiceFilters } from "@/lib/invoice-filters"
-import { requireUser } from "@/lib/access"
-import prisma from "@/lib/db"
 import TextError from "@/components/TextError"
 
 export default async function InvoicesPage({ searchParams }: {
@@ -12,9 +10,6 @@ export default async function InvoicesPage({ searchParams }: {
     }>
 }) {
     const params = await searchParams
-
-    const user = await requireUser()
-    const account = await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { credit: true } })
 
     return <div className="space-y-4 p-4">
         <h1 className="text-xl font-semibold">

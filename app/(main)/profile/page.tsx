@@ -1,11 +1,9 @@
-import RequiredLabel from "@/components/core/RequiredLabel"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { auth } from "@/lib/Auth"
 import prisma from "@/lib/db"
 import { notFound } from "next/navigation"
 import ProfileForm from "./ProfileForm"
-import { AlertCircle, Hourglass } from "lucide-react"
 import ProfileAccountStatus from "./ProfileAccountStatus"
 
 export default async function ProfilePage() {

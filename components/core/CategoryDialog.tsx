@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
-import { Prisma, SubCategory } from "@/generated/prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { colorOptionsType, colorSelectMap, colorSelectMapBorder } from "./FormFieldColorSelectShorthand"
 import LensProductItem from "../LensProductItem"
 import { IsInRange } from "@/lib/is-in-range"
@@ -43,7 +43,7 @@ export function CategoryDialog({ category, range, AddToOrder }: {
             tags: true
         }
     }>) {
-        let newProduct = { ...product, available: false }
+        const newProduct = { ...product, available: false }
 
         const odValue = {
             sph: range.od.sph,

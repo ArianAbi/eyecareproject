@@ -1,15 +1,13 @@
 "use client"
 
-import { colorOptionsType, ColorSelect, colorSelectMap } from "@/components/core/FormFieldColorSelectShorthand"
+import { colorOptionsType, ColorSelect } from "@/components/core/FormFieldColorSelectShorthand"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { ADMIN_CreateTag } from "@/lib/actions/admin.tag.action"
-import { cn } from "@/lib/utils"
 import { useState } from "react"
 
 export function AdminCreateTagBtn() {
@@ -85,9 +83,9 @@ export function AdminCreateTagBtn() {
                     <div className="space-y-2 mt-3">
                         <Label>رنگ</Label>
 
-                        <ColorSelect 
-                        value={color}
-                        onChange={e=>setColor(e as colorOptionsType['value'])}
+                        <ColorSelect
+                            value={color}
+                            onChange={e => setColor(e as colorOptionsType['value'])}
                         />
 
                         {/* <Select defaultValue="gray" value={color} onValueChange={e=>setColor(e as colorOptionsType['value'])}>

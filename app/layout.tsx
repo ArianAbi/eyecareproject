@@ -9,22 +9,10 @@ import { Toaster } from "@/components/ui/toast";
 import { SessionProvider } from "next-auth/react";
 import { TrafficTracker } from "@/components/core/TrafficTracker";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
-
 const fontSans = Noto_Sans_Arabic({
   subsets: ["arabic"],
   variable: "--font-sans",
 })
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || 'http://localhost:3000'),

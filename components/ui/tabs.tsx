@@ -4,8 +4,6 @@ import { useSearchParamsUtil } from "@/hooks/useSearchParams"
 import { Tabs as TabsPrimitive, TabsRootChangeEventDetails } from "@base-ui/react/tabs"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
-import { usePathname, useSearchParams } from "next/navigation"
-import { useRouter } from "next/router"
 import { useCallback } from "react"
 
 interface TabsProps extends TabsPrimitive.Root.Props {
@@ -33,7 +31,7 @@ function Tabs({
     ? paramValue ?? (defaultValue as string | undefined) ?? ""
     : value
 
-  const handleValueChange = useCallback((newValue: any, eventDetails: TabsRootChangeEventDetails) => {
+  const handleValueChange = useCallback((newValue: string, eventDetails: TabsRootChangeEventDetails) => {
     if (paramKey) {
       set(paramKey, newValue as string)
     }

@@ -4,7 +4,7 @@ import { orderWhere, type OrderFilters } from "../order-filters"
 import { ActionError } from "../action-error"
 import { auth } from "../Auth"
 import prisma from "../db"
-import { PaginationObjectDB, paginationSkipNumber } from "../pagination-object"
+import { PaginationObjectDB } from "../pagination-object"
 
 export async function GetOrdersAction(filters: OrderFilters) {
     try {
@@ -46,7 +46,7 @@ export async function GetOrdersAction(filters: OrderFilters) {
                 }
             })
 
-            return {orders,total}
+            return { orders, total }
         })
 
 

@@ -3,14 +3,14 @@
 import { ActionError } from "../action-error"
 import prisma from "../db"
 
-export async function GetProductCategorys(withProducts=true) {
+export async function GetProductCategorys() {
     try {
         const data = await prisma.subCategory.findMany({
-            include:{
-                products:{
-                    include:{
-                        lens:true,
-                        tags:true
+            include: {
+                products: {
+                    include: {
+                        lens: true,
+                        tags: true
                     }
                 }
             }

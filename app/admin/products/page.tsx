@@ -1,5 +1,4 @@
 import { buttonVariants } from "@/components/ui/button";
-import { ADMIN_GetProductCategorys } from "@/lib/actions/admin.productCategory.actions";
 import { ADMIN_GetProducts } from "@/lib/actions/admin.products.action";
 import Link from "next/link";
 import { AdminProductsColumn } from "./columns";
@@ -13,7 +12,7 @@ export default async function MasterCategoryPage() {
     return <div className="space-y-3">
         <h1>محصولات</h1>
 
-        <Link href={'/admin/products/create'} className={buttonVariants({variant:"default"})}>
+        <Link href={'/admin/products/create'} className={buttonVariants({ variant: "default" })}>
             افزودن محصول
         </Link>
 

@@ -2,7 +2,7 @@
 
 import { ADMIN_GetSingleOrder, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
 import { ActionData } from "@/types/actions";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { OrderItemStatus } from "@/generated/prisma/enums"
 import { OrderStatusFarsi } from "@/lib/order-status-farsi-map"
 import Link from "next/link"
@@ -27,30 +27,30 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
     const router = useRouter()
 
     async function UpdateOrderStatus() {
-        try{
+        try {
             setLoading(true)
 
             await ADMIN_UpdateOrderStatus({
-                id:data.id,
-                newStatus:selectedStatus
+                id: data.id,
+                newStatus: selectedStatus
             })
 
             toast.add({
-                type:"Success",
-                title:"وضعیت سفارش بروزرسانی شد"
+                type: "Success",
+                title: "وضعیت سفارش بروزرسانی شد"
             })
 
             router.push('/admin/orders')
-        }catch(err){
-            if(err instanceof Error){
+        } catch (err) {
+            if (err instanceof Error) {
                 toast.add({
-                    type:"Error",
-                    title:err.message
+                    type: "Error",
+                    title: err.message
                 })
             }
             toast.add({
-                type:"Error",
-                title:"updating status failed:Unknown"
+                type: "Error",
+                title: "updating status failed:Unknown"
             })
         }
     }
@@ -150,7 +150,7 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
                     variant={'green'}
                 >
                     <span>
-                    بروزرسانی
+                        بروزرسانی
                     </span>
                     {loading && <Spinner />}
                 </Button>

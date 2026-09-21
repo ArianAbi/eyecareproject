@@ -8,7 +8,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { MasterCategory } from "@/generated/prisma/client";
 import { parseActionError } from "@/lib/action-error";
-import { ADMIN_CreateMasterCategoryAction } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_CreateProductCategoryAction } from "@/lib/actions/admin.productCategory.actions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";

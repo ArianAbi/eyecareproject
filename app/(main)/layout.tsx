@@ -5,20 +5,12 @@ import Header from "@/components/core/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/Auth";
 import prisma from "@/lib/db";
-import { AlertTriangle, CircleQuestionMarkIcon } from "lucide-react";
-import Link from "next/link";
 
 export default async function AuthLayout({
   children,
-  params
 }: {
   children: React.ReactNode;
-  params: Promise<any>
 }) {
-  const _params = await params
-
-  console.log("params", _params);
-
   const session = await auth()
   const isAdmin = session && session.user ?
     await prisma.user.findUnique({
@@ -44,7 +36,7 @@ export default async function AuthLayout({
   return <>
     <div className="relative min-h-svh">
       <SidebarProvider>
-        <CustomSidebar
+        {session && session.user && <CustomSidebar
           data={UserSidebarData}
           admin={isAdmin ? isAdmin.admin : false}
           footer
@@ -53,9 +45,9 @@ export default async function AuthLayout({
               ICN
             </>
           }
-        />
+        />}
         <div className="w-full max-lg:min-w-0 flex flex-col">
-          <Header sidebar />
+          <Header sidebar={session && session.user ? true : false} />
 
           {accountStatus !== undefined && accountStatus != 'VERIFIED' &&
             <AccountVerifyNotification accountStatus={accountStatus} />

@@ -2,14 +2,11 @@
 
 import { CreateUserAction, LoginAction } from "@/lib/actions/auth.actions"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card"
-import { Input } from "../ui/input"
 import { Button } from "../ui/button"
-import { startTransition, useActionState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import InputErrorMesage from "./InputErrorMessage"
 import { LoginSchema, LoginSchemaType, SignupSchema, SignupSchemaType } from "@/lib/schemas/auth.schema"
-import { Field, FieldGroup, FieldLabel } from "../ui/field"
+import { FieldGroup } from "../ui/field"
 import { FormFieldShorthand } from "../core/FormFieldShorthand"
 import { Separator } from "../ui/separator"
 import { TermsAndConditions } from "../core/TermsAndConditions"
@@ -18,7 +15,6 @@ import { Spinner } from "../ui/spinner"
 
 export function LoginForm() {
     const {
-        register,
         handleSubmit,
         formState,
         control
@@ -117,7 +113,8 @@ export function SignupForm() {
         } catch (err) {
             toast.add({
                 type: "error",
-                title: "مشکلی در ایجاد حساب پیش آمده. دوباره تلاش کنید یا با پشتیبانی تماس بگیرید"
+                title: "مشکلی در ایجاد حساب پیش آمده. دوباره تلاش کنید یا با پشتیبانی تماس بگیرید",
+                ...(err instanceof Error ? {} : {})
             })
             return
         }

@@ -5,8 +5,6 @@ import { ArrowUp, ArrowDown, ArrowUpDown, CheckIcon, XIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
-import { OrderItem } from "@/generated/prisma/client"
-import { OrderItemGetPayload } from "@/generated/prisma/models"
 import { ActionData } from "@/types/actions"
 import { ADMIN_GetSingleOrder } from "@/lib/actions/admin.orders.action"
 import { colorOptionsType, colorSelectMap } from "./core/FormFieldColorSelectShorthand"
@@ -152,38 +150,53 @@ export function OrderTable({
             <TableBody>
                 {sortedItems.map((item) => {
                     return (
-                       <TableRow key={item.id}>
-                                <TableCell>
-                                    {item.product.name}
-                                </TableCell>
+                        <TableRow key={item.id}>
+                            <TableCell>
+                                {item.product.name}
+                            </TableCell>
 
-                                <TableCell>
-                                    <div className="text-center flex items-center justify-center gap-1">
-                                        <div className={cn(
-                                            colorSelectMap[item.product.categoryRel.color as colorOptionsType['value']],
-                                            'size-3 rounded-full'
-                                        )}></div>
-                                        {item.product.categoryRel.name}
-                                    </div>
-                                </TableCell>
+                            <TableCell>
+                                <div className="text-center flex items-center justify-center gap-1">
+                                    <div className={cn(
+                                        colorSelectMap[item.product.categoryRel.color as colorOptionsType['value']],
+                                        'size-3 rounded-full'
+                                    )}></div>
+                                    {item.product.categoryRel.name}
+                                </div>
+                            </TableCell>
 
-                                <TableCell>
-                                    {item.odOnly
-                                        ?
-                                        <CheckIcon className="stroke-emerald-500" stroke="inherit" />
-                                        :
-                                        <XIcon className="stroke-red-500" stroke="inherit" />
-                                    }
-                                </TableCell>
+                            <TableCell>
+                                {item.odOnly
+                                    ?
+                                    <CheckIcon className="stroke-emerald-500" stroke="inherit" />
+                                    :
+                                    <XIcon className="stroke-red-500" stroke="inherit" />
+                                }
+                            </TableCell>
 
-                                <TableCell>
-                                    {/* AUX */}
-                                    <div className="flex flex-col items-start">
+                            <TableCell>
+                                {/* AUX */}
+                                <div className="flex flex-col items-start">
+                                    <span style={{ direction: "ltr" }}>
+                                        <span>OD : </span>
+                                        {parseFloat(item.odCyl) < 0 ?
+                                            <span>
+                                                {item.odAux} deg
+                                            </span>
+                                            :
+                                            <span>
+                                                ندارد
+                                            </span>
+                                        }
+                                    </span>
+
+                                    {!item.odOnly &&
                                         <span style={{ direction: "ltr" }}>
-                                            <span>OD : </span>
-                                            {parseFloat(item.odCyl) < 0 ?
+                                            <span>OS : </span>
+
+                                            {parseFloat(item.osCyl) < 0 ?
                                                 <span>
-                                                    {item.odAux} deg
+                                                    {item.osAux} deg
                                                 </span>
                                                 :
                                                 <span>
@@ -191,62 +204,47 @@ export function OrderTable({
                                                 </span>
                                             }
                                         </span>
-
-                                        {!item.odOnly &&
-                                            <span style={{ direction: "ltr" }}>
-                                                <span>OS : </span>
-
-                                                {parseFloat(item.osCyl) < 0 ?
-                                                    <span>
-                                                        {item.osAux} deg
-                                                    </span>
-                                                    :
-                                                    <span>
-                                                        ندارد
-                                                    </span>
-                                                }
-                                            </span>
-                                        }
-                                    </div>
-                                </TableCell>
-
-                                <TableCell>
-                                    {/* sph & cyl */}
-                                    <div className="flex flex-col">
-                                        <span>
-                                            <span>OD : </span>
-                                            <span>{item.odSph}</span>
-                                            <span> {item.odCyl}</span>
-                                        </span>
-
-                                        {
-                                            !item.odOnly &&
-                                            <span>
-                                                <span>OS : </span>
-                                                <span>{item.osSph}</span>
-                                                <span> {item.osCyl}</span>
-                                            </span>
-                                        }
-                                    </div>
-                                </TableCell>
-
-                                <TableCell>
-                                    {
-                                        item.rawOrCut == 'RAW'
-                                            ?
-                                            <span>ندارد</span>
-                                            :
-                                            <span className="text-emerald-500">دارد</span>
                                     }
-                                </TableCell>
+                                </div>
+                            </TableCell>
 
-                                <TableCell>
-                                    {item.purchasedPrice.toLocaleString() + " "}
-                                    <span className="text-xs text-emerald-500 font-semibold">
-                                        تومان
+                            <TableCell>
+                                {/* sph & cyl */}
+                                <div className="flex flex-col">
+                                    <span>
+                                        <span>OD : </span>
+                                        <span>{item.odSph}</span>
+                                        <span> {item.odCyl}</span>
                                     </span>
-                                </TableCell>
-                            </TableRow>
+
+                                    {
+                                        !item.odOnly &&
+                                        <span>
+                                            <span>OS : </span>
+                                            <span>{item.osSph}</span>
+                                            <span> {item.osCyl}</span>
+                                        </span>
+                                    }
+                                </div>
+                            </TableCell>
+
+                            <TableCell>
+                                {
+                                    item.rawOrCut == 'RAW'
+                                        ?
+                                        <span>ندارد</span>
+                                        :
+                                        <span className="text-emerald-500">دارد</span>
+                                }
+                            </TableCell>
+
+                            <TableCell>
+                                {item.purchasedPrice.toLocaleString() + " "}
+                                <span className="text-xs text-emerald-500 font-semibold">
+                                    تومان
+                                </span>
+                            </TableCell>
+                        </TableRow>
                     )
                 })}
             </TableBody>

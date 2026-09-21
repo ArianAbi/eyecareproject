@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { ADMIN_GetOrdersAction, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
 import { ActionData } from "@/types/actions";
 import { AdminOrdersColumn } from "./column";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { useState } from "react";
 import { OrderItemStatus } from "@/generated/prisma/enums";
 import { OrderStatusFarsi } from "@/lib/order-status-farsi-map";

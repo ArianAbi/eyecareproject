@@ -2,16 +2,13 @@
 
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MasterCategory } from "@/generated/prisma/client";
 import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
-import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
@@ -106,9 +103,7 @@ export const AdminMasterCategoryColumns: ColumnDef<MasterCategory & { subCategor
 ]
 
 function MasterCategoryDeleteBtn({ data }: { data: MasterCategory & { subCategory: { name: string, id: string }[] } }) {
-    const [inputV, setInputV] = useState("")
     const [loading, setLoading] = useState(false)
-    const [disabled, setDisabled] = useState(false)
 
     const [open, setOpen] = useState(false)
 
@@ -116,7 +111,7 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory & { subCategor
 
     async function onDelete() {
         try {
-            if (disabled || hasAttachedCategorys) {
+            if (hasAttachedCategorys) {
                 toast.add({
                     title: "این دسته بندی شامل زیرمجموعه است و قابل حذف نیست",
                     type: "warning"
@@ -189,7 +184,7 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory & { subCategor
                 </div>}
 
                 <div className="space-x-3 mt-3">
-                    <Button onClick={onDelete} disabled={loading || disabled || hasAttachedCategorys} variant={"destructive"}>
+                    <Button onClick={onDelete} disabled={loading || hasAttachedCategorys} variant={"destructive"}>
                         <span>
                             حذف
                         </span>

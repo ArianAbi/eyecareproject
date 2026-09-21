@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/sidebar"
 import { SidebarDataType } from "@/types/sidebar-data"
 import { useApprovalCount, useOrderCount } from "@/app/admin/AdminProviders"
-import { toast } from "../ui/toast"
 
 // ---------------------------------------------------------------------------
 // Types

@@ -9,25 +9,21 @@ const BLOCKED_ROUTES = [
     "/orders",
     "/tickets",
     "/api/legacy",
+    "/profile",
 ]
 
-async function canAccessAdmin(request: NextRequest): Promise<boolean> {
+async function canAccessAdmin(): Promise<boolean> {
     const access = await isAdmin()
 
     return access
 }
 
-async function shouldBlock(request: NextRequest): Promise<boolean> {
+async function shouldBlock(): Promise<boolean> {
     const access = !(await isLoggedIn())
-
-    console.log('should block : ',access);
 
     // your condition for the blocked-routes array
     return access
 }
-
-const matches = (pathname: string, route: string) =>
-    pathname === route || pathname.startsWith(route + "/")
 
 function reject(request: NextRequest, mode: "login" | "notFound" | "forbidden" = "login") {
     const { pathname } = request.nextUrl
@@ -51,11 +47,11 @@ export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // matches /admin, /admin/anything, and /admin-anything
-    if (pathname.startsWith("/admin") && !(await canAccessAdmin(request))) {
+    if (pathname.startsWith("/admin") && !(await canAccessAdmin())) {
         return reject(request, "notFound") // or "notFound" to hide that the route exists
     }
 
-    if (BLOCKED_ROUTES.some(route => pathname.startsWith(route)) && (await shouldBlock(request))) {
+    if (BLOCKED_ROUTES.some(route => pathname.startsWith(route)) && (await shouldBlock())) {
         return reject(request, "forbidden")
     }
 

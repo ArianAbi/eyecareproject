@@ -2,20 +2,18 @@
 
 import { colorOptionsType, colorSelectMap, FormFieldColorSelectShorthand } from "@/components/core/FormFieldColorSelectShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
-import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { MasterCategory, Product, SubCategory } from "@/generated/prisma/client";
 import { ActionError } from "@/lib/action-error";
-import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
 import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { BanIcon, Check, Handbag, PenIcon, SprayCan, TowelRack, TrashIcon, XIcon } from "lucide-react";
+import { PenIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
@@ -35,10 +33,10 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: M
         accessorKey: "name",
         header: "نام",
         cell: ({ row }) => {
-                console.log(row.original);
-                
+            console.log(row.original);
+
             return <div className="flex gap-1">
-                <div className={cn(colorSelectMap[row.original.color as colorOptionsType['value']] ,"border-2 border-white/60 size-4 rounded-full")}></div>
+                <div className={cn(colorSelectMap[row.original.color as colorOptionsType['value']], "border-2 border-white/60 size-4 rounded-full")}></div>
 
                 <div>{row.original.name}</div>
             </div>
@@ -104,7 +102,6 @@ export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: M
 function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Product[] } }) {
     // const [inputV, setInputV] = useState("")
     const [loading, setLoading] = useState(false)
-    const [disabled, setDisabled] = useState(false)
     const containsProducts = data.products.length > 0
 
     const [open, setOpen] = useState(false)
@@ -167,7 +164,7 @@ function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Pr
 
             <div className="flex flex-col gap-2">
                 <div className="space-x-3 mt-3">
-                    <Button onClick={onDelete} disabled={containsProducts || loading || disabled} variant={"destructive"}>
+                    <Button onClick={onDelete} disabled={containsProducts || loading} variant={"destructive"}>
                         <span>
                             حذف
                         </span>
@@ -206,7 +203,7 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
 
     const onSubmit = handleSubmit(async values => {
         try {
-            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description,values.color)
+            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description, values.color)
 
             toast.add({
                 title: "دسته بندی بروزرسانی شد",

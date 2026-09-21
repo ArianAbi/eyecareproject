@@ -2,32 +2,17 @@
 
 import { calculateOrderTotal } from "@/lib/order-credit"
 
-import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
-import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Spinner } from "@/components/ui/spinner";
-import { toast } from "@/components/ui/toast";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MasterCategory } from "@/generated/prisma/client";
-import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
-import { ADMIN_GetOrdersAction } from "@/lib/actions/admin.orders.action";
 import { GetOrdersAction } from "@/lib/actions/orders.action";
 import { OrderStatusFarsi } from "@/lib/order-status-farsi-map";
 import { cn } from "@/lib/utils";
 import { ActionData } from "@/types/actions";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { Check, EyeIcon, PenIcon, TrashIcon, XIcon } from "lucide-react";
+import { EyeIcon, } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import z from "zod";
 
 type OrderActionType = ActionData<typeof GetOrdersAction>['orders'][0]
 
@@ -43,17 +28,17 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
             </Link>
         }
     },
-      {
+    {
         accessorKey: "total-price",
         header: () => <div className="text-center">مبلغ سفارش</div>,
         cell: ({ row }) => {
             const total = calculateOrderTotal(row.original)
-            
+
             return <div className="text-center">
                 <span>
-                {
-                    total.toLocaleString() + " "
-                }
+                    {
+                        total.toLocaleString() + " "
+                    }
                 </span>
                 <span className="text-xs text-emerald-500 font-semibold">
                     تومان
@@ -117,7 +102,7 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
             </div>
         }
     },
-  
+
     {
         accessorKey: "createdAt",
         header: "تاریخ ساخت",

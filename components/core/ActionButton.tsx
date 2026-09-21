@@ -10,9 +10,8 @@ import { toast } from "../ui/toast"
 export function ActionButton({ action, children }: { action: () => Promise<unknown>, children: React.ReactNode }) {
     const [pending, startTransition] = useTransition()
 
-    const [open,setOpen]=useState(false)
+    const [open, setOpen] = useState(false)
 
-    const [error, setError] = useState('')
     const router = useRouter()
     return <Popover open={open} onOpenChange={setOpen}>
         <div className="space-y-2">
@@ -27,9 +26,8 @@ export function ActionButton({ action, children }: { action: () => Promise<unkno
                 <div className="flex gap-1">
                     <Button variant={'destructive'} size='xs'
                         onClick={() => startTransition(async () => {
-                            setError('')
-                            try { 
-                                await action(); 
+                            try {
+                                await action();
                                 router.refresh()
                                 setOpen(false)
                             }
@@ -38,14 +36,13 @@ export function ActionButton({ action, children }: { action: () => Promise<unkno
                                     title: 'عملیات انجام نشد؛ وضعیت را بررسی و دوباره تلاش کنید.',
                                     type: "error"
                                 })
-                                setError('عملیات انجام نشد؛ وضعیت را بررسی و دوباره تلاش کنید.')
                             }
                         })}
                     >
                         بستن تیکت
                     </Button>
 
-                    <Button variant={'outline'} size='xs' onClick={()=>setOpen(false)}>
+                    <Button variant={'outline'} size='xs' onClick={() => setOpen(false)}>
                         لغو
                     </Button>
                 </div>

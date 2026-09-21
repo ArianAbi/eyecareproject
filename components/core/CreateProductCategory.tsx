@@ -1,10 +1,8 @@
 "use client"
 
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
-import LoadingOverlay from "@/components/core/LoadingOverlay";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { parseActionError } from "@/lib/action-error";
@@ -17,90 +15,90 @@ import * as z from "zod"
 
 export default function CreateProductCategory() {
     const schema = z.object({
-        name: z.string().min(3,{error:"نام حداقل 3 حرف باید باشد"})
+        name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" })
     })
 
     const { control, handleSubmit, formState } = useForm({
         resolver: zodResolver(schema),
         mode: 'onChange',
-        defaultValues:{
-            name:""
+        defaultValues: {
+            name: ""
         }
     })
 
-    const onSubmit= handleSubmit(async values=>{
+    const onSubmit = handleSubmit(async values => {
         const data = new FormData()
-        data.append("name",values.name)
+        data.append("name", values.name)
 
-        try{
+        try {
             await ADMIN_CreateMasterCategoryAction(values.name, "LENS")
-            
+
             setAlertOpen(false)
 
             toast.add({
-                title:"دسته بندی اضافه شد",
-                type:"success",
+                title: "دسته بندی اضافه شد",
+                type: "success",
             })
-        }catch(err){
-            const {error} = parseActionError(err)
+        } catch (err) {
+            const { error } = parseActionError(err)
 
-            if(error){
+            if (error) {
                 toast.add({
-                    title:"خطا",
-                    description:error,
-                    type:"error"
+                    title: "خطا",
+                    description: error,
+                    type: "error"
                 })
             }
-            else{
+            else {
                 console.log(err);
                 toast.add({
-                    title:"unknown error, check console"
+                    title: "unknown error, check console"
                 })
             }
         }
     })
 
-    const [alertOpen,setAlertOpen] = useState(false)
+    const [alertOpen, setAlertOpen] = useState(false)
 
     return <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
-            <AlertDialogTrigger render={
-                <Button>
-                    <span>
-                        افزودن
-                    </span>
-                    <Plus />
-                </Button>
-            } />
+        <AlertDialogTrigger render={
+            <Button>
+                <span>
+                    افزودن
+                </span>
+                <Plus />
+            </Button>
+        } />
 
-            <AlertDialogContent>
-                {/* <LoadingOverlay /> */}
+        <AlertDialogContent>
+            {/* <LoadingOverlay /> */}
 
-                <AlertDialogHeader>
-                    <AlertDialogTitle>افزودن دسته بندی کلی</AlertDialogTitle>
-                </AlertDialogHeader>
+            <AlertDialogHeader>
+                <AlertDialogTitle>افزودن دسته بندی کلی</AlertDialogTitle>
+            </AlertDialogHeader>
 
-                <form onSubmit={onSubmit}>
-                    <FormFieldShorthand
-                        control={control}
-                        placeholder="نام دسته بندی"
-                        label="نام دسته بندی"
-                        name="name"
-                        disabled={formState.isSubmitting}
-                    />
+            <form onSubmit={onSubmit}>
+                <FormFieldShorthand
+                    control={control}
+                    placeholder="نام دسته بندی"
+                    label="نام دسته بندی"
+                    name="name"
+                    disabled={formState.isSubmitting}
+                />
 
-                    <div className="mt-4 space-x-2">
-                        <Button disabled={!formState.isValid || formState.isSubmitting} variant={"secondary"} type="submit">
-                            <span>
+                <div className="mt-4 space-x-2">
+                    <Button disabled={!formState.isValid || formState.isSubmitting} variant={"secondary"} type="submit">
+                        <span>
                             ساخت
-                            </span>
-                            {formState.isSubmitting && <Spinner />}
-                        </Button>
+                        </span>
+                        {formState.isSubmitting && <Spinner />}
+                    </Button>
 
-                        <AlertDialogCancel disabled={formState.isSubmitting} className={buttonVariants({ variant: "outline" })}>
-                            لغو
-                        </AlertDialogCancel>
-                    </div>
-                </form>
-            </AlertDialogContent>
-        </AlertDialog>
+                    <AlertDialogCancel disabled={formState.isSubmitting} className={buttonVariants({ variant: "outline" })}>
+                        لغو
+                    </AlertDialogCancel>
+                </div>
+            </form>
+        </AlertDialogContent>
+    </AlertDialog>
 }

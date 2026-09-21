@@ -8,13 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Dispatch, SetStateAction } from "react";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
-
-interface SelectOption {
-    label: string;
-    value: string;
-}
 
 interface FormFieldSelectShorthandProps<TFieldValues extends FieldValues> {
     name: Path<TFieldValues>;
@@ -47,7 +41,7 @@ export const colorSelectMap = {
     cyan: "bg-cyan-500",
     blue: "bg-blue-500",
     purple: "bg-purple-500",
-    taupe:"bg-taupe-500",
+    taupe: "bg-taupe-500",
     amber: "bg-amber-500",
     transparent: "bg-transparent"
 } as const
@@ -59,7 +53,7 @@ export const colorSelectMapBorder = {
     cyan: "border-cyan-500",
     blue: "border-blue-500",
     purple: "border-purple-500",
-    taupe:"border-taupe-500",
+    taupe: "border-taupe-500",
     amber: "border-amber-500",
     transparent: "border-white/60"
 } as const
@@ -129,19 +123,19 @@ export function ColorSelect(
     {
         value,
         onChange,
-        defaultValue="gray",
-        disabled=false
+        defaultValue = "gray",
+        disabled = false
     }: {
         value: string,
-        onChange: (e:string | null)=>void,
-        defaultValue?:string
-        disabled?:boolean
+        onChange: (e: string | null) => void,
+        defaultValue?: string
+        disabled?: boolean
     }
 ) {
 
     return <Select
         value={value}
-        onValueChange={(e=>onChange(e))}
+        onValueChange={(e => onChange(e))}
         defaultValue={defaultValue}
         disabled={disabled}
     >

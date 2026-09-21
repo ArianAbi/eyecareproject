@@ -6,5 +6,5 @@ export interface DataTableMeta<TData> {
 }
 
 declare module "@tanstack/react-table" {
-  interface TableMeta<TData> extends DataTableMeta<TData> {}
+  interface TableMeta<TData> extends DataTableMeta<TData> { }
 }

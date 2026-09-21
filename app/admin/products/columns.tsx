@@ -1,26 +1,18 @@
 "use client"
 
 import { colorOptionsType, colorSelectMap } from "@/components/core/FormFieldColorSelectShorthand";
-import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
-import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { Lens, Prisma, Product, SubCategory } from "@/generated/prisma/client";
-import { ActionError } from "@/lib/action-error";
-import { ADMIN_DeleteMasterCategorys, ADMIN_UpdateMasterCategorys } from "@/lib/actions/admin.masterCategory.actions";
-import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
+import { Prisma, Product } from "@/generated/prisma/client";
 import { ADMIN_DeleteProduct } from "@/lib/actions/admin.products.action";
 import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { ArrowRight, BanIcon, Check, Handbag, PenIcon, SprayCan, TowelRack, TrashIcon, XIcon } from "lucide-react";
+import { BanIcon, Handbag, SprayCan, TowelRack, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import z from "zod";
 
 // export const AdminProductsColumn: ColumnDef<Product & { lens: Lens | null }>[] = [
 export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
@@ -34,7 +26,7 @@ export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
             header: "",
             cell: ({ row }) => {
                 return <div className="space-x-2">
-                    <ProductDeleteBtn product={row.original} lensId={row.original.lens ? row.original.lens.id : null}/>
+                    <ProductDeleteBtn product={row.original} lensId={row.original.lens ? row.original.lens.id : null} />
                 </div>
             }
         },
@@ -215,10 +207,9 @@ export const AdminProductsColumn: ColumnDef<Prisma.ProductGetPayload<{
         },
     ]
 
-function ProductDeleteBtn({ product ,lensId}: { product: Product ,lensId:string | null}) {
+function ProductDeleteBtn({ product, lensId }: { product: Product, lensId: string | null }) {
     // const [inputV, setInputV] = useState("")
     const [loading, setLoading] = useState(false)
-    const [disabled, setDisabled] = useState(false)
 
     const [open, setOpen] = useState(false)
 
@@ -226,7 +217,7 @@ function ProductDeleteBtn({ product ,lensId}: { product: Product ,lensId:string 
         try {
             setLoading(true)
 
-            await ADMIN_DeleteProduct(product.id,lensId)
+            await ADMIN_DeleteProduct(product.id, lensId)
 
             toast.add({
                 title: "محصول حذف شد",
@@ -271,7 +262,7 @@ function ProductDeleteBtn({ product ,lensId}: { product: Product ,lensId:string 
 
             <div className="flex flex-col gap-2">
                 <div className="space-x-3 mt-3">
-                    <Button onClick={onDelete} disabled={loading || disabled} variant={"destructive"}>
+                    <Button onClick={onDelete} disabled={loading} variant={"destructive"}>
                         <span>
                             حذف
                         </span>

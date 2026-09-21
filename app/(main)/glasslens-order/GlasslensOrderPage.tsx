@@ -4,10 +4,9 @@ import { CategoryDialog } from "@/components/core/CategoryDialog"
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
-import { CartItem, Prisma, Tags, UserVerifyType } from "@/generated/prisma/client"
-import { IsInRange } from "@/lib/is-in-range"
+import { Prisma, Tags, UserVerifyType } from "@/generated/prisma/client"
 import { lensFilter } from "@/lib/lens-filter"
 import { AllLensRanges, NegativeLensRanges } from "@/lib/lens-range"
 import { LensProductType } from "@/types/lens-product"
@@ -25,9 +24,8 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTr
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-export default function GlasslensOrderPage({ products, categorys, accountStatus, userCredit, tags, cartItems, adminUserId }: {
+export default function GlasslensOrderPage({ categorys, accountStatus, userCredit, tags, cartItems, adminUserId }: {
     adminUserId?: string,
-    products: LensProductType[],
     categorys: Prisma.SubCategoryGetPayload<{
         include: {
             products: {

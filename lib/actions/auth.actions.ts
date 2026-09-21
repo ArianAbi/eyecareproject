@@ -7,7 +7,6 @@ import { signIn } from "../Auth"
 import { AuthError } from "next-auth"
 import { LoginSchema, SignupSchema } from "../schemas/auth.schema"
 import { hashPassword } from "../password"
-import { toast } from "@/components/ui/toast"
 import { ActionError } from "../action-error"
 type SignupField = "username" | "number" | "password" | "confirmPassword"
 
