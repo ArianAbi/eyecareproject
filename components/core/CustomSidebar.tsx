@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCardPlus, Globe, Hammer, LayoutDashboard, LayoutList, List, PieChartIcon, ReceiptIcon, TicketIcon, User, UserIcon, type LucideIcon } from "lucide-react"
+import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCard, Globe, Hammer, LayoutDashboard, LayoutList, List, PieChartIcon, ReceiptIcon, TicketIcon, User, UserIcon, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -309,7 +309,7 @@ export const UserSidebarData: SidebarDataType = {
     },
     {
       group_title: "افزایش موجودی",
-      icon: CreditCardPlus,
+      icon: CreditCard,
       items: [
         {
           title: "افزایش موجودی",

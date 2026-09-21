@@ -3,7 +3,7 @@
 import { useSearchParamsUtil } from "@/hooks/useSearchParams"
 import { Tabs as TabsPrimitive, TabsRootChangeEventDetails } from "@base-ui/react/tabs"
 import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useRouter } from "next/router"
 import { useCallback } from "react"
@@ -28,8 +28,8 @@ function Tabs({
   const { get, set } = useSearchParamsUtil()
 
   const paramValue = paramKey ? get(paramKey) : null
-  
-const resolvedValue = paramKey
+
+  const resolvedValue = paramKey
     ? paramValue ?? (defaultValue as string | undefined) ?? ""
     : value
 

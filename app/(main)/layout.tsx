@@ -31,7 +31,7 @@ export default async function AuthLayout({
     })
     : false
 
-  const accountStatus = (await prisma.user.findUnique({
+  const accountStatus = session && session.user && session.user.id ? (await prisma.user.findUnique({
     where: {
       id: session?.user.id
     },
@@ -39,6 +39,7 @@ export default async function AuthLayout({
       userStatus: true
     }
   }))?.userStatus
+    : undefined
 
   return <>
     <div className="relative min-h-svh">
