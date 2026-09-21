@@ -7,12 +7,15 @@ import { Spinner } from "@/components/ui/spinner"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
 import { DeleteItemFromCartAction, UpdateCartItemRawOrCutAction } from "@/lib/actions/cart.actions"
+import { ADMIN_DeleteItemFromCartAction, ADMIN_UpdateCartItemRawOrCutAction } from "@/lib/actions/admin.cart.actions"
 import type { OrderProductItemWithStatus } from "@/types/order"
 import { Trash } from "lucide-react"
 import { useSession } from "next-auth/react"
-import { Dispatch, SetStateAction, useOptimistic, useState, useTransition } from "react"
+import { Dispatch, SetStateAction, useState } from "react"
 
-export default function CartOrderItem({ indexInList, listNumber, orderItem, updateOrderList }: {
+export default function CartOrderItem({ listNumber, orderItem, updateOrderList, adminUserId, onPendingChange }: {
+    adminUserId?: string,
+    onPendingChange?: (pending: boolean) => void,
     indexInList: number,
     listNumber: number,
     orderItem: OrderProductItemWithStatus,
@@ -24,6 +27,7 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
     const [loading, setLoading] = useState(false)
 
     async function ToggleRawOrCut(value: boolean) {
+        onPendingChange?.(true)
         try {
             if(!orderItem.cartItemId) {
                 throw new Error("این محصول به سبد خرید اضافه نشده")
@@ -32,7 +36,8 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
             setRawOrCut(value)
             setLoading(true)
 
-            await UpdateCartItemRawOrCutAction(orderItem.cartItemId, value)
+            await (adminUserId ? ADMIN_UpdateCartItemRawOrCutAction(adminUserId, orderItem.cartItemId, value) : UpdateCartItemRawOrCutAction(orderItem.cartItemId, value))
+            updateOrderList(prev => prev.map(item => item.tempId === orderItem.tempId ? { ...item, rawOrCut: value } : item))
         } catch (err) {
             setRawOrCut(!value)
             if (err instanceof Error) {
@@ -50,6 +55,7 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
             }
         } finally {
             setLoading(false)
+            onPendingChange?.(false)
         }
     }
 
@@ -154,14 +160,13 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
                     user && user.id &&
                     <RemoveOrderPopover
                         userId={user.id}
+                        adminUserId={adminUserId}
+                        onPendingChange={onPendingChange}
                         cartItemId={orderItem.cartItemId}
                         disabled={loading || orderItem.cartStatus === "pending"}
                         onDeleteFromList={() => {
                             updateOrderList(prev => {
-                                const newList = [...prev]
-                                newList.splice(indexInList, 1)
-
-                                return newList
+                                return prev.filter(item => item.tempId !== orderItem.tempId)
                             })
                         }} />
                 }
@@ -172,18 +177,20 @@ export default function CartOrderItem({ indexInList, listNumber, orderItem, upda
 }
 
 
-function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList, disabled = false }: { userId: string, cartItemId: string | undefined, onDeleteFromList: CallableFunction, disabled?: boolean }) {
+function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList, disabled = false, adminUserId, onPendingChange }: { userId: string, cartItemId: string | undefined, onDeleteFromList: CallableFunction, disabled?: boolean, adminUserId?: string, onPendingChange?: (pending: boolean) => void }) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
 
     async function DeleteFromCart() {
+        if (disabled || loading) return
+        onPendingChange?.(true)
         try {
             if (disabled) return
 
             setLoading(true)
 
             if (cartItemId) {
-                await DeleteItemFromCartAction(userId, cartItemId)
+                await (adminUserId ? ADMIN_DeleteItemFromCartAction(adminUserId, cartItemId) : DeleteItemFromCartAction(userId, cartItemId))
             }
             onDeleteFromList()
 
@@ -197,6 +204,7 @@ function RemoveOrderPopover({ userId, cartItemId, onDeleteFromList, disabled = f
             }
         } finally {
             setLoading(false)
+            onPendingChange?.(false)
         }
     }
 

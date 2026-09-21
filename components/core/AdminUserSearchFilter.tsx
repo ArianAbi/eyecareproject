@@ -50,29 +50,26 @@ export function AdminUserSearchFilter({
   })
 
   useEffect(() => {
-    if (query.trim() === "") {
-      setOptions([])
-      return
-    }
-
-    setLoading(true)
+    if (query.trim() === "") return
+    let active = true
 
     const timeoutId = setTimeout(async () => {
       try {
         const result = await ADMIN_SearchUserAction(query)
+        if (!active) return
         const mapped: UserOption[] = result.map((user) => ({
           label: user.username,
           value: user.id,
         }))
         setOptions(mapped)
       } catch {
-        setOptions([])
+        if (active) setOptions([])
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }, 400)
 
-    return () => clearTimeout(timeoutId)
+    return () => { active = false; clearTimeout(timeoutId) }
   }, [query])
 
 
@@ -84,6 +81,11 @@ export function AdminUserSearchFilter({
   for (const page of ["page", "pendingPage", "restPage"]) params.delete(page)
 
   function ClearParamKey() {
+    setSelected({ label: '', value: '' })
+    setQuery('')
+    setOptions([])
+    setLoading(false)
+    onSelect?.(null)
     if (paramKey) {
       params.delete(paramKey)
       setSelected({
@@ -102,15 +104,14 @@ export function AdminUserSearchFilter({
       autoHighlight
       onValueChange={(option: UserOption | null) => {
 
-        if (paramKey && option) {
+        setSelected(option ?? { label: '', value: '' })
+        if (paramKey) {
 
           if (option) {
             params.set(paramKey, JSON.stringify(option))
           } else {
             params.delete(paramKey)
           }
-
-          setSelected(option)
 
           router.push(`${pathname}?${params.toString()}`)
         }
@@ -130,7 +131,7 @@ export function AdminUserSearchFilter({
 
         {selected.value &&
 
-          <button onClick={ClearParamKey} className="border size-4 grid place-items-center hover:bg-white/20 rounded-full">
+          <button type="button" disabled={disabled} aria-label="پاک کردن کاربر" onClick={ClearParamKey} className="border size-4 grid place-items-center hover:bg-white/20 rounded-full">
             <XIcon size={12} />
           </button>
         }
@@ -139,7 +140,11 @@ export function AdminUserSearchFilter({
       <ComboboxInput
         placeholder={placeholder}
         className="text-xs"
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          setQuery(e.target.value)
+          setLoading(e.target.value.trim() !== '')
+          if (!e.target.value.trim()) setOptions([])
+        }}
       />
 
       <ComboboxContent>

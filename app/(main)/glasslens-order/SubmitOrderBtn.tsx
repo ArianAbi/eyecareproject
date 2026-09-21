@@ -3,20 +3,26 @@ import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } 
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { SubmitCartOrderAction } from "@/lib/actions/cart.actions";
+import { ADMIN_SubmitCartOrderAction } from "@/lib/actions/admin.cart.actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function SubmitOrderBtn({ customerNote = "", disabled = false }: { customerNote?: string, disabled?: boolean }) {
+export default function SubmitOrderBtn({ customerNote = "", disabled = false, adminUserId, onPendingChange }: { customerNote?: string, disabled?: boolean, adminUserId?: string, onPendingChange?: (pending: boolean) => void }) {
     const [loading, setLoading] = useState(false)
     const [open, setOpen] = useState(false)
 
     const router = useRouter()
 
     async function SubmitOrder() {
+        if (disabled || loading) return
         try {
             setLoading(true)
+            onPendingChange?.(true)
 
-            await SubmitCartOrderAction({ deliveryPrice: 0, customerNote })
+            const result = await (adminUserId
+                ? ADMIN_SubmitCartOrderAction(adminUserId, { deliveryPrice: 0, customerNote })
+                : SubmitCartOrderAction({ deliveryPrice: 0, customerNote }))
+            if (!result.success) throw new Error('سفارش ثبت نشد؛ حساب و سبد خرید را بررسی کنید')
 
             toast.add({
                 type: "Success",
@@ -39,6 +45,7 @@ export default function SubmitOrderBtn({ customerNote = "", disabled = false }: 
             })
         } finally {
             setLoading(false)
+            onPendingChange?.(false)
         }
     }
 

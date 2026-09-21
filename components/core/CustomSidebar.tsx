@@ -228,6 +228,10 @@ export const AdminSidebarData: SidebarDataType = {
         {
           title: "سفارش ها",
           path: `/admin/orders`
+        },
+        {
+          title: "ثبت سفارش برای کاربر",
+          path: '/admin/glasslens-order'
         }
       ],
       badgeFn: useOrderCount

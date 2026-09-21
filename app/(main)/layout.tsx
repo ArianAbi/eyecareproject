@@ -53,7 +53,7 @@ export default async function AuthLayout({
             </>
           }
         />
-        <div className="w-full flex flex-col">
+        <div className="w-full max-lg:min-w-0 flex flex-col">
           <Header sidebar />
 
           {accountStatus !== undefined && accountStatus != 'VERIFIED' &&
