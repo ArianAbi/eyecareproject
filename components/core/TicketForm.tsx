@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "../ui/button"
 import { Label } from "../ui/label"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { Spinner } from "../ui/spinner"
+import TextError from "../TextError"
 
 export function TicketForm({ ticketId, admin = false }: { ticketId?: string, admin?: boolean }) {
     const [open, setOpen] = useState(false)
@@ -17,18 +18,18 @@ export function TicketForm({ ticketId, admin = false }: { ticketId?: string, adm
     const [error, setError] = useState('')
     const router = useRouter()
 
-    if(ticketId) return <>
-    {/* <div className="fixed bottom-2 left-1/2 -translate-x-1/2 min-h-10 max-w-4xl w-full">
+    if (ticketId) return <>
+        {/* <div className="fixed bottom-2 left-1/2 -translate-x-1/2 min-h-10 max-w-4xl w-full">
         <Textarea className="border" placeholder="GGG"/>
     </div> */}
-    <div className="min-h-10 w-full">
-        <h2>پیام جدید</h2>
+        <div className="min-h-10 w-full">
+            <h2>پیام جدید</h2>
 
-        <Textarea className="mt-2" />
-        <Button className={'mt-2'} variant={'green'}>
-            ارسال
-        </Button>
-    </div>
+            <Textarea className="mt-2" />
+            <Button className={'mt-2'} variant={'green'}>
+                ارسال
+            </Button>
+        </div>
     </>
 
     return <AlertDialog open={open} onOpenChange={setOpen}>
@@ -79,7 +80,10 @@ export function TicketForm({ ticketId, admin = false }: { ticketId?: string, adm
                     <Textarea id="ticket-message" name="message" required maxLength={5000} rows={4} />
                 </div>
                 {error &&
-                    <p role="alert" className="text-sm text-destructive">{error}</p>}
+                    <TextError>
+                        {error}
+                    </TextError>
+                }
 
 
                 <div className="space-x-2 mt-3">

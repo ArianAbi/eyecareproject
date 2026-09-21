@@ -7,8 +7,19 @@ import { signIn } from "../Auth"
 import { AuthError } from "next-auth"
 import { LoginSchema, SignupSchema } from "../schemas/auth.schema"
 import { hashPassword } from "../password"
+import { toast } from "@/components/ui/toast"
+import { ActionError } from "../action-error"
+type SignupField = "username" | "number" | "password" | "confirmPassword"
 
-export async function CreateUserAction(username: string, number: string, password: string) {
+export type CreateUserResult =
+    | { success: true }
+    | { success: false; error: string; fieldErrors?: Partial<Record<SignupField, string>> }
+
+export async function CreateUserAction(
+    username: string,
+    number: string,
+    password: string
+): Promise<CreateUserResult> {
 
     const validateFields = SignupSchema.safeParse({
         username,
@@ -18,44 +29,69 @@ export async function CreateUserAction(username: string, number: string, passwor
     })
 
     if (!validateFields.success) {
+        const flat = validateFields.error.flatten().fieldErrors
+        const fieldErrors: Partial<Record<SignupField, string>> = {}
+        for (const [key, messages] of Object.entries(flat)) {
+            if (messages?.[0]) fieldErrors[key as SignupField] = messages[0]
+        }
+        return { success: false, error: "اطلاعات وارد شده معتبر نیست", fieldErrors }
+    }
+
+    const data = validateFields.data
+
+    // Check for duplicates first so we know exactly which field clashed
+    const existing = await prisma.user.findMany({
+        where: { OR: [{ username: data.username }, { number: data.number }] },
+        select: { username: true, number: true }
+    })
+
+    if (existing.length > 0) {
+        const fieldErrors: Partial<Record<SignupField, string>> = {}
+        if (existing.some(u => u.number === data.number)) {
+            fieldErrors.number = "کاربری با این شماره قبلاً ثبت شده است"
+        }
+        if (existing.some(u => u.username === data.username)) {
+            fieldErrors.username = "این نام کاربری قبلاً گرفته شده است"
+        }
         return {
-            error: "validation failed",
-            errors: validateFields.error.flatten()
+            success: false,
+            error: fieldErrors.number ?? fieldErrors.username!,
+            fieldErrors
         }
     }
 
     try {
-        const passwordHash = await hashPassword(validateFields.data.password)
+        const passwordHash = await hashPassword(data.password)
+
         await prisma.$transaction(async tx => {
-        const user = await tx.user.create({
-            data: {
-                username: validateFields.data.username,
-                number: validateFields.data.number,
-                password: passwordHash,
-            }
-        })
+            const user = await tx.user.create({
+                data: {
+                    username: data.username,
+                    number: data.number,
+                    password: passwordHash,
+                }
+            })
 
             await writeAudit(tx, user.id, "ACCOUNT_CREATED", "User", user.id)
         })
 
-        await signIn('credentials', {
-            username: validateFields.data.username,
-            password: validateFields.data.password,
-            redirect: true,
-            redirectTo: '/',
-        })
-
-        return {}
+        return { success: true }
     } catch (err) {
-        if (err instanceof AuthError) {
+        // Race condition: someone took the username/number between the check and the insert
+        if ((err as { code?: string })?.code === "P2002") {
             return {
-                error: "اطلاعات وارد شده صحیح نمیباشد"
+                success: false,
+                error: "کاربری با این نام کاربری یا شماره قبلاً ثبت شده است"
             }
         }
-        throw err
+
+        console.error(err)
+
+        throw new ActionError({
+            error: "مشکلی در ایجاد حساب پیش آمده. دوباره تلاش کنید یا با پشتیبانی تماس بگیرید"
+        })
     }
 }
-
 export async function LoginAction(username: string, password: string) {
     const validateFields = LoginSchema.safeParse({
         username,

@@ -93,10 +93,10 @@ export function LoginForm() {
 
 export function SignupForm() {
     const {
-        register,
         handleSubmit,
         formState,
-        control
+        control,
+        setError
     } = useForm<SignupSchemaType>({
         resolver: zodResolver(SignupSchema),
         mode: "onChange",
@@ -110,14 +110,28 @@ export function SignupForm() {
     })
 
     const onSubmit = handleSubmit(async (data) => {
-        const response = await CreateUserAction(data.username, data.number, data.password)
+        let response: Awaited<ReturnType<typeof CreateUserAction>>
 
-        if (response.error) {
+        try {
+            response = await CreateUserAction(data.username, data.number, data.password)
+        } catch (err) {
+            toast.add({
+                type: "error",
+                title: "مشکلی در ایجاد حساب پیش آمده. دوباره تلاش کنید یا با پشتیبانی تماس بگیرید"
+            })
+            return
+        }
+
+        if (!response.success) {
+            // show the message under the offending field(s)
+            for (const [field, message] of Object.entries(response.fieldErrors ?? {})) {
+                setError(field as keyof SignupSchemaType, { type: "server", message })
+            }
+
             toast.add({
                 title: response.error,
                 type: "error"
             })
-
             return
         }
 
@@ -126,8 +140,10 @@ export function SignupForm() {
             type: "success"
         })
 
-        LoginAction(data.username, data.password)
+        // outside the try/catch so its redirect isn't caught as an error
+        await LoginAction(data.username, data.password)
     })
+
 
     return <>
         <Card>
@@ -153,7 +169,7 @@ export function SignupForm() {
                         <FormFieldShorthand
                             control={control}
                             label="شماره"
-                            placeholder="شماره"
+                            placeholder="0912xxxxxxx"
                             name="number"
                             type="text"
                         />

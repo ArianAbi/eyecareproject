@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import { PayInvoiceAction } from "@/lib/actions/invoices.action"
 import { ADMIN_ApproveInvoiceAction, ADMIN_RejectInvoiceAction } from "@/lib/actions/admin.invoices.action"
 import { Button } from "../ui/button"
+import TextError from "../TextError"
+import { cn } from "@/lib/utils"
 
-export function InvoiceControls({ id, admin = false }: { id: string, admin?: boolean }) {
+export function InvoiceControls({ id, admin = false, largePayBtn = false }: { id: string, admin?: boolean, largePayBtn?: boolean }) {
     const [pending, startTransition] = useTransition()
     const [error, setError] = useState('')
     const router = useRouter()
@@ -29,11 +31,13 @@ export function InvoiceControls({ id, admin = false }: { id: string, admin?: boo
             {admin ? <>
                 <Button
                     disabled={pending}
+                    className="z-50"
                     onClick={() => run('approve')}>
                     تایید اعتبار
                 </Button>
                 <Button
                     disabled={pending}
+                    className="z-50"
                     variant="outline"
                     onClick={() => run('reject')}>
                     رد درخواست
@@ -42,6 +46,13 @@ export function InvoiceControls({ id, admin = false }: { id: string, admin?: boo
                 :
                 <Button
                     disabled={pending}
+                    className={
+                        cn(
+                            largePayBtn ? 'w-full max-w-xl' : ''
+                        )
+                    }
+                    variant={largePayBtn ? 'green' : 'default'}
+                    size={largePayBtn ? 'lg' : 'sm'}
                     onClick={() => run('pay')}>
                     {pending ?
                         'اتصال به درگاه…'
@@ -50,5 +61,10 @@ export function InvoiceControls({ id, admin = false }: { id: string, admin?: boo
                 </Button>
             }
 
-        </div>{error || true && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>
+        </div>{error &&
+            <TextError>
+                {error}
+            </TextError>
+        }
+    </div>
 }

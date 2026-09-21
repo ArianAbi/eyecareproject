@@ -20,7 +20,7 @@ export default async function InvoiceDetailPage({ params }: {
 
     const { text, bg } = InvoiceStatusFarsi(invoice.data.status)
 
-    return <div className="p-3 space-y-4">
+    return <div className="p-3 space-y-4 max-w-2xl">
         <Link href="/invoices" className="text-sm underline">بازگشت به صورتحساب‌ها</Link>
         <h2 className="mb-2">فاکتور شماره {invoice.data.invoiceNumber}</h2>
 
@@ -64,6 +64,11 @@ export default async function InvoiceDetailPage({ params }: {
             </CardContent>
         </Card>
         {invoice.data.zarinpalRefId && <p>کد پیگیری: {invoice.data.zarinpalRefId}</p>}
-        {invoice.data.status === 'PENDING' && invoice.data.paymentType === 'CASH' && <InvoiceControls id={id} />}
+        {invoice.data.status === 'PENDING' && invoice.data.paymentType === 'CASH' &&
+            <InvoiceControls 
+            id={id} 
+            largePayBtn
+            />
+        }
     </div>
 }

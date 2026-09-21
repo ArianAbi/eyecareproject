@@ -6,7 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
-import { CartItem, Prisma, Tags } from "@/generated/prisma/client"
+import { CartItem, Prisma, Tags, UserVerifyType } from "@/generated/prisma/client"
 import { IsInRange } from "@/lib/is-in-range"
 import { lensFilter } from "@/lib/lens-filter"
 import { AllLensRanges, NegativeLensRanges } from "@/lib/lens-range"
@@ -24,7 +24,7 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTr
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-export default function GlasslensOrderPage({ products, categorys, tags, cartItems }: {
+export default function GlasslensOrderPage({ products, categorys, accountStatus, userCredit, tags, cartItems }: {
     products: LensProductType[],
     categorys: Prisma.SubCategoryGetPayload<{
         include: {
@@ -36,6 +36,8 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
             }
         }
     }>[],
+    userCredit: number | undefined,
+    accountStatus: UserVerifyType | undefined,
     tags: Tags[],
     cartItems: Prisma.CartItemGetPayload<{
         include: {
@@ -71,6 +73,13 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
     }))
 
     const [orderProductItems, setOrderProductItems] = useState<OrderProductItemWithStatus[]>(mappedItems)
+
+    const accountVeified = accountStatus ? accountStatus == 'VERIFIED' ? true : false : false
+
+    const orderSumPrice = orderProductItems.reduce((acc, curr) => {
+        const price = curr.odOnly ? curr.price / 2 : curr.price
+        return acc += price
+    }, 0)
 
     useEffect(() => {
         setOrderProductItems(mappedItems)
@@ -122,7 +131,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
             const result = await AddItemToCartAction(item)
 
             if (!result.success || !result.cartItem) {
-                toast.add({ type: "Error", title: "سفارش افزوده نشد", description: result.error })
+                toast.add({ type: "error", title: "سفارش افزوده نشد", description: result.error })
                 setOrderProductItems(prev =>
                     prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
                 )
@@ -133,7 +142,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                 ? { ...i, cartStatus: "success", cartItemId: result.cartItem.id }
                 : i))
         } catch {
-            toast.add({ type: "Error", title: "سفارش افزوده نشد" })
+            toast.add({ type: "error", title: "سفارش افزوده نشد" })
             setOrderProductItems(prev =>
                 prev.map(i => i.tempId === tempId ? { ...i, cartStatus: "error" } : i)
             )
@@ -351,6 +360,7 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                     </Table>
                 </div>
 
+                {/* order summery */}
                 <div className="col-span-3 rounded-lg p-2 max-h-fit sticky top-2 border border-dashed border-white/50 flex flex-col">
                     <table className="text-sm">
                         <thead>
@@ -498,10 +508,28 @@ export default function GlasslensOrderPage({ products, categorys, tags, cartItem
                         </DialogContent>
                     </Dialog>
 
-                    <SubmitOrderBtn
-                        customerNote={userNote}
-                        disabled={orderProductItems.length <= 0 || orderProductItems.some(item => item.cartStatus !== "success")}
-                    />
+                    {!accountVeified &&
+                        <>
+                            <SubmitOrderBtn
+                                customerNote={userNote}
+                                disabled
+                            />
+                            <span className="text-amber-400 text-center text-sm">حساب شما تایید نشده</span>
+                        </>
+                    }
+
+                    {accountVeified &&
+                        <>
+                            <SubmitOrderBtn
+                                customerNote={userNote}
+                                disabled={orderProductItems.length <= 0 || orderProductItems.some(item => item.cartStatus !== "success")}
+                            />
+
+                            {!userCredit || userCredit < orderSumPrice &&
+                                <span className="text-amber-400 text-center text-sm">حساب شما تایید نشده</span>
+                            }
+                        </>
+                    }
                 </div>
             </section>
 

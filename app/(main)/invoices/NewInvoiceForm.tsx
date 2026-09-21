@@ -56,7 +56,7 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defau
 
 
             toast.add({
-                type: "Success",
+                type: "success",
                 title: "صورتحساب ساخته شد"
             })
 
@@ -69,7 +69,7 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defau
             console.error(err);
 
             toast.add({
-                type: "Error",
+                type: "error",
                 title: "خطایی رخ داد",
                 ...(err instanceof Error ? { description: err.message } : {})
             })
@@ -87,7 +87,7 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defau
     }
 
     return <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'mb-2')}>
+        <AlertDialogTrigger className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'mb-auto')}>
             افزایش موجودی
         </AlertDialogTrigger>
 

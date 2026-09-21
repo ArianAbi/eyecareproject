@@ -27,7 +27,7 @@ export function AdminCreateTagBtn() {
 
             if (!tag) {
                 toast.add({
-                    type: "Error",
+                    type: "error",
                     title: "Tag is empty"
                 })
 
@@ -38,7 +38,7 @@ export function AdminCreateTagBtn() {
             setTag("")
 
             toast.add({
-                type: "Success",
+                type: "success",
                 title: "Tag Created"
             })
 
@@ -46,7 +46,7 @@ export function AdminCreateTagBtn() {
         } catch (err) {
             if (err instanceof Error) {
                 toast.add({
-                    type: "Error",
+                    type: "error",
                     title: "Failed to create Tag",
                     description: `${err.message}`
                 })
@@ -54,7 +54,7 @@ export function AdminCreateTagBtn() {
                 return
             }
             toast.add({
-                type: "Error",
+                type: "error",
                 title: "Failed to create Tag",
                 description: "unknown error"
             })

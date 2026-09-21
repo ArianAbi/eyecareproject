@@ -36,7 +36,7 @@ export function ActionButton({ action, children }: { action: () => Promise<unkno
                             catch (err) {
                                 toast.add({
                                     title: 'عملیات انجام نشد؛ وضعیت را بررسی و دوباره تلاش کنید.',
-                                    type: "Error"
+                                    type: "error"
                                 })
                                 setError('عملیات انجام نشد؛ وضعیت را بررسی و دوباره تلاش کنید.')
                             }

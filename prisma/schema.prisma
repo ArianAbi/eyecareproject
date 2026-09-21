@@ -12,6 +12,13 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserVerifyType {
+  UNVERIFIED
+  WAITING_FOR_APPROVAL
+  VERIFIED
+  REJECTED
+}
+
 model User {
   id       String  @id @default(uuid())
   username String  @unique
@@ -25,7 +32,7 @@ model User {
   managementName String @default("")
   storeName      String @default("")
 
-  accountVerifyed Boolean @default(false)
+  userStatus UserVerifyType @default(UNVERIFIED)
 
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt

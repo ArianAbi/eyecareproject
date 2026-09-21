@@ -70,7 +70,7 @@ export function CategoryDialog({ category, range, AddToOrder }: {
 
         if (!odAvailability || !osAvailability) {
             toast.add({
-                type: "Error",
+                type: "error",
                 title: "در تحلیل نمرات مشکلی پیش آمد",
                 description: "Range Conversion retured NaN"
             })

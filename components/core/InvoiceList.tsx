@@ -9,11 +9,18 @@ import CustomPagination from "./CustomPagination"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { InvoiceControls } from "./InvoiceControls"
 import { Badge } from "../ui/badge"
+import { cn } from "@/lib/utils"
+import { ReactNode } from "react"
 
-export async function InvoiceList({ admin = false, filters }: { admin?: boolean, filters: InvoiceFilters }) {
+export async function InvoiceList({ admin = false, filters, children }: { admin?: boolean, filters: InvoiceFilters, children: ReactNode }) {
     const { data } = await (admin ? ADMIN_GetInvoicesAction : GetInvoicesAction)({ ...filters, userId: selectedUser(filters.userId) })
-    return <div className="space-y-4">
-        <QueryFilters admin={admin} payment statuses={(['PENDING', 'WAITING_FOR_APPORVAL', 'PAID', 'CANCELED'] as const).map(value => ({ value, label: InvoiceStatusFarsi(value).text }))} />
+    
+    return <div className="space-y-0">
+        <div className="flex items-center justify-between">
+            {children}
+
+            <QueryFilters admin={admin} payment statuses={(['PENDING', 'WAITING_FOR_APPORVAL', 'PAID', 'CANCELED'] as const).map(value => ({ value, label: InvoiceStatusFarsi(value).text }))} />
+        </div>
         <div className="rounded-lg border">
             <Table>
                 <TableHeader>
@@ -30,7 +37,9 @@ export async function InvoiceList({ admin = false, filters }: { admin?: boolean,
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.invoices.map(invoice => <TableRow key={invoice.id}>
+                    {data.invoices.map(invoice => {
+
+                        return <TableRow key={invoice.id} className="cursor-pointer">
                         <TableCell>
                             <Link className="underline" href={`${admin ? '/admin' : ''}/invoices/${invoice.id}`}>
                                 #{invoice.invoiceNumber}
@@ -39,7 +48,7 @@ export async function InvoiceList({ admin = false, filters }: { admin?: boolean,
                         {admin &&
                             <TableCell>
                                 <Link href={`/admin/users/${invoice.userId}`} className="underline">
-                                {'user' in invoice ? (invoice.user as { username: string }).username : ''}
+                                    {'user' in invoice ? (invoice.user as { username: string }).username : ''}
                                 </Link>
                             </TableCell>
                         }
@@ -53,7 +62,15 @@ export async function InvoiceList({ admin = false, filters }: { admin?: boolean,
                             {InvoicePaymentTypeFarsi(invoice.paymentType)}
                         </TableCell>
                         <TableCell>
-                            <Badge variant="outline">
+                            <Badge variant="outline"
+                                className={cn(
+                                    invoice.status == 'PAID'
+                                        ? 'bg-emerald-500/30' :
+                                        invoice.status == 'WAITING_FOR_APPORVAL'
+                                            ? 'bg-cyan-500/30' :
+                                            invoice.status == 'PENDING'
+                                                ? 'bg-amber-500/30' :
+                                                '')}>
                                 {InvoiceStatusFarsi(invoice.status).text}
                             </Badge>
                         </TableCell>
@@ -76,6 +93,7 @@ export async function InvoiceList({ admin = false, filters }: { admin?: boolean,
                                     '—'}
                         </TableCell>
                     </TableRow>
+                    }
                     )}
                     {!data.total &&
                         <TableRow>
@@ -88,5 +106,5 @@ export async function InvoiceList({ admin = false, filters }: { admin?: boolean,
             </Table>
         </div>
         <CustomPagination total={data.total} paramKey="page" />
-    </div>
+    </div >
 }

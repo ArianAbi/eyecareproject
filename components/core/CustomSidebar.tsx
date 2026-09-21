@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCardPlus, Globe, Hammer, LayoutDashboard, LayoutList, List, ReceiptIcon, TicketIcon, User, type LucideIcon } from "lucide-react"
+import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCardPlus, Globe, Hammer, LayoutDashboard, LayoutList, List, ReceiptIcon, TicketIcon, User, UserIcon, type LucideIcon } from "lucide-react"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -48,10 +48,11 @@ export interface SidebarNavGroup {
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   data: SidebarDataType
   header?: React.ReactNode
-  footer?: boolean
+  footer?: boolean,
+  admin: boolean
 }
 
-export function CustomSidebar({ data, header, footer = false, ...props }: AppSidebarProps) {
+export function CustomSidebar({ data, admin = false, header, footer = false, ...props }: AppSidebarProps) {
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
       {header && <SidebarHeader>{header}</SidebarHeader>}
@@ -72,7 +73,7 @@ export function CustomSidebar({ data, header, footer = false, ...props }: AppSid
       </SidebarContent>
       <SidebarRail />
 
-      {data.footer && footer && <SidebarFooter>
+      {data.footer && footer && admin && <SidebarFooter>
         <SidebarFooterItem key={data.footer.path}
           title={data.footer.title}
           icon={data.footer.icon}
@@ -278,7 +279,7 @@ export const AdminSidebarData: SidebarDataType = {
 export const UserSidebarData: SidebarDataType = {
   menus: [
     { group_title: "خانه", icon: Globe, items: [{ title: "خانه", path: "/" }] },
-    { group_title: "پشتیبانی", icon: ReceiptIcon, items: [{ title: "پشتیبانی و تیکت‌ها", path: "/tickets" }] },
+    { group_title: "پروفایل", icon: UserIcon, items: [{ title: "پروفایل", path: "/profile" }] },
     {
       group_title: "سفارش عدسی",
       icon: ReceiptIcon,
@@ -289,6 +290,7 @@ export const UserSidebarData: SidebarDataType = {
         }
       ]
     },
+    { group_title: "پشتیبانی", icon: ReceiptIcon, items: [{ title: "پشتیبانی و تیکت‌ها", path: "/tickets" }] },
     {
       group_title: "سفارش ها",
       icon: List,

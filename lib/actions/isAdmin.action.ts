@@ -10,3 +10,11 @@ export async function isAdmin() {
     const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { admin: true } })
     return user?.admin === true
 }
+
+export async function isLoggedIn() {
+    const session = await auth()
+    if (!session?.user) return false
+    if (!session?.user?.id) return false
+
+    return true
+}

@@ -3,6 +3,7 @@ import { NewInvoiceForm } from "./NewInvoiceForm"
 import type { InvoiceFilters } from "@/lib/invoice-filters"
 import { requireUser } from "@/lib/access"
 import prisma from "@/lib/db"
+import TextError from "@/components/TextError"
 
 export default async function InvoicesPage({ searchParams }: {
     searchParams: Promise<InvoiceFilters & {
@@ -24,15 +25,16 @@ export default async function InvoicesPage({ searchParams }: {
         </p> */}
         {
             params.payment === 'error' &&
-            <p role="alert" className="text-xs md:text-sm p-3 w-fit bg-red-500/50 border-red-500 rounded-lg border-2">
+            <TextError>
                 تایید پرداخت انجام نشد. وارد حساب خود شوید و در صورت کسر وجه، از طریق تیکت پیگیری کنید.
-            </p>
+            </TextError>
         }
 
-        <NewInvoiceForm
-            defaultOpen={Boolean(params.addCreditOpen)}
-            defaultOpenParamKey="addCreditOpen"
-        />
-        <InvoiceList filters={params} />
+        <InvoiceList filters={params} >
+            <NewInvoiceForm
+                defaultOpen={Boolean(params.addCreditOpen)}
+                defaultOpenParamKey="addCreditOpen"
+            />
+        </InvoiceList>
     </div>
 }

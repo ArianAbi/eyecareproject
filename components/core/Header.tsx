@@ -35,9 +35,6 @@ export default async function Header({sidebar=false}) {
             }
 
             {session &&
-            // <pre>
-            //     {JSON.stringify(session.user)}
-            // </pre>
                 <LogoutBtn
                 username={session.user.username}
                 credit={account?.credit ?? 0}

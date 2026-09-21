@@ -16,7 +16,7 @@ export default function SubmitOrderBtn({ customerNote = "", disabled = false }: 
         try {
             setLoading(true)
 
-            await SubmitCartOrderAction(0, customerNote)
+            await SubmitCartOrderAction({ deliveryPrice: 0, customerNote })
 
             toast.add({
                 type: "Success",
@@ -28,13 +28,13 @@ export default function SubmitOrderBtn({ customerNote = "", disabled = false }: 
         } catch (err) {
             if (err instanceof Error) {
                 toast.add({
-                    type: "Error",
+                    type: "error",
                     title: "مشکلی در ثبت سفارش پیش آمده. با پشتیبانی در ارتباط باشید",
                     description: err.message
                 })
             }
             toast.add({
-                type: "Error",
+                type: "error",
                 title: "مشکلی در ثبت سفارش پیش آمده. با پشتیبانی در ارتباط باشید",
             })
         } finally {
@@ -44,7 +44,7 @@ export default function SubmitOrderBtn({ customerNote = "", disabled = false }: 
 
     return <>
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger className={buttonVariants({ variant: 'green' })}>
+            <PopoverTrigger disabled={disabled} className={buttonVariants({ variant: 'green' })}>
                 <span>
                     ثبت سفارش
                 </span>
@@ -64,23 +64,23 @@ export default function SubmitOrderBtn({ customerNote = "", disabled = false }: 
                 </PopoverHeader>
 
 
-            <div className="flex gap-1">
-                <Button onClick={SubmitOrder} disabled={disabled || loading} variant={"green"} className="text-xs">
-                    <span>
-                        ثبت سفارش
-                    </span>
-                    {
-                        loading &&
+                <div className="flex gap-1">
+                    <Button onClick={SubmitOrder} disabled={disabled || loading} variant={"green"} className="text-xs">
                         <span>
-                            <Spinner />
+                            ثبت سفارش
                         </span>
-                    }
-                </Button>
+                        {
+                            loading &&
+                            <span>
+                                <Spinner />
+                            </span>
+                        }
+                    </Button>
 
-                <Button onClick={()=>setOpen(false)} variant={'outline'} className={"text-xs"}>
-                    لغو
-                </Button>
-            </div>
+                    <Button onClick={() => setOpen(false)} variant={'outline'} className={"text-xs"}>
+                        لغو
+                    </Button>
+                </div>
             </PopoverContent>
         </Popover>
     </>
