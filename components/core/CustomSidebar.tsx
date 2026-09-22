@@ -22,7 +22,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { SidebarDataType } from "@/types/sidebar-data"
-import { useApprovalCount, useOrderCount } from "@/app/admin/AdminProviders"
+import { useApprovalCount, useCreditInvoiceCount, useOpenTicketCount, useOrderCount } from "@/app/admin/AdminProviders"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -207,7 +207,7 @@ export const AdminSidebarData: SidebarDataType = {
     },
     { group_title: "گزارش مالی", icon: BanknoteArrowUp, items: [{ title: "گزارش مالی", path: "/admin/financial" }] },
     { group_title: "آمار ورودی سایت", icon: PieChartIcon, items: [{ title: "آمار ورودی سایت", path: "/admin/analytics" }] },
-    { group_title: "تیکت‌ها", icon: TicketIcon, items: [{ title: "تیکت‌ها", path: "/admin/tickets" }] },
+    { group_title: "تیکت‌ها", icon: TicketIcon, badgeFn: useOpenTicketCount, items: [{ title: "تیکت‌ها", path: "/admin/tickets" }] },
     { group_title: "گزارش فعالیت‌ها", icon: List, items: [{ title: "گزارش فعالیت‌ها", path: "/admin/logs" }] },
     {
       group_title: "مدیریت کاربران",
@@ -266,6 +266,7 @@ export const AdminSidebarData: SidebarDataType = {
     {
       group_title: "صورتحساب ها",
       icon: BanknoteArrowUp,
+      badgeFn: useCreditInvoiceCount,
       items: [
         {
           title: "صورتحساب ها",

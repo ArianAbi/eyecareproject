@@ -10,11 +10,30 @@ import { z } from "zod"
 import type { Prisma } from "@/generated/prisma/client"
 import { PaginationObjectDB } from "../pagination-object"
 
-export async function ADMIN_GetUsersActions(){
+export type AdminUserFilters = {
+    username?: string
+    number?: string
+    status?: string
+}
+
+const userFilterStatusSchema = z.enum(['UNVERIFIED', 'WAITING_FOR_APPROVAL', 'VERIFIED', 'REJECTED'])
+
+export async function ADMIN_GetUsersActions(filters: AdminUserFilters = {}){
     try{
         await requireAdmin()
 
+        const parsedFilters = z.object({
+            username: z.string().trim().max(100).optional().catch(undefined),
+            number: z.string().trim().max(20).optional().catch(undefined),
+            status: userFilterStatusSchema.optional().catch(undefined),
+        }).parse(filters)
+
         const data = await prisma.user.findMany({
+            where: {
+                username: parsedFilters.username ? { contains: parsedFilters.username, mode: 'insensitive' } : undefined,
+                number: parsedFilters.number ? { contains: parsedFilters.number } : undefined,
+                userStatus: parsedFilters.status,
+            },
             omit:{
                 password:true,
                 updatedAt:true

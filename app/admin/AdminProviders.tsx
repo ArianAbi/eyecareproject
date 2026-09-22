@@ -6,6 +6,8 @@ import { createContext, useContext, useEffect, useState } from "react"
 
 const OrderCountContext = createContext<number | null>(null)
 const ApprovalCountContext = createContext(0)
+const OpenTicketCountContext = createContext(0)
+const CreditInvoiceCountContext = createContext(0)
 
 export function ApprovalCountProvider({ count, children }: { count: number, children: React.ReactNode }) {
   return <ApprovalCountContext.Provider value={count}>{children}</ApprovalCountContext.Provider>
@@ -13,6 +15,22 @@ export function ApprovalCountProvider({ count, children }: { count: number, chil
 
 export function useApprovalCount() {
   return useContext(ApprovalCountContext)
+}
+
+export function OpenTicketCountProvider({ count, children }: { count: number, children: React.ReactNode }) {
+  return <OpenTicketCountContext.Provider value={count}>{children}</OpenTicketCountContext.Provider>
+}
+
+export function useOpenTicketCount() {
+  return useContext(OpenTicketCountContext)
+}
+
+export function CreditInvoiceCountProvider({ count, children }: { count: number, children: React.ReactNode }) {
+  return <CreditInvoiceCountContext.Provider value={count}>{children}</CreditInvoiceCountContext.Provider>
+}
+
+export function useCreditInvoiceCount() {
+  return useContext(CreditInvoiceCountContext)
 }
 
 export function OrderCountProvider({ children }: { children: React.ReactNode }) {

@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "مدیریت", robots: { index: fals
 import { AdminSidebarData, CustomSidebar } from "@/components/core/CustomSidebar";
 import Header from "@/components/core/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { ApprovalCountProvider, OrderCountProvider } from "./AdminProviders";
+import { ApprovalCountProvider, CreditInvoiceCountProvider, OpenTicketCountProvider, OrderCountProvider } from "./AdminProviders";
 
 export default async function AuthLayout({
     children,
@@ -17,13 +17,19 @@ export default async function AuthLayout({
     if (!session?.user?.id) redirect('/login')
     const account = await prisma.user.findUnique({ where: { id: session.user.id }, select: { admin: true } })
     if (!account?.admin) redirect('/')
-    const approvalCount = await prisma.user.count({ where: { userStatus: 'WAITING_FOR_APPROVAL' } })
+    const [approvalCount, openTicketCount, creditInvoiceCount] = await Promise.all([
+        prisma.user.count({ where: { userStatus: 'WAITING_FOR_APPROVAL' } }),
+        prisma.ticket.count({ where: { status: 'OPEN' } }),
+        prisma.invoice.count({ where: { status: 'WAITING_FOR_APPORVAL', paymentType: 'CREDIT' } }),
+    ])
     return (
         <>
             <div className="relative">
                 <SidebarProvider>
                     <OrderCountProvider>
                         <ApprovalCountProvider count={approvalCount}>
+                        <OpenTicketCountProvider count={openTicketCount}>
+                        <CreditInvoiceCountProvider count={creditInvoiceCount}>
                         <CustomSidebar
                             admin
                             data={AdminSidebarData}
@@ -39,6 +45,8 @@ export default async function AuthLayout({
                             <Header sidebar />
                             <main className="p-3">{children}</main>
                         </div>
+                        </CreditInvoiceCountProvider>
+                        </OpenTicketCountProvider>
                         </ApprovalCountProvider>
                     </OrderCountProvider>
                 </SidebarProvider>
