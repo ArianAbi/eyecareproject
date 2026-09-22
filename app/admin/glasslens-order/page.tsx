@@ -50,7 +50,7 @@ export default async function AdminGlasslensOrderPage({
               <Badge variant="outline">
                 {userStatusLabels[user.userStatus]}
               </Badge>
-              <span>اعتبار: {user.credit.toLocaleString("fa-IR")} تومان</span>
+              <span>اعتبار: {user.credit.toLocaleString()} تومان</span>
             </div>
             <p className="text-sm text-muted-foreground">
               سبد خرید فعلی این کاربر نمایش داده می‌شود. تغییرات و ثبت نهایی

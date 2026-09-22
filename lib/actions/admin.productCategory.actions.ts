@@ -12,11 +12,10 @@ export async function ADMIN_CreateProductCategoryAction(data: FormData) {
         const actor = await requireAdmin()
         return await prisma.$transaction(async tx => {
 
-        console.log(data);
-
         const name = data.get("name")
         const description = data.get("description")
         const masterCategoryId = data.get("masterCategoryId")
+        const color = data.get("color")
 
         if (!name) throw new ActionError({ error: "نام دسته بندی الزامیست" })
         if (!description) throw new ActionError({ error: "توضیحات الزامیست" })
@@ -26,7 +25,8 @@ export async function ADMIN_CreateProductCategoryAction(data: FormData) {
             data: {
                 name: name.toString(),
                 description: description.toString(),
-                masterCategoryId: masterCategoryId.toString()
+                masterCategoryId: masterCategoryId.toString(),
+                color:color?.toString()
             }
         })
 

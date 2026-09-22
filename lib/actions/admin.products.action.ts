@@ -91,7 +91,14 @@ export async function ADMIN_GetProducts() {
         const data = await prisma.product.findMany({
             include: {
                 lens: true,
-                tags: true
+                tags: true,
+                categoryRel:{
+                    select:{
+                        id:true,
+                        color:true,
+                        name:true
+                    }
+                }
             },
             orderBy: {
                 createdAt: "asc"

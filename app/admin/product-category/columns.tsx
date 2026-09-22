@@ -1,14 +1,33 @@
-"use client"
+"use client";
 
-import { colorOptionsType, colorSelectMap, FormFieldColorSelectShorthand } from "@/components/core/FormFieldColorSelectShorthand";
+import {
+  colorOptionsType,
+  colorSelectMap,
+  FormFieldColorSelectShorthand,
+} from "@/components/core/FormFieldColorSelectShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
-import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogCancel,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogContent,
+} from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { MasterCategory, Product, SubCategory } from "@/generated/prisma/client";
+import {
+  MasterCategory,
+  Product,
+  SubCategory,
+} from "@/generated/prisma/client";
 import { ActionError } from "@/lib/action-error";
-import { ADMIN_DeleteProductCategorys, ADMIN_UpdateProductCategorys } from "@/lib/actions/admin.productCategory.actions";
+import {
+  ADMIN_DeleteProductCategorys,
+  ADMIN_UpdateProductCategorys,
+} from "@/lib/actions/admin.productCategory.actions";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef } from "@tanstack/react-table";
@@ -18,267 +37,285 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-export const AdminSubCategoryColumn: ColumnDef<SubCategory & { masterCategory: MasterCategory, products: Product[] }>[] = [
-    {
-        accessorKey: "edit",
-        header: "",
-        cell: ({ row }) => {
-            return <div className="space-x-2">
-                <ProductCategoryEditBtn data={row.original} />
-            </div>
-        }
+export const AdminSubCategoryColumn: ColumnDef<
+  SubCategory & { masterCategory: MasterCategory; products: Product[] }
+>[] = [
+  {
+    accessorKey: "edit",
+    header: "",
+    cell: ({ row }) => {
+      return (
+        <div className="space-x-2">
+          <ProductCategoryEditBtn data={row.original} />
+        </div>
+      );
     },
+  },
 
-    {
-        accessorKey: "name",
-        header: "نام",
-        cell: ({ row }) => {
-            console.log(row.original);
+  {
+    accessorKey: "name",
+    header: "نام",
+    cell: ({ row }) => {
+      console.log(row.original);
 
-            return <div className="flex gap-1">
-                <div className={cn(colorSelectMap[row.original.color as colorOptionsType['value']], "border-2 border-white/60 size-4 rounded-full")}></div>
+      return (
+        <div className="flex gap-1">
+          <div
+            className={cn(
+              colorSelectMap[row.original.color as colorOptionsType["value"]],
+              "border-2 border-white/60 size-4 rounded-full",
+            )}
+          ></div>
 
-                <div>{row.original.name}</div>
-            </div>
-
-        }
+          <div>{row.original.name}</div>
+        </div>
+      );
     },
-    {
-        accessorKey: "description",
-        header: "توضیحات",
-        cell: ({ row }) => {
-            return <div className="">
-                {row.original.description}
-            </div>
-        }
+  },
+  {
+    accessorKey: "description",
+    header: "توضیحات",
+    cell: ({ row }) => {
+      return <div className="">{row.original.description}</div>;
     },
-    {
-        accessorKey: "masterCategoryId",
-        header: "زیرمجموعه",
-        cell: ({ row }) => {
-            return <div className="bg-gray-500/20 border-2 border-gray-600/20 px-2 py-1 rounded-md w-fit">
-                {row.original.masterCategory.name}
-            </div>
-        }
+  },
+  {
+    accessorKey: "masterCategoryId",
+    header: "زیرمجموعه",
+    cell: ({ row }) => {
+      return (
+        <div className="bg-gray-500/20 border-2 border-gray-600/20 px-2 py-1 rounded-md w-fit">
+          {row.original.masterCategory.name}
+        </div>
+      );
     },
-    {
-        accessorKey: "products",
-        header: "محصولات متصل",
-        cell: ({ row }) => {
-            return <div className="w-full text-center">
-                {row.original.products.length}
-            </div>
-        }
+  },
+  {
+    accessorKey: "products",
+    header: "محصولات متصل",
+    cell: ({ row }) => {
+      return (
+        <div className="w-full text-center">{row.original.products.length}</div>
+      );
     },
-    {
-        accessorKey: "createdAt",
-        header: "تاریخ ساخت",
-        cell: ({ row }) => {
-            return <div>
-                {
-                    format(row.original.createdAt, "yyyy/MM/dd")
-                }
-            </div>
-        }
+  },
+  {
+    accessorKey: "createdAt",
+    header: "تاریخ ساخت",
+    cell: ({ row }) => {
+      return <div>{format(row.original.createdAt, "yyyy/MM/dd")}</div>;
     },
-    {
-        accessorKey: "delete",
-        header: "",
-        cell: ({ row }) => {
-            return <div className="space-x-2">
-                {
-                    row.original.products.length <= 0
-                        ? <ProductCategoryDeleteBtn data={row.original} />
-                        :
-                        <Button disabled variant={"destructive"}>
-                            <TrashIcon />
-                        </Button>
-                }
-            </div>
-        }
+  },
+  {
+    accessorKey: "delete",
+    header: "",
+    cell: ({ row }) => {
+      return (
+        <div className="space-x-2">
+          {row.original.products.length <= 0 ? (
+            <ProductCategoryDeleteBtn data={row.original} />
+          ) : (
+            <Button disabled variant={"destructive"}>
+              <TrashIcon />
+            </Button>
+          )}
+        </div>
+      );
     },
-]
+  },
+];
 
-function ProductCategoryDeleteBtn({ data }: { data: SubCategory & { products: Product[] } }) {
-    // const [inputV, setInputV] = useState("")
-    const [loading, setLoading] = useState(false)
-    const containsProducts = data.products.length > 0
+function ProductCategoryDeleteBtn({
+  data,
+}: {
+  data: SubCategory & { products: Product[] };
+}) {
+  // const [inputV, setInputV] = useState("")
+  const [loading, setLoading] = useState(false);
+  const containsProducts = data.products.length > 0;
 
-    const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
-    async function onDelete() {
-        try {
-            if (data.products.length > 0) throw new ActionError({ error: "در این دسته بندی محصول هست و قابل حذف نیست" })
-            // if (disabled || inputV !== validationPhrase) {
-            //     toast.add({
-            //         title: "متن تایپ شده صحیح نیست",
-            //         type: "warning"
-            //     })
-            //     return
-            // }
+  async function onDelete() {
+    try {
+      if (data.products.length > 0)
+        throw new ActionError({
+          error: "در این دسته بندی محصول هست و قابل حذف نیست",
+        });
+      // if (disabled || inputV !== validationPhrase) {
+      //     toast.add({
+      //         title: "متن تایپ شده صحیح نیست",
+      //         type: "warning"
+      //     })
+      //     return
+      // }
 
-            setLoading(true)
+      setLoading(true);
 
-            await ADMIN_DeleteProductCategorys(data.id)
+      await ADMIN_DeleteProductCategorys(data.id);
 
-            toast.add({
-                title: "دسته بندی حذف شد",
-                type: "success"
-            })
+      toast.add({
+        title: "دسته بندی حذف شد",
+        type: "success",
+      });
 
-            setOpen(false)
-        } catch (err) {
-            toast.add({
-                title: "Failed to Delete,check console",
-                type: "error"
-            })
+      setOpen(false);
+    } catch (err) {
+      toast.add({
+        title: "Failed to Delete,check console",
+        type: "error",
+      });
 
-            console.log(err);
-        } finally {
-            setLoading(false)
-        }
+      console.log(err);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    return <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger className={buttonVariants({ variant: "destructive" })}>
-            <TrashIcon />
-        </AlertDialogTrigger>
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        className={buttonVariants({ variant: "destructive" })}
+      >
+        <TrashIcon />
+      </AlertDialogTrigger>
 
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>
-                    <span>
-                        حذف
-                    </span>
-                    <span>
-                        {" " + data.name}
-                    </span>
-                </AlertDialogTitle>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            <span>حذف</span>
+            <span>{" " + data.name}</span>
+          </AlertDialogTitle>
 
-                <AlertDialogDescription>
-                    <span>
-                        این عملیات قابل برگشت نیست
-                    </span>
-                </AlertDialogDescription>
-            </AlertDialogHeader>
+          <AlertDialogDescription>
+            <span>این عملیات قابل برگشت نیست</span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-            <div className="flex flex-col gap-2">
-                <div className="space-x-3 mt-3">
-                    <Button onClick={onDelete} disabled={containsProducts || loading} variant={"destructive"}>
-                        <span>
-                            حذف
-                        </span>
-                        {loading && <Spinner />}
-                    </Button>
+        <div className="flex flex-col gap-2">
+          <div className="space-x-3 mt-3">
+            <Button
+              onClick={onDelete}
+              disabled={containsProducts || loading}
+              variant={"destructive"}
+            >
+              <span>حذف</span>
+              {loading && <Spinner />}
+            </Button>
 
-                    <AlertDialogCancel variant={"default"}>
-                        لغو
-                    </AlertDialogCancel>
-                </div>
-            </div>
-        </AlertDialogContent>
+            <AlertDialogCancel variant={"default"}>لغو</AlertDialogCancel>
+          </div>
+        </div>
+      </AlertDialogContent>
     </AlertDialog>
+  );
 }
 
 const editSchema = z.object({
-    name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
-    description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
-    color: z.string()
-})
+  name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
+  description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
+  color: z.string(),
+});
 
 function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
+  const { handleSubmit, formState, control } = useForm({
+    resolver: zodResolver(editSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: {
+      name: data.name,
+      description: data.description,
+      color: data.color,
+    },
+  });
 
-    const { handleSubmit, formState, control } = useForm({
-        resolver: zodResolver(editSchema),
-        mode: "onChange",
-        reValidateMode: "onChange",
-        defaultValues: {
-            name: data.name,
-            description: data.description,
-            color: data.color
-        }
-    })
+  const [open, setOpen] = useState(false);
 
-    const [open, setOpen] = useState(false)
+  const onSubmit = handleSubmit(async (values) => {
+    try {
+      await ADMIN_UpdateProductCategorys(
+        data.id,
+        values.name,
+        values.description,
+        values.color,
+      );
 
-    const onSubmit = handleSubmit(async values => {
-        try {
-            await ADMIN_UpdateProductCategorys(data.id, values.name, values.description, values.color)
+      toast.add({
+        title: "دسته بندی بروزرسانی شد",
+        type: "success",
+      });
 
-            toast.add({
-                title: "دسته بندی بروزرسانی شد",
-                type: "success"
-            })
+      setOpen(false);
+    } catch (err) {
+      toast.add({
+        title: "خطا در بروزرسانی",
+        type: "error",
+      });
+      console.log(err);
+    }
+  });
 
-            setOpen(false)
-        } catch (err) {
-            toast.add({
-                title: "خطا در بروزرسانی",
-                type: "error"
-            })
-            console.log(err);
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger className={buttonVariants({ variant: "edit" })}>
+        <PenIcon />
+      </AlertDialogTrigger>
 
-        }
-    })
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            <span>بروزرسانی</span>
+            <span>{" " + data.name}</span>
+          </AlertDialogTitle>
+        </AlertDialogHeader>
 
-    return <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger className={buttonVariants({ variant: "edit" })}>
-            <PenIcon />
-        </AlertDialogTrigger>
+        <div className="flex flex-col gap-2">
+          <div className="space-y-2">
+            <FormFieldShorthand
+              control={control}
+              name="name"
+              label="نام جدید"
+              placeholder="نام جدید"
+              disabled={formState.isSubmitting}
+            />
 
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>
-                    <span>
-                        بروزرسانی
-                    </span>
-                    <span>
-                        {" " + data.name}
-                    </span>
-                </AlertDialogTitle>
-            </AlertDialogHeader>
+            <FormFieldColorSelectShorthand
+              control={control}
+              name="color"
+              label="انتخاب رنگ"
+              placeholder="انتخاب رنگ"
+              disabled={formState.isSubmitting}
+            />
 
-            <div className="flex flex-col gap-2">
-                <div className="space-y-2">
-                    <FormFieldShorthand
-                        control={control}
-                        name="name"
-                        label="نام جدید"
-                        placeholder="نام جدید"
-                        disabled={formState.isSubmitting}
-                    />
+            <FormFieldShorthand
+              control={control}
+              name="description"
+              label="توضیحات جدید"
+              placeholder="توضیحات جدید"
+              disabled={formState.isSubmitting}
+              as="textarea"
+            />
+          </div>
 
-                    <FormFieldShorthand
-                        control={control}
-                        name="description"
-                        label="توضیحات جدید"
-                        placeholder="توضیحات جدید"
-                        disabled={formState.isSubmitting}
-                        as="textarea"
-                    />
+          <div className="space-x-3 mt-3">
+            <Button
+              onClick={onSubmit}
+              disabled={formState.isSubmitting}
+              variant={"edit"}
+            >
+              <span>بروزرسانی</span>
+              {formState.isSubmitting && <Spinner />}
+            </Button>
 
-                    <FormFieldColorSelectShorthand
-                        control={control}
-                        name="color"
-                        label="انتخاب رنگ"
-                        placeholder="انتخاب رنگ"
-                        disabled={formState.isSubmitting}
-                    />
-                </div>
-
-                <div className="space-x-3 mt-3">
-                    <Button onClick={onSubmit} disabled={formState.isSubmitting} variant={"edit"}>
-                        <span>
-                            بروزرسانی
-                        </span>
-                        {formState.isSubmitting && <Spinner />}
-                    </Button>
-
-                    <AlertDialogCancel disabled={formState.isSubmitting} variant={"default"}>
-                        لغو
-                    </AlertDialogCancel>
-                </div>
-            </div>
-        </AlertDialogContent>
+            <AlertDialogCancel
+              disabled={formState.isSubmitting}
+              variant={"default"}
+            >
+              لغو
+            </AlertDialogCancel>
+          </div>
+        </div>
+      </AlertDialogContent>
     </AlertDialog>
+  );
 }
