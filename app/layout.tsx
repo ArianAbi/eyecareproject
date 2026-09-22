@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
-import { Noto_Sans_Arabic } from "next/font/google"
-import NextTopLoader from "nextjs-toploader"
+import { Noto_Sans_Arabic } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "@/components/ui/toast";
 import { SessionProvider } from "next-auth/react";
 import { TrafficTracker } from "@/components/core/TrafficTracker";
@@ -11,15 +11,21 @@ import { TrafficTracker } from "@/components/core/TrafficTracker";
 const fontSans = Noto_Sans_Arabic({
   subsets: ["arabic"],
   variable: "--font-sans",
-})
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL || 'http://localhost:3000'),
-  title: { default: "ICN | پخش عدسی عینک", template: "%s | ICN" },
-  description: "سامانه سفارش و توزیع عدسی عینک ویژه فروشگاه‌ها و همکاران اپتیک",
-  applicationName: "ICN",
-  twitter: { card: "summary", title: "ICN | پخش عدسی عینک", description: "سامانه همکاری و سفارش عدسی برای فروشگاه‌های عینک" },
+  other: {
+    enamad: "49178649",
+  },
 };
+
+// export const metadata: Metadata = {
+//   metadataBase: new URL(process.env.APP_URL || 'http://localhost:3000'),
+//   title: { default: "ICN | پخش عدسی عینک", template: "%s | ICN" },
+//   description: "سامانه سفارش و توزیع عدسی عینک ویژه فروشگاه‌ها و همکاران اپتیک",
+//   applicationName: "ICN",
+//   twitter: { card: "summary", title: "ICN | پخش عدسی عینک", description: "سامانه همکاری و سفارش عدسی برای فروشگاه‌های عینک" },
+// };
 
 export default function RootLayout({
   children,
@@ -40,9 +46,7 @@ export default function RootLayout({
         <NextTopLoader />
         <TrafficTracker />
         <DirectionProvider direction="rtl">
-          <SessionProvider>
-            {children}
-          </SessionProvider>
+          <SessionProvider>{children}</SessionProvider>
           <Toaster />
         </DirectionProvider>
       </body>
