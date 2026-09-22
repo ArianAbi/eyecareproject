@@ -218,6 +218,9 @@ model OrderBatch {
 
   customerNote String @default("")
 
+  creditCharged    Int       @default(0)
+  creditRefundedAt DateTime?
+
   orederIdentification Int @unique @default(autoincrement())
 
   status OrderItemStatus @default(PENDING)
@@ -272,6 +275,10 @@ model OrderUpdate {
 
   message String?
 
+  adminOnly      Boolean   @default(false)
+  readAt         DateTime?
+  creditRefunded Int       @default(0)
+
   orderItemId String?
   orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
 
@@ -281,6 +288,8 @@ model OrderUpdate {
   updatedStatus OrderItemStatus
 
   createdAt DateTime @default(now())
+
+  @@index([orderBatchId, adminOnly, readAt])
 }
 
 enum InvoicePaymentType {

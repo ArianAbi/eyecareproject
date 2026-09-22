@@ -4,6 +4,7 @@ import { Glasses, ClipboardList, MessagesSquare, Wallet } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import BaleNotif from "../baleSendNotification";
 
 export const metadata: Metadata = {
   title: "49178649",

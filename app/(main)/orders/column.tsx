@@ -18,6 +18,16 @@ type OrderActionType = ActionData<typeof GetOrdersAction>['orders'][0]
 
 export const OrdersColumn: ColumnDef<OrderActionType>[] = [
     {
+        id: "unreadUpdates",
+        header: "بروزرسانی‌ها",
+        cell: ({ row }) => row.original._count.orderUpdate > 0 ? <Link
+            href={`/orders/${row.original.id}`}
+            className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800"
+        >
+            {row.original._count.orderUpdate.toLocaleString()} بروزرسانی جدید
+        </Link> : null,
+    },
+    {
         accessorKey: "id",
         header: "",
         cell: ({ row }) => {

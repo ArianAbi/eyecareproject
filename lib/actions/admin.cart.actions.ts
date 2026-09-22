@@ -6,6 +6,7 @@ import prisma from "../db"
 import { requireAdmin } from "../access"
 import { writeAudit } from "../audit"
 import { orderEvents } from "../order-event"
+import { chargeOrderCredit } from "../order-credit"
 import type { CartItemProductItemType } from "@/types/order"
 
 const idSchema = z.string().uuid()
@@ -84,8 +85,9 @@ export async function ADMIN_SubmitCartOrderAction(userId: string, input: { custo
         const total = items.reduce((sum, item) => sum + item.purchasedPrice, deliveryPrice)
         if (!Number.isSafeInteger(total) || total < 0 || total > 2147483647) throw new Error('مبلغ سفارش نامعتبر است')
         if (user.credit < total) throw new Error('اعتبار کاربر انتخاب‌شده کافی نیست')
+        await chargeOrderCredit(tx, userId, total)
         const batch = await tx.orderBatch.create({ data: {
-            userId, deliveryPrice, customerNote, status: 'PENDING', orderItems: { create: items },
+            userId, deliveryPrice, customerNote, status: 'PENDING', creditCharged: total, orderItems: { create: items },
         }, include: { orderItems: true } })
         await tx.cartItem.deleteMany({ where: { cartId: cart.id, id: { in: cart.cartItems.map(item => item.id) } } })
         await writeAudit(tx, actor.id, 'ADMIN_ORDER_SUBMITTED', 'OrderBatch', batch.id, `userId: ${userId}`)
@@ -100,5 +102,6 @@ export async function ADMIN_SubmitCartOrderAction(userId: string, input: { custo
     revalidatePath(`/admin/users/${userId}`)
     revalidatePath('/glasslens-order')
     revalidatePath('/orders')
+    revalidatePath('/', 'layout')
     return { success: true, orderBatch }
 }

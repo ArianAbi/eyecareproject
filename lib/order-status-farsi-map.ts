@@ -18,7 +18,7 @@ export const OrderStatusFarsi = (status: OrderItemStatus) => {
             color = 'bg-blue-500'
             break;
         case 'ONHOLD':
-            value = 'متوقف شده'
+            value = 'رد شده'
             color = 'bg-amber-500'
             break;
         case 'FINISHED':

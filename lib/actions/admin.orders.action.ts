@@ -1,8 +1,8 @@
 "use server"
 
 import { requireAdmin } from "../access"
-import { writeAudit } from "../audit"
-import { orderWhere, orderStatuses, type OrderFilters } from "../order-filters"
+import { orderWhere, type OrderFilters } from "../order-filters"
+import { orderUpdateInput, saveOrderUpdate } from "../order-updates"
 import { OrderItemStatus } from "@/generated/prisma/enums"
 import { ActionError } from "../action-error"
 import prisma from "../db"
@@ -85,7 +85,7 @@ export async function ADMIN_GetSingleOrder(id: string) {
                         }
                     }
                 },
-                orderUpdate: true,
+                orderUpdate: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] },
                 user: {
                     select: {
                         id: true,
@@ -108,28 +108,22 @@ export async function ADMIN_GetSingleOrder(id: string) {
     }
 }
 
-export async function ADMIN_UpdateOrderStatus({
-    id, newStatus
-}: { id: string, newStatus: OrderItemStatus }) {
+export async function ADMIN_UpdateOrderStatus(input: {
+    id: string, newStatus?: OrderItemStatus, message?: string, adminOnly?: boolean, refundCredit?: boolean
+}) {
     try {
         const actor = await requireAdmin()
-        if (!orderStatuses.includes(newStatus)) throw new Error("درخواست نامعتبر است یا امکان انجام این عملیات وجود ندارد")
-        const data = await prisma.$transaction(async tx => {
-            const previous = await tx.orderBatch.findUniqueOrThrow({ where: { id } })
-            const order = await tx.orderBatch.update({
-                where: { id }, data: {
-                    status: newStatus,
-                    orderUpdate: { create: { updatedStatus: newStatus } },
-                }
-            })
-            await writeAudit(tx, actor.id, "ORDER_STATUS_CHANGED", "OrderBatch", id, `${previous.status} -> ${newStatus}`)
-            return order
-        })
+        const parsed = orderUpdateInput.safeParse(input)
+        if (!parsed.success) throw new Error("اطلاعات بروزرسانی سفارش نامعتبر است")
+        const { id } = parsed.data
+        const data = await prisma.$transaction(tx => saveOrderUpdate(tx, actor.id, parsed.data))
         revalidatePath(`/admin/orders/${id}`)
         revalidatePath('/orders', 'layout')
         revalidatePath('/admin/summary')
 
         revalidatePath('/admin/orders')
+        revalidatePath(`/admin/users/${data.userId}`)
+        revalidatePath('/', 'layout')
 
         return { sucess: true, data }
     } catch (err) {

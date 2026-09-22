@@ -1,171 +1,32 @@
-'use client'
-
-import { ADMIN_GetSingleOrder, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
-import { ActionData } from "@/types/actions";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
-import { OrderItemStatus } from "@/generated/prisma/enums"
+﻿import type { GetSingleOrder } from "@/lib/actions/orders.action"
+import type { ActionData } from "@/types/actions"
 import { OrderStatusFarsi } from "@/lib/order-status-farsi-map"
+import { calculateOrderTotal } from "@/lib/order-credit"
 import Link from "next/link"
-import { useState } from "react"
-import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { OrderTable } from "@/components/OrderTable";
-import { toast } from "@/components/ui/toast";
-import { useRouter } from "next/navigation";
-import { Spinner } from "@/components/ui/spinner";
+import { ArrowRight } from "lucide-react"
+import { buttonVariants } from "@/components/ui/button"
+import { OrderTable } from "@/components/OrderTable"
+import OrderUpdateHistory from "@/components/OrderUpdateHistory"
 
-export default function SingleOrderItem({ data }: { data: NonNullable<ActionData<typeof ADMIN_GetSingleOrder>> }) {
-
-    const statusValues = Object.values(OrderItemStatus)
-    const [selectedStatus, setSelectedStatus] = useState<OrderItemStatus>('APPROVED')
-
-    const [loading, setLoading] = useState(false)
-
-    const updateDisabled = selectedStatus === data.status
-
-    const router = useRouter()
-
-    async function UpdateOrderStatus() {
-        try {
-            setLoading(true)
-
-            await ADMIN_UpdateOrderStatus({
-                id: data.id,
-                newStatus: selectedStatus
-            })
-
-            toast.add({
-                type: "Success",
-                title: "وضعیت سفارش بروزرسانی شد"
-            })
-
-            router.push('/admin/orders')
-        } catch (err) {
-            if (err instanceof Error) {
-                toast.add({
-                    type: "Error",
-                    title: err.message
-                })
-            }
-            toast.add({
-                type: "Error",
-                title: "updating status failed:Unknown"
-            })
-        }
-    }
-
+export default function SingleOrderItem({ data }: { data: NonNullable<ActionData<typeof GetSingleOrder>> }) {
+    const status = OrderStatusFarsi(data.status)
     return <>
-        <Link
-            className={buttonVariants({ variant: 'outline' }) + ' mb-2'}
-            href={`/admin/orders`}
-        >
-            <ArrowRight />
-            <span>
-                سفارش ها
-            </span>
+        <Link className={buttonVariants({ variant: 'outline' }) + ' mb-2'} href="/orders">
+            <ArrowRight /> سفارش‌ها
         </Link>
-        <section className="border flex justify-between rounded-lg border-dashed p-3">
-            {/* right items */}
-            <section className="space-y-2 text-sm">
-                <div className="flex gap-1">
-                    <span>کاربر : </span>
-                    <span>
-                        <Link className="underline" href={`/admin/users/${data.userId}`}>
-                            {data.user.username}
-                        </Link>
-                    </span>
-                </div>
-
-                <div className="flex gap-1">
-                    <span>شناسه سفارش : </span>
-                    <span>
-                        {data.orederIdentification}
-                    </span>
-                </div>
-
-                {/* STATUS */}
-                <div className="flex items-center gap-1">
-                    <span>وضعیت : </span>
-                    <span className="flex items-center gap-1">
-                        <div className={cn(OrderStatusFarsi(data.status).bg, 'size-3 rounded-full')}></div>
-                        {OrderStatusFarsi(data.status).text}
-                    </span>
-                </div>
-
-                {/* ORDER COUNT */}
-                <div className="flex items-center gap-1">
-                    <span>تعداد سفارش : </span>
-                    <span className="flex items-center gap-1">
-                        {data.orderItems.length}
-                    </span>
-                </div>
-
-                {/* ORDER TOTAL PRICE */}
-                <div className="flex items-center gap-1">
-                    <span>جمع مبلغ : </span>
-                    <span className="flex items-center gap-1">
-                        {data.orderItems.reduce((acc, current) => {
-                            return acc + current.purchasedPrice
-                        }, 0).toLocaleString() + " "}
-                        <span className="text-emerald-500 font-semibold">تومان</span>
-                    </span>
-                </div>
-            </section>
-
-            {/* left items */}
-            <section className="flex flex-col gap-2 text-sm">
-                {/* STATUS */}
-                <div className="flex items-center gap-1 mt-auto">
-                    <span>وضعیت جدید : </span>
-                    <span>
-                        <Select
-                            defaultValue={'APPROVED' as OrderItemStatus}
-                            value={selectedStatus}
-                            onValueChange={value => setSelectedStatus(value ?? data.status)}
-                        >
-                            <SelectTrigger>
-                                <div className={cn(OrderStatusFarsi(selectedStatus).bg, 'size-3 rounded-full')}></div>
-                                {OrderStatusFarsi(selectedStatus).text}
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                {
-                                    statusValues.map(item => {
-                                        return <SelectItem key={item} value={item}>
-                                            <div className={cn(OrderStatusFarsi(item).bg, 'size-3 rounded-full')}></div>
-
-                                            {OrderStatusFarsi(item).text}
-                                        </SelectItem>
-                                    })
-                                }
-                            </SelectContent>
-                        </Select>
-                    </span>
-                </div>
-
-                <Button
-                    onClick={UpdateOrderStatus}
-                    disabled={updateDisabled || loading}
-                    variant={'green'}
-                >
-                    <span>
-                        بروزرسانی
-                    </span>
-                    {loading && <Spinner />}
-                </Button>
-            </section>
-
-        </section >
-
-        <section className="border mt-2 rounded-lg overflow-hidden border-dashed p-3">
-            <h2 className="mb-2">لیست سفارش ها</h2>
-
-            <div className="border rounded-lg">
-                <OrderTable
-                    data={data.orderItems}
-                />
+        <section className="rounded-lg border border-dashed p-3 space-y-2 text-sm">
+            <p>شناسه سفارش: {data.orederIdentification}</p>
+            <div className="flex items-center gap-2">
+                وضعیت: <span className={`${status.bg} size-3 rounded-full`} /> {status.text}
             </div>
+            <p>تعداد اقلام: {data.orderItems.length.toLocaleString()}</p>
+            <p>جمع مبلغ: {calculateOrderTotal(data).toLocaleString()} تومان</p>
+            {data.customerNote && <p className="whitespace-pre-wrap break-words">یادداشت شما: {data.customerNote}</p>}
+        </section>
+        <OrderUpdateHistory updates={data.orderUpdate} customerOrderId={data.id} />
+        <section className="mt-3 rounded-lg border border-dashed p-3">
+            <h2 className="mb-2">اقلام سفارش</h2>
+            <div className="overflow-x-auto rounded-lg border"><OrderTable data={data.orderItems} /></div>
         </section>
     </>
 }
