@@ -13,12 +13,6 @@ const fontSans = Noto_Sans_Arabic({
   variable: "--font-sans",
 });
 
-export const metadata: Metadata = {
-  other: {
-    enamad: "49178649",
-  },
-};
-
 // export const metadata: Metadata = {
 //   metadataBase: new URL(process.env.APP_URL || 'http://localhost:3000'),
 //   title: { default: "ICN | پخش عدسی عینک", template: "%s | ICN" },
@@ -42,6 +36,9 @@ export default function RootLayout({
       dir="rtl"
       className={cn("h-full dark", "antialiased", fontSans.variable)}
     >
+      <head>
+        <meta name="enamad" content="49178649" />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextTopLoader />
         <TrafficTracker />
