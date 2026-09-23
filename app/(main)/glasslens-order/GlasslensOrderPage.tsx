@@ -67,22 +67,19 @@ function ResponsiveOrderSummary({
     <>
       {/*
           Desktop summary. `lg` is the mobile breakpoint used here (Tailwind's default: 1024px).
-          To change it, replace every `lg:` in this helper with another breakpoint, such as `md:` (768px).
+          To change it, replace every `md:` in this helper with another breakpoint, such as `md:` (768px).
         */}
-      <div className="hidden lg:contents">{children}</div>
+      <div className="hidden md:contents">{children}</div>
 
-      {/* Mobile-only fixed action and bottom sheet. */}
-      <div className="lg:hidden">
-        {/* dom space */}
-        {/* <div className="w-full h-12 pointer-events-none bg-transparent mb-3"></div> */}
-
+      {/* Stick within the order section until the action's normal position is visible. */}
+      <div className="sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 w-full md:hidden">
         <Sheet>
           <SheetTrigger
             render={
               <Button
                 type="button"
-                variant={"default"}
-                className="sticky inset-x-3 bottom-3 z-40 h-12 w-auto shadow-lg"
+                variant={"glass"}
+                className="h-12 w-full shadow-lg"
               />
             }
           >
@@ -279,12 +276,12 @@ export default function GlasslensOrderPage({
   return (
     <fieldset
       disabled={submitting}
-      className="border p-3 max-lg:p-2 max-lg:pb-20 space-y-2 rounded-md min-w-0"
+      className="border p-3 max-md:p-2 max-md:pb-20 space-y-2 rounded-md min-w-0"
     >
-      <section className="flex flex-col-reverse lg:flex-row gap-2 p-2 border border-white/50 border-dashed rounded-lg w-full items-end justify-between ">
+      <section className="flex flex-col-reverse md:flex-row gap-2 p-2 border border-white/50 border-dashed rounded-lg w-full items-end justify-between ">
         {/* categorys */}
-        <div className="flex w-full gap-2 justify-between xl:basis-3/5 max-lg:grid max-lg:grid-cols-2 max-lg:[&>button]:w-full max-lg:[&>button]:min-h-10">
-          {categorys.map((cate) => {
+        <div className="flex w-full gap-2 justify-between xl:basis-3/5 max-md:grid max-md:grid-cols-2 max-md:[&>button]:w-full max-md:[&>button]:min-h-10">
+          {categorys.map((cate, _i) => {
             return (
               <CategoryDialog
                 key={cate.id}
@@ -303,11 +300,8 @@ export default function GlasslensOrderPage({
         </div>
 
         {/* inputs */}
-        <div className="xl:basis-2/5 max-lg:w-full max-lg:min-w-0 max-lg:overflow-x-auto">
-          <table
-            dir="ltr"
-            className="max-lg:w-full max-lg:[&_td]:px-0.5 max-lg:[&_input]:min-w-0 max-lg:[&_input]:px-1"
-          >
+        <div className="">
+          <table dir="ltr">
             <thead>
               <tr>
                 <th style={{ minWidth: "0px" }}></th>
@@ -483,13 +477,13 @@ export default function GlasslensOrderPage({
         </div>
       </section>
 
-      <section className="grid grid-cols-10 max-lg:grid-cols-1 gap-2">
+      <section className="grid grid-cols-10 max-md:flex max-md:flex-col gap-2">
         {/* orders list */}
-        <div className="col-span-7 max-lg:col-span-1 max-lg:min-w-0 min-h-72 rounded-lg p-2 border border-dashed border-white/50 ">
-          <p className="mb-2 text-xs text-muted-foreground lg:hidden">
+        <div className="col-span-7 max-md:col-span-1 max-md:min-w-0 min-h-72 rounded-lg p-2 border border-dashed border-white/50 ">
+          <p className="mb-2 text-xs text-muted-foreground md:hidden">
             برای دیدن تمام ستون‌ها، جدول را به چپ و راست بکشید.
           </p>
-          <Table className="max-lg:min-w-[600px]">
+          <Table className="max-md:min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead></TableHead>
@@ -525,7 +519,7 @@ export default function GlasslensOrderPage({
           itemCount={orderProductItems.length}
           totalPrice={orderSumPrice}
         >
-          <div className="col-span-3 max-lg:col-span-1 max-lg:min-w-0 rounded-lg p-2 max-h-fit sticky top-2 max-lg:static border border-dashed border-white/50 flex flex-col">
+          <div className="col-span-3 max-md:col-span-1 max-md:min-w-0 rounded-lg p-2 max-h-fit sticky top-2 max-md:static border border-dashed border-white/50 flex flex-col">
             <table className="text-sm">
               <thead>
                 <tr>

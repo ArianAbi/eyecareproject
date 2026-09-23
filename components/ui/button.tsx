@@ -12,7 +12,7 @@ const buttonVariants = cva(
         green:
           "bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-emerald-700",
         glass:
-          "bg-transparent dark:text-white text-black border rounded-lg backdrop-blur-md",
+          "bg-white/20 dark:text-white text-black border-2 border-white/40 rounded-full backdrop-blur-md",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-transparent dark:hover:bg-input/30",
         boldOutline:
