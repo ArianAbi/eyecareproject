@@ -1,6 +1,7 @@
 "use server"
 
 import { requireAdmin } from "../access"
+import { priceSchema } from "../schemas/settings"
 import { writeAudit } from "../audit"
 
 import { revalidatePath } from "next/cache"
@@ -38,7 +39,7 @@ export async function ADMIN_CreateProductsAction(
                 data: {
                     name: input.name,
                     description: input.description,
-                    price: input.price,
+                    price: priceSchema.parse(input.price),
                     type: input.type,
                     categoryId: input.categoryId,
                     ...(input.tagIds !== undefined && {
@@ -189,6 +190,7 @@ export async function ADMIN_UpdateProduct(
 
             const data: Prisma.ProductUpdateInput = {
                 ...scalarFields,
+                ...(input.price !== undefined && { price: priceSchema.parse(input.price) }),
                 ...(categoryId !== undefined && {
                     categoryRel: { connect: { id: categoryId } },
                 }),

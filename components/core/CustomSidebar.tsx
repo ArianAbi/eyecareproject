@@ -11,6 +11,7 @@ import {
   CreditCard,
   Globe,
   Hammer,
+  Settings,
   LayoutDashboard,
   LayoutList,
   List,
@@ -72,19 +73,20 @@ export interface SidebarNavGroup {
 // ---------------------------------------------------------------------------
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  data: SidebarDataType;
+  menu: "admin" | "user";
   header?: React.ReactNode;
   footer?: boolean;
   admin: boolean;
 }
 
 export function CustomSidebar({
-  data,
+  menu,
   admin = false,
   header,
   footer = false,
   ...props
 }: AppSidebarProps) {
+  const data = menu === "admin" ? AdminSidebarData : UserSidebarData;
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
       {header && <SidebarHeader>{header}</SidebarHeader>}
@@ -256,8 +258,9 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
   );
 }
 
-export const AdminSidebarData: SidebarDataType = {
+const AdminSidebarData: SidebarDataType = {
   menus: [
+    { group_title: "تنظیمات", icon: Settings, items: [{ title: "تنظیمات", path: "/admin/settings" }] },
     {
       group_title: "داشبورد",
       icon: LayoutDashboard,
@@ -362,7 +365,7 @@ export const AdminSidebarData: SidebarDataType = {
   },
 };
 
-export const UserSidebarData: SidebarDataType = {
+const UserSidebarData: SidebarDataType = {
   menus: [
     { group_title: "خانه", icon: Globe, items: [{ title: "خانه", path: "/" }] },
     {

@@ -25,7 +25,7 @@ export default function LogoutBtn({ username, credit }: { username: string | und
                                 <span>موجودی </span>
 
                                 {credit !== undefined ? <span>
-                                    {credit.toLocaleString() + " "}
+                                    {credit.toLocaleString("en-US") + " "}
                                     <span className='text-emerald-500 text-xs font-semibold'>تومان</span>
                                 </span>
                                     :

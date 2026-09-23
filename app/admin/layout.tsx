@@ -3,7 +3,7 @@ import prisma from "@/lib/db"
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 export const metadata: Metadata = { title: "مدیریت", robots: { index: false, follow: false } }
-import { AdminSidebarData, CustomSidebar } from "@/components/core/CustomSidebar";
+import { CustomSidebar } from "@/components/core/CustomSidebar";
 import Header from "@/components/core/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ApprovalCountProvider, CreditInvoiceCountProvider, OpenTicketCountProvider, OrderCountProvider } from "./AdminProviders";
@@ -32,7 +32,7 @@ export default async function AuthLayout({
                         <CreditInvoiceCountProvider count={creditInvoiceCount}>
                         <CustomSidebar
                             admin
-                            data={AdminSidebarData}
+                            menu="admin"
                             footer
                             header={
                                 <>

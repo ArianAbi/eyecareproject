@@ -384,3 +384,18 @@ model TrafficVisit {
 
   @@index([createdAt, source])
 }
+
+model Setting {
+  id String @id @default("global")
+
+  siteName String @default("SalimOptic")
+
+  deliveryPrice Int @default(0)
+  cutPrice      Int @default(0)
+
+  baleGroupId     String?
+  telegramGroupId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,5 +1,5 @@
 import AccountVerifyNotification from "@/components/AccountVerifyNotification";
-import { CustomSidebar, UserSidebarData } from "@/components/core/CustomSidebar";
+import { CustomSidebar } from "@/components/core/CustomSidebar";
 import Footer from "@/components/core/Footer";
 import Header from "@/components/core/Header";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -37,7 +37,7 @@ export default async function AuthLayout({
     <div className="relative min-h-svh">
       <SidebarProvider>
         {session && session.user && <CustomSidebar
-          data={UserSidebarData}
+          menu="user"
           admin={isAdmin ? isAdmin.admin : false}
           footer
           header={

@@ -17,13 +17,14 @@ import { Handbag, SprayCan, TowelRack } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod"
+import { priceSchema } from "@/lib/schemas/settings";
 
 export default function AdminCreateProductForm({ categorys, tags }: { categorys: SubCategory[], tags: Tags[] }) {
     const schema = z.object({
         name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
         description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
         type: z.string(),
-        price: z.number(),
+        price: priceSchema,
         categoryId: z.string({ error: "زیرمجموعه الزامیست" }).min(1, { error: "زیرمجموعه الزامیست" }),
         tags: z.string().array(),
         lens: z.object({
@@ -138,6 +139,7 @@ export default function AdminCreateProductForm({ categorys, tags }: { categorys:
                     placeholder="قیمت"
                     label="قیمت به تومان"
                     name="price"
+                    integerInput
                     type="number"
                     disabled={formState.isSubmitting}
                 />

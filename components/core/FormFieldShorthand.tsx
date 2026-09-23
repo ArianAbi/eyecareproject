@@ -20,6 +20,7 @@ interface InputFieldProps<TFieldValues extends FieldValues>
   extends BaseFormFieldProps<TFieldValues> {
   as?: "input";
   type?: React.HTMLInputTypeAttribute;
+  integerInput?: boolean;
 }
 
 interface TextareaFieldProps<TFieldValues extends FieldValues>
@@ -74,7 +75,8 @@ export function FormFieldShorthand<TFieldValues extends FieldValues>(
               className={className ?? "text-xs"}
               {...field}
               id={id}
-              type={props.type ?? "text"}
+              type={props.integerInput ? "text" : props.type ?? "text"}
+              inputMode={props.integerInput ? "numeric" : undefined}
               aria-invalid={fieldState.invalid}
               placeholder={placeholder}
               autoComplete={autoComplete}
@@ -91,6 +93,7 @@ export function FormFieldShorthand<TFieldValues extends FieldValues>(
                 }
 
                 const raw = e.target.value;
+                if (props.integerInput && !/^[0-9]*$/.test(raw)) return;
 
                 // User deleted everything
                 if (raw === "") {

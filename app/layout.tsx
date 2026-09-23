@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSettings } from "@/lib/settings";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
@@ -20,6 +21,17 @@ const fontSans = Noto_Sans_Arabic({
 //   applicationName: "ICN",
 //   twitter: { card: "summary", title: "ICN | پخش عدسی عینک", description: "سامانه همکاری و سفارش عدسی برای فروشگاه‌های عینک" },
 // };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { siteName } = await getSettings();
+  return {
+    metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
+    title: { default: siteName, template: `%s | ${siteName}` },
+    applicationName: siteName,
+    openGraph: { siteName, title: siteName },
+    twitter: { card: "summary", title: siteName },
+  };
+}
 
 export default function RootLayout({
   children,

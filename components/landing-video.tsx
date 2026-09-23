@@ -265,7 +265,7 @@ export default function LandingVideo({
     <>
       {/* video */}
       <div
-        className="sticky top-0 origin-top z-[-1] pointer-events-none w-full aspect-square"
+        className="sticky left-1/2 -translate-x-1/2 top-0 origin-top z-[-1] pointer-events-none w-full aspect-square"
         style={{ width: widthFormula }}
       >
         <div className="relative aspect-square w-full">
