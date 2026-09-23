@@ -3,15 +3,16 @@
 import { requireAdmin } from "../access"
 import prisma from "../db"
 import { getSettings } from "../settings"
-import { tehranDay, parseDateFilterParam } from "../prisma-date-filter"
+import { tehranDay, parseDateFilterParam, validDay } from "../prisma-date-filter"
 import { calculateOrderTotal } from "../order-credit"
 import type { TodayOrder } from "../todays-orders"
 import { revalidatePath } from "next/cache"
 import { dailyChargeInput, DailyChargeError, deductDailyOrderCharge, type DailyChargeInput } from "../daily-order-charge"
 
-export async function ADMIN_GetTodayOrdersAction() {
+export async function ADMIN_GetTodayOrdersAction(rawDay?: string) {
     await requireAdmin()
-    const day = tehranDay()
+    const today = tehranDay()
+    const day = validDay(rawDay) ? rawDay : today
     const [orders, settings, receipts] = await Promise.all([
         prisma.orderBatch.findMany({
             where: { createdAt: parseDateFilterParam(JSON.stringify({ from: day }))! },
@@ -46,7 +47,7 @@ export async function ADMIN_GetTodayOrdersAction() {
                 kind: String(detail.kind), reason: String(detail.reason) }]
         } catch { return [] }
     })
-    return { day, orders: data, deliveryPrice: settings.deliveryPrice, charges }
+    return { day, isToday: day === today, orders: data, deliveryPrice: settings.deliveryPrice, charges }
 }
 
 export async function ADMIN_DeductDailyOrderFeeAction(input: DailyChargeInput) {

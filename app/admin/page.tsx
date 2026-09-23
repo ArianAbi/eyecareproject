@@ -18,11 +18,11 @@ export default async function SummaryPage({ searchParams }: { searchParams: Prom
         <SummaryDayFilter day={data.day} tab={params.tab} />
         <Tabs defaultValue="orders" paramKey="tab"><TabsList><TabsTrigger value="orders">سفارش‌ها</TabsTrigger><TabsTrigger value="financial">مالی</TabsTrigger><TabsTrigger value="tickets">تیکت‌ها</TabsTrigger></TabsList>
             <TabsContent value="orders" className="space-y-4 pt-4">
-                <div className="grid gap-3 sm:grid-cols-3">{[['تعداد سفارش', data.total], ['تعداد ردیف', data.itemCount], ['مبلغ سفارش‌ها (تومان)', data.orderTotal]].map(([label, value]) => <div className="rounded-lg border bg-card p-4" key={label}><p className="mb-2 text-sm text-muted-foreground">{label}</p><strong className="text-xl">{Number(value).toLocaleString('fa-IR')}</strong></div>)}</div>
+                <div className="grid gap-3 sm:grid-cols-3">{[['تعداد سفارش', data.total], ['تعداد ردیف', data.itemCount], ['مبلغ سفارش‌ها (تومان)', data.orderTotal]].map(([label, value]) => <div className="rounded-lg border bg-card p-4" key={label}><p className="mb-2 text-sm text-muted-foreground">{label}</p><strong className="text-xl">{Number(value).toLocaleString('en-US')}</strong></div>)}</div>
                 <div className="flex flex-wrap gap-2">{data.statuses.map(row => <Badge key={row.status} variant="outline">{OrderStatusFarsi(row.status).text}: {row._count}</Badge>)}</div>
                 <div className="divide-y rounded-lg border">{data.orders.map(order => <Link href={`/admin/orders/${order.id}`} key={order.id} className="flex flex-wrap items-center justify-between gap-3 p-3 hover:bg-muted">
                     <div><p className="text-sm font-medium">#{order.orederIdentification} · {order.user.username}</p><p className="mt-1 text-xs text-muted-foreground">{order.orderItems.length} ردیف · {order.orderItems.reduce((sum, item) => sum + (item.odOnly ? 1 : 2), 0)} عدسی{order.customerNote && ` · ${order.customerNote.slice(0, 100)}`}</p></div>
-                    <div className="text-sm">{calculateOrderTotal(order).toLocaleString('fa-IR')} تومان · <Badge variant="outline">{OrderStatusFarsi(order.status).text}</Badge></div>
+                    <div className="text-sm">{calculateOrderTotal(order).toLocaleString('en-US')} تومان · <Badge variant="outline">{OrderStatusFarsi(order.status).text}</Badge></div>
                 </Link>)}{!data.total && <p className="p-8 text-center text-muted-foreground">در این روز سفارشی ثبت نشده است.</p>}</div>
                 <CustomPagination total={data.total} paramKey="page" pageSize={20} />
             </TabsContent>

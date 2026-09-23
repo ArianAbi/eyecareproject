@@ -73,13 +73,13 @@ export function DailyOrderFee({ user, day, deliveryPrice, charges }: {
                 <Label htmlFor={`fee-reason-${user.id}`}>توضیح قابل نمایش به کاربر</Label>
                 <Input id={`fee-reason-${user.id}`} required minLength={3} maxLength={300} disabled={pending} value={reason} onChange={event => setReason(event.target.value)} placeholder="علت کسر هزینه" />
             </div>}
-            <Button type="submit" disabled={pending || !valid}>{pending ? "در حال ثبت…" : `کسر ${Number.isFinite(amount) ? amount.toLocaleString("fa-IR") : "۰"} تومان`}</Button>
+            <Button type="submit" disabled={pending || !valid}>{pending ? "در حال ثبت…" : `کسر ${Number.isFinite(amount) ? amount.toLocaleString("en-US") : "0"} تومان`}</Button>
         </form>
         {kind === "delivery" && deliveryPaid && <p className="text-sm text-muted-foreground">هزینه ارسال امروز قبلاً کسر شده است.</p>}
         {kind === "delivery" && deliveryPrice <= 0 && <p className="text-sm text-muted-foreground">هزینه ارسال در تنظیمات صفر است؛ مبلغ دلخواه وارد کنید یا تنظیمات ارسال را تغییر دهید.</p>}
         {amount > user.credit && <p className="text-sm text-destructive">اعتبار کاربر برای این مبلغ کافی نیست.</p>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {message && <p role="status" className="text-sm text-emerald-600">{message}</p>}
-        {charges.length > 0 && <div className="space-y-1 text-xs"><p className="font-medium">هزینه‌های کسرشده امروز:</p>{charges.map(charge => <p key={charge.id}>{charge.reason} · {charge.amount.toLocaleString("fa-IR")} تومان</p>)}</div>}
+        {charges.length > 0 && <div className="space-y-1 text-xs"><p className="font-medium">هزینه‌های کسرشده امروز:</p>{charges.map(charge => <p key={charge.id}>{charge.reason} · {charge.amount.toLocaleString("en-US")} تومان</p>)}</div>}
     </div>
 }

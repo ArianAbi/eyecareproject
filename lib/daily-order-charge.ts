@@ -55,10 +55,10 @@ export async function deductDailyOrderCharge(tx: Prisma.TransactionClient, actor
         detail: JSON.stringify({ day: input.day, kind: input.kind, amount: input.amount, reason,
             before: input.expectedCredit, after: input.expectedCredit - input.amount, orderId: order.id }),
     } })
-    const dayLabel = new Date(`${input.day}T12:00:00Z`).toLocaleDateString("fa-IR", { timeZone: "Asia/Tehran" })
+    const dayLabel = new Date(`${input.day}T12:00:00Z`).toLocaleDateString("fa-IR-u-nu-latn", { timeZone: "Asia/Tehran" })
     await tx.orderUpdate.create({ data: {
         orderBatchId: order.id, updatedStatus: order.status, adminOnly: false,
-        message: `${reason} (${dayLabel}): ${input.amount.toLocaleString("fa-IR")} تومان از اعتبار شما کسر شد. این مبلغ جدا از هزینه‌های ثبت‌شده سفارش است.`,
+        message: `${reason} (${dayLabel}): ${input.amount.toLocaleString("en-US")} تومان از اعتبار شما کسر شد. این مبلغ جدا از هزینه‌های ثبت‌شده سفارش است.`,
     } })
     return { alreadyApplied: false }
 }
