@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function Home() {
   return (
     <>
-      <div className="relative">
+      <div className="relative isolate">
         <LandingVideo trackElementId="video-trigger" topOffset={100} />
 
         <div className="mx-auto max-w-6xl space-y-12 px-5 py-10 md:py-16">

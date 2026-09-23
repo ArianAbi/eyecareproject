@@ -259,13 +259,14 @@ export default function LandingVideo({
     return () => clearTimeout(timeout);
   }, [trackElementId]);
 
-  const widthFormula = `min(calc(100svh - 74px), 100vw)`;
+  // Size against the content area, including when a sidebar is present.
+  const widthFormula = "min(calc(100svh - 74px), 100%)";
 
   return (
     <>
       {/* video */}
       <div
-        className="sticky left-1/2 -translate-x-1/2 top-0 origin-top z-[-1] pointer-events-none w-full aspect-square"
+        className="sticky top-0 mx-auto origin-top z-[-1] pointer-events-none w-full max-w-full aspect-square"
         style={{ width: widthFormula }}
       >
         <div className="relative aspect-square w-full">
