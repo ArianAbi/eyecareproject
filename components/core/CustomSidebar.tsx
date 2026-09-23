@@ -160,7 +160,11 @@ function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
       <SidebarMenuButton
         isActive={isActive}
         tooltip={item.title}
-        onClick={() => sidebar.toggleSidebar()}
+        onClick={() => {
+          if (sidebar.isMobile) {
+            sidebar.toggleSidebar();
+          }
+        }}
         render={
           <Link href={item.path} className="relative overflow-visible">
             <SidebarBadge badgeFn={group.badgeFn} />
@@ -260,7 +264,6 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
 
 const AdminSidebarData: SidebarDataType = {
   menus: [
-    { group_title: "تنظیمات", icon: Settings, items: [{ title: "تنظیمات", path: "/admin/settings" }] },
     {
       group_title: "داشبورد",
       icon: LayoutDashboard,
@@ -356,6 +359,11 @@ const AdminSidebarData: SidebarDataType = {
           path: `/admin/invoices`,
         },
       ],
+    },
+    {
+      group_title: "تنظیمات",
+      icon: Settings,
+      items: [{ title: "تنظیمات", path: "/admin/settings" }],
     },
   ],
   footer: {
