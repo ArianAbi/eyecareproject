@@ -1,11 +1,32 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { BanknoteArrowUp, BoxIcon, ChevronDown, Clock, CreditCard, Globe, Hammer, LayoutDashboard, LayoutList, List, PieChartIcon, ReceiptIcon, TicketIcon, User, UserIcon, type LucideIcon } from "lucide-react"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  BanknoteArrowUp,
+  BoxIcon,
+  ChevronDown,
+  Clock,
+  CreditCard,
+  Globe,
+  Hammer,
+  LayoutDashboard,
+  LayoutList,
+  List,
+  PieChartIcon,
+  ReceiptIcon,
+  TicketIcon,
+  User,
+  UserIcon,
+  type LucideIcon,
+} from "lucide-react";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -20,24 +41,30 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { SidebarDataType } from "@/types/sidebar-data"
-import { useApprovalCount, useCreditInvoiceCount, useOpenTicketCount, useOrderCount } from "@/app/admin/AdminProviders"
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { SidebarDataType } from "@/types/sidebar-data";
+import {
+  useApprovalCount,
+  useCreditInvoiceCount,
+  useOpenTicketCount,
+  useOrderCount,
+} from "@/app/admin/AdminProviders";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface SidebarNavItem {
-  title: string
-  path: string
+  title: string;
+  path: string;
 }
 
 export interface SidebarNavGroup {
-  group_title: string
-  icon: LucideIcon
-  items: SidebarNavItem[],
-  badgeFn?: SidebarDataType['menus'][0]['badgeFn']
+  group_title: string;
+  icon: LucideIcon;
+  items: SidebarNavItem[];
+  badgeFn?: SidebarDataType["menus"][0]["badgeFn"];
 }
 
 // ---------------------------------------------------------------------------
@@ -45,13 +72,19 @@ export interface SidebarNavGroup {
 // ---------------------------------------------------------------------------
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  data: SidebarDataType
-  header?: React.ReactNode
-  footer?: boolean,
-  admin: boolean
+  data: SidebarDataType;
+  header?: React.ReactNode;
+  footer?: boolean;
+  admin: boolean;
 }
 
-export function CustomSidebar({ data, admin = false, header, footer = false, ...props }: AppSidebarProps) {
+export function CustomSidebar({
+  data,
+  admin = false,
+  header,
+  footer = false,
+  ...props
+}: AppSidebarProps) {
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
       {header && <SidebarHeader>{header}</SidebarHeader>}
@@ -61,10 +94,16 @@ export function CustomSidebar({ data, admin = false, header, footer = false, ...
             <SidebarMenu>
               {data.menus.map((group, index) =>
                 group.items.length > 1 ? (
-                  <SidebarNavCollapsibleGroup key={group.group_title || index} group={group} />
+                  <SidebarNavCollapsibleGroup
+                    key={group.group_title || index}
+                    group={group}
+                  />
                 ) : (
-                  <SidebarNavSingleItem key={group.items[0]?.path ?? index} group={group} />
-                )
+                  <SidebarNavSingleItem
+                    key={group.items[0]?.path ?? index}
+                    group={group}
+                  />
+                ),
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -72,15 +111,18 @@ export function CustomSidebar({ data, admin = false, header, footer = false, ...
       </SidebarContent>
       <SidebarRail />
 
-      {data.footer && footer && admin && <SidebarFooter>
-        <SidebarFooterItem key={data.footer.path}
-          title={data.footer.title}
-          icon={data.footer.icon}
-          path={data.footer.path}
-        />
-      </SidebarFooter>}
-    </Sidebar >
-  )
+      {data.footer && footer && admin && (
+        <SidebarFooter>
+          <SidebarFooterItem
+            key={data.footer.path}
+            title={data.footer.title}
+            icon={data.footer.icon}
+            path={data.footer.path}
+          />
+        </SidebarFooter>
+      )}
+    </Sidebar>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -88,28 +130,35 @@ export function CustomSidebar({ data, admin = false, header, footer = false, ...
 // ---------------------------------------------------------------------------
 
 function SidebarBadge({ badgeFn }: { badgeFn?: () => number | null }) {
-  if (!badgeFn) return
+  if (!badgeFn) return;
 
-  const count = badgeFn()
+  const count = badgeFn();
 
-  if (!count) return
+  if (!count) return;
 
-  if (count <= 0) return
+  if (count <= 0) return;
 
-  return <div className="grid place-items-center min-w-4 h-4 px-1 text-xs text-white rounded-full bg-red-500 z-50 absolute right-0.5 top-0">
-    {count}
-  </div>
+  return (
+    <div className="grid place-items-center min-w-4 h-4 px-1 text-xs text-white rounded-full bg-red-500 z-50 absolute right-0.5 top-0">
+      {count}
+    </div>
+  );
 }
 
 function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
-  const pathname = usePathname()
-  const item = group.items[0]
-  const Icon = group.icon
-  const isActive = pathname === item.path
+  const pathname = usePathname();
+  const item = group.items[0];
+  const Icon = group.icon;
+  const isActive = pathname === item.path;
+
+  const sidebar = useSidebar();
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton isActive={isActive} tooltip={item.title}
+      <SidebarMenuButton
+        isActive={isActive}
+        tooltip={item.title}
+        onClick={() => sidebar.toggleSidebar()}
         render={
           <Link href={item.path} className="relative overflow-visible">
             <SidebarBadge badgeFn={group.badgeFn} />
@@ -117,29 +166,39 @@ function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
             <Icon />
             <span>{item.title}</span>
           </Link>
-        }>
-      </SidebarMenuButton>
+        }
+      ></SidebarMenuButton>
     </SidebarMenuItem>
-  )
+  );
 }
 
-function SidebarFooterItem({ title, icon, path }: { title: string, icon: LucideIcon, path: string }) {
-  const pathname = usePathname()
-  const Icon = icon
-  const isActive = pathname === path
+function SidebarFooterItem({
+  title,
+  icon,
+  path,
+}: {
+  title: string;
+  icon: LucideIcon;
+  path: string;
+}) {
+  const pathname = usePathname();
+  const Icon = icon;
+  const isActive = pathname === path;
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton isActive={isActive} tooltip={title}
+      <SidebarMenuButton
+        isActive={isActive}
+        tooltip={title}
         render={
           <Link href={path} className="relative">
             <Icon />
             <span>{title}</span>
           </Link>
-        }>
-      </SidebarMenuButton>
+        }
+      ></SidebarMenuButton>
     </SidebarMenuItem>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -147,10 +206,10 @@ function SidebarFooterItem({ title, icon, path }: { title: string, icon: LucideI
 // ---------------------------------------------------------------------------
 
 function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
-  const pathname = usePathname()
-  const Icon = group.icon
-  const isGroupActive = group.items.some((item) => item.path === pathname)
-  const [open, setOpen] = React.useState(isGroupActive)
+  const pathname = usePathname();
+  const Icon = group.icon;
+  const isGroupActive = group.items.some((item) => item.path === pathname);
+  const [open, setOpen] = React.useState(isGroupActive);
 
   return (
     <Collapsible
@@ -161,7 +220,11 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
     >
       <CollapsibleTrigger
         render={
-          <SidebarMenuButton isActive={isGroupActive} tooltip={group.group_title} className="relative overflow-visible">
+          <SidebarMenuButton
+            isActive={isGroupActive}
+            tooltip={group.group_title}
+            className="relative overflow-visible"
+          >
             <SidebarBadge badgeFn={group.badgeFn} />
 
             <Icon />
@@ -173,25 +236,25 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
       <CollapsibleContent>
         <SidebarMenuSub>
           {group.items.map((item) => {
-            const isActive = pathname === item.path
+            const isActive = pathname === item.path;
             return (
               <SidebarMenuSubItem key={item.path + item.title}>
-                <SidebarMenuSubButton isActive={isActive}
+                <SidebarMenuSubButton
+                  isActive={isActive}
                   render={
                     <Link href={item.path}>
                       <span>{item.title}</span>
                     </Link>
-                  }>
-                </SidebarMenuSubButton>
+                  }
+                ></SidebarMenuSubButton>
               </SidebarMenuSubItem>
-            )
+            );
           })}
         </SidebarMenuSub>
       </CollapsibleContent>
     </Collapsible>
-  )
+  );
 }
-
 
 export const AdminSidebarData: SidebarDataType = {
   menus: [
@@ -201,14 +264,31 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "داشبورد",
-          path: `/admin/`
-        }
-      ]
+          path: `/admin/`,
+        },
+      ],
     },
-    { group_title: "گزارش مالی", icon: BanknoteArrowUp, items: [{ title: "گزارش مالی", path: "/admin/financial" }] },
-    { group_title: "آمار ورودی سایت", icon: PieChartIcon, items: [{ title: "آمار ورودی سایت", path: "/admin/analytics" }] },
-    { group_title: "تیکت‌ها", icon: TicketIcon, badgeFn: useOpenTicketCount, items: [{ title: "تیکت‌ها", path: "/admin/tickets" }] },
-    { group_title: "گزارش فعالیت‌ها", icon: List, items: [{ title: "گزارش فعالیت‌ها", path: "/admin/logs" }] },
+    {
+      group_title: "گزارش مالی",
+      icon: BanknoteArrowUp,
+      items: [{ title: "گزارش مالی", path: "/admin/financial" }],
+    },
+    {
+      group_title: "آمار ورودی سایت",
+      icon: PieChartIcon,
+      items: [{ title: "آمار ورودی سایت", path: "/admin/analytics" }],
+    },
+    {
+      group_title: "تیکت‌ها",
+      icon: TicketIcon,
+      badgeFn: useOpenTicketCount,
+      items: [{ title: "تیکت‌ها", path: "/admin/tickets" }],
+    },
+    {
+      group_title: "گزارش فعالیت‌ها",
+      icon: List,
+      items: [{ title: "گزارش فعالیت‌ها", path: "/admin/logs" }],
+    },
     {
       group_title: "مدیریت کاربران",
       icon: User,
@@ -216,9 +296,9 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "مدیریت کاربران",
-          path: `/admin/users`
-        }
-      ]
+          path: `/admin/users`,
+        },
+      ],
     },
     {
       group_title: "سفارش ها",
@@ -226,14 +306,14 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "سفارش ها",
-          path: `/admin/orders`
+          path: `/admin/orders`,
         },
         {
           title: "ثبت سفارش برای کاربر",
-          path: '/admin/glasslens-order'
-        }
+          path: "/admin/glasslens-order",
+        },
       ],
-      badgeFn: useOrderCount
+      badgeFn: useOrderCount,
     },
     {
       group_title: "دسته بندی ها",
@@ -241,13 +321,13 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "دسته بندی کلی",
-          path: `/admin/master-category`
+          path: `/admin/master-category`,
         },
         {
           title: "دسته بندی محصولات",
-          path: `/admin/product-category`
-        }
-      ]
+          path: `/admin/product-category`,
+        },
+      ],
     },
     {
       group_title: "محصولات",
@@ -255,13 +335,13 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "لیست محصولات",
-          path: `/admin/products`
+          path: `/admin/products`,
         },
         {
           title: "تگ ها",
-          path: `/admin/products/tags`
-        }
-      ]
+          path: `/admin/products/tags`,
+        },
+      ],
     },
     {
       group_title: "صورتحساب ها",
@@ -270,42 +350,50 @@ export const AdminSidebarData: SidebarDataType = {
       items: [
         {
           title: "صورتحساب ها",
-          path: `/admin/invoices`
-        }
-      ]
-    }
+          path: `/admin/invoices`,
+        },
+      ],
+    },
   ],
   footer: {
     title: "صفحه اصلی",
     icon: Globe,
-    path: "/"
-  }
-}
+    path: "/",
+  },
+};
 
 export const UserSidebarData: SidebarDataType = {
   menus: [
     { group_title: "خانه", icon: Globe, items: [{ title: "خانه", path: "/" }] },
-    { group_title: "پروفایل", icon: UserIcon, items: [{ title: "پروفایل", path: "/profile" }] },
+    {
+      group_title: "پروفایل",
+      icon: UserIcon,
+      items: [{ title: "پروفایل", path: "/profile" }],
+    },
     {
       group_title: "سفارش عدسی",
       icon: ReceiptIcon,
       items: [
         {
           title: "سفارش عدسی",
-          path: `/glasslens-order`
-        }
-      ]
+          path: `/glasslens-order`,
+        },
+      ],
     },
-    { group_title: "پشتیبانی", icon: ReceiptIcon, items: [{ title: "پشتیبانی و تیکت‌ها", path: "/tickets" }] },
+    {
+      group_title: "پشتیبانی",
+      icon: ReceiptIcon,
+      items: [{ title: "پشتیبانی و تیکت‌ها", path: "/tickets" }],
+    },
     {
       group_title: "سفارش ها",
       icon: List,
       items: [
         {
           title: "سفارش ها",
-          path: `/orders`
-        }
-      ]
+          path: `/orders`,
+        },
+      ],
     },
     {
       group_title: "افزایش موجودی",
@@ -313,9 +401,9 @@ export const UserSidebarData: SidebarDataType = {
       items: [
         {
           title: "افزایش موجودی",
-          path: `/invoices?addCreditOpen=true`
-        }
-      ]
+          path: `/invoices?addCreditOpen=true`,
+        },
+      ],
     },
     {
       group_title: "صورتحساب ها",
@@ -323,14 +411,14 @@ export const UserSidebarData: SidebarDataType = {
       items: [
         {
           title: "صورتحساب ها",
-          path: `/invoices`
-        }
-      ]
-    }
+          path: `/invoices`,
+        },
+      ],
+    },
   ],
   footer: {
     title: "مدیریت",
     icon: Hammer,
-    path: `/admin`
-  }
-}
+    path: `/admin`,
+  },
+};
