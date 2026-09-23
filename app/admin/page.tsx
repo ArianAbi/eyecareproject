@@ -7,12 +7,14 @@ import { calculateOrderTotal } from "@/lib/order-credit"
 import { Badge } from "@/components/ui/badge"
 import CustomPagination from "@/components/core/CustomPagination"
 import { FinancialSummaryCard } from "@/components/core/FinancialSummary"
+import { TodaysOrdersSection } from "@/components/core/TodaysOrdersSection"
 
 export default async function SummaryPage({ searchParams }: { searchParams: Promise<{ day?: string, page?: string, tab?: string }> }) {
     const params = await searchParams
     const data = await ADMIN_GetSummaryAction(params.day, params.page)
     return <div className="space-y-5">
         <h1 className="text-xl font-semibold">خلاصه مدیریت</h1>
+        <TodaysOrdersSection />
         <SummaryDayFilter day={data.day} tab={params.tab} />
         <Tabs defaultValue="orders" paramKey="tab"><TabsList><TabsTrigger value="orders">سفارش‌ها</TabsTrigger><TabsTrigger value="financial">مالی</TabsTrigger><TabsTrigger value="tickets">تیکت‌ها</TabsTrigger></TabsList>
             <TabsContent value="orders" className="space-y-4 pt-4">
