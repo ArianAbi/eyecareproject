@@ -538,8 +538,8 @@ export default function GlasslensOrderPage({
                 <TableHead className="text-center">آکس</TableHead>
                 <TableHead className="text-center">نمره</TableHead>
                 <TableHead className="text-center">قیمت</TableHead>
-                <TableHead className="text-center">تراش</TableHead>
                 <TableHead className="text-center">گارانتی</TableHead>
+                <TableHead className="text-center">تراش</TableHead>
                 <TableHead>
                   <Dialog
                     open={clearDialogOpen}
