@@ -105,9 +105,10 @@ export function DataTable<TData, TValue>({
   const showToolbar = enableRowSelection && renderBulkAction
 
   return (
-    <div className="space-y-2">
+    // Keep wide columns from increasing the minimum width of ancestor flex/grid items.
+    <div className="w-full min-w-0 max-w-full space-y-2 [contain:inline-size]">
       {showToolbar && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {renderBulkAction({
             selectedRows,
             selectedCount: selectedRows.length,
@@ -121,7 +122,7 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-md border">
+      <div className="min-w-0 max-w-full overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
