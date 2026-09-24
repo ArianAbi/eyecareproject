@@ -7,6 +7,7 @@ import {
   BanknoteArrowUp,
   BoxIcon,
   ChevronDown,
+  Eye,
   Clock,
   CreditCard,
   Globe,
@@ -34,6 +35,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -42,9 +44,11 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SidebarDataType } from "@/types/sidebar-data";
+import styles from "./CustomSidebar.module.css";
 import {
   useApprovalCount,
   useCreditInvoiceCount,
@@ -87,43 +91,113 @@ export function CustomSidebar({
   ...props
 }: AppSidebarProps) {
   const data = menu === "admin" ? AdminSidebarData : UserSidebarData;
+  const pathname = usePathname();
+  const sections = menu === "admin" ? adminSections : userSections;
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
-      {header && <SidebarHeader>{header}</SidebarHeader>}
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {data.menus.map((group, index) =>
-                group.items.length > 1 ? (
-                  <SidebarNavCollapsibleGroup
-                    key={group.group_title || index}
-                    group={group}
-                  />
-                ) : (
-                  <SidebarNavSingleItem
-                    key={group.items[0]?.path ?? index}
-                    group={group}
-                  />
-                ),
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarHeader className={styles.header}>
+        <Link
+          href={menu === "admin" ? "/admin" : "/"}
+          className={styles.brand}
+          aria-label="ICN"
+        >
+          <span className={styles.brandIcon}>
+            <Eye aria-hidden="true" />
+          </span>
+          <span className={styles.brandText}>
+            <strong>{header || "ICN"}</strong>
+            <span>{menu === "admin" ? "پنل مدیریت" : "حساب کاربری"}</span>
+          </span>
+        </Link>
+        {/* <SidebarTrigger className={styles.toggle} title="باز و بسته کردن منو" /> */}
+      </SidebarHeader>
+      <SidebarContent className={styles.content}>
+        {sections.map((section) => (
+          <SidebarGroup key={section.title} className={styles.section}>
+            <SidebarGroupLabel className={styles.sectionLabel}>
+              {section.title}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                {section.paths
+                  .map((path) =>
+                    data.menus.find(
+                      (group) =>
+                        group.items[0]?.path.replace(/\/$/, "") === path,
+                    ),
+                  )
+                  .filter((group) => group !== undefined)
+                  .map((group, index) =>
+                    group.items.length > 1 ? (
+                      <SidebarNavCollapsibleGroup
+                        key={group.group_title + pathname}
+                        group={group}
+                      />
+                    ) : (
+                      <SidebarNavSingleItem
+                        key={group.items[0]?.path ?? index}
+                        group={group}
+                      />
+                    ),
+                  )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarRail />
 
       {data.footer && footer && admin && (
-        <SidebarFooter>
-          <SidebarFooterItem
-            key={data.footer.path}
-            title={data.footer.title}
-            icon={data.footer.icon}
-            path={data.footer.path}
-          />
+        <SidebarFooter className={styles.footer}>
+          <SidebarMenu>
+            <SidebarFooterItem
+              key={data.footer.path}
+              title={data.footer.title}
+              icon={data.footer.icon}
+              path={data.footer.path}
+            />
+          </SidebarMenu>
         </SidebarFooter>
       )}
     </Sidebar>
+  );
+}
+
+const adminSections = [
+  {
+    title: "مدیریت اصلی",
+    paths: ["/admin", "/admin/orders", "/admin/users", "/admin/invoices"],
+  },
+  {
+    title: "کاتالوگ محصولات",
+    paths: ["/admin/products", "/admin/master-category"],
+  },
+  {
+    title: "گزارش‌ها و آمار",
+    paths: ["/admin/financial", "/admin/analytics", "/admin/logs"],
+  },
+  { title: "پشتیبانی و تنظیمات", paths: ["/admin/tickets", "/admin/settings"] },
+];
+
+const userSections = [
+  { title: "حساب کاربری", paths: ["", "/profile"] },
+  {
+    title: "سفارش‌ها و پرداخت‌ها",
+    paths: [
+      "/glasslens-order",
+      "/orders",
+      "/invoices?addCreditOpen=true",
+      "/invoices",
+    ],
+  },
+  { title: "پشتیبانی", paths: ["/tickets"] },
+];
+
+function isRouteActive(pathname: string, path: string) {
+  const route = path.replace(/\/$/, "") || "/";
+  return (
+    pathname === route ||
+    (route !== "/" && route !== "/admin" && pathname.startsWith(route + "/"))
   );
 }
 
@@ -140,37 +214,33 @@ function SidebarBadge({ badgeFn }: { badgeFn?: () => number | null }) {
 
   if (count <= 0) return;
 
-  return (
-    <div className="grid place-items-center min-w-4 h-4 px-1 text-xs text-white rounded-full bg-red-500 z-50 absolute right-0.5 top-0">
-      {count}
-    </div>
-  );
+  return <span className={styles.badge}>{count.toLocaleString("fa-IR")}</span>;
 }
 
 function SidebarNavSingleItem({ group }: { group: SidebarNavGroup }) {
   const pathname = usePathname();
   const item = group.items[0];
   const Icon = group.icon;
-  const isActive = pathname === item.path;
+  const isActive = isRouteActive(pathname, item.path);
 
   const sidebar = useSidebar();
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
+        className={styles.menuButton}
         isActive={isActive}
-        tooltip={item.title}
+        tooltip={{ children: item.title, side: "left" }}
         onClick={() => {
           if (sidebar.isMobile) {
             sidebar.toggleSidebar();
           }
         }}
         render={
-          <Link href={item.path} className="relative overflow-visible">
-            <SidebarBadge badgeFn={group.badgeFn} />
-
+          <Link href={item.path} aria-current={isActive ? "page" : undefined}>
             <Icon />
-            <span>{item.title}</span>
+            <span className={styles.label}>{item.title}</span>
+            <SidebarBadge badgeFn={group.badgeFn} />
           </Link>
         }
       ></SidebarMenuButton>
@@ -188,14 +258,19 @@ function SidebarFooterItem({
   path: string;
 }) {
   const pathname = usePathname();
+  const sidebar = useSidebar();
   const Icon = icon;
   const isActive = pathname === path;
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
+        className={styles.menuButton}
         isActive={isActive}
-        tooltip={title}
+        tooltip={{ children: title, side: "left" }}
+        onClick={() => {
+          if (sidebar.isMobile) sidebar.setOpenMobile(false);
+        }}
         render={
           <Link href={path} className="relative">
             <Icon />
@@ -214,13 +289,21 @@ function SidebarFooterItem({
 function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
   const pathname = usePathname();
   const Icon = group.icon;
-  const isGroupActive = group.items.some((item) => item.path === pathname);
+  const sidebar = useSidebar();
+  const isGroupActive = group.items.some((item) =>
+    isRouteActive(pathname, item.path),
+  );
   const [open, setOpen] = React.useState(isGroupActive);
 
   return (
     <Collapsible
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(nextOpen) => {
+        if (!sidebar.isMobile && sidebar.state === "collapsed") {
+          sidebar.setOpen(true);
+          setOpen(true);
+        } else setOpen(nextOpen);
+      }}
       className="group/collapsible"
       render={<SidebarMenuItem />}
     >
@@ -228,27 +311,42 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
         render={
           <SidebarMenuButton
             isActive={isGroupActive}
-            tooltip={group.group_title}
-            className="relative overflow-visible"
+            tooltip={{ children: group.group_title, side: "left" }}
+            className={styles.menuButton}
           >
-            <SidebarBadge badgeFn={group.badgeFn} />
-
             <Icon />
-            <span>{group.group_title}</span>
-            <ChevronDown className="mr-auto transition-transform -rotate-90 " />
+            <span className={styles.label}>{group.group_title}</span>
+            <SidebarBadge badgeFn={group.badgeFn} />
+            <ChevronDown
+              className={styles.chevron}
+              style={{ transform: open ? "rotate(0deg)" : "rotate(90deg)" }}
+            />
           </SidebarMenuButton>
         }
       />
       <CollapsibleContent>
-        <SidebarMenuSub>
+        <SidebarMenuSub className={styles.submenu}>
           {group.items.map((item) => {
-            const isActive = pathname === item.path;
+            const isActive =
+              isRouteActive(pathname, item.path) &&
+              !group.items.some(
+                (other) =>
+                  other.path.length > item.path.length &&
+                  isRouteActive(pathname, other.path),
+              );
             return (
               <SidebarMenuSubItem key={item.path + item.title}>
                 <SidebarMenuSubButton
+                  className={styles.subButton}
                   isActive={isActive}
+                  onClick={() => {
+                    if (sidebar.isMobile) sidebar.setOpenMobile(false);
+                  }}
                   render={
-                    <Link href={item.path}>
+                    <Link
+                      href={item.path}
+                      aria-current={isActive ? "page" : undefined}
+                    >
                       <span>{item.title}</span>
                     </Link>
                   }

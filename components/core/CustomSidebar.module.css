@@ -1,0 +1,41 @@
+.header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 80px;
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brandIcon { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); }
+.brandIcon svg { width: 20px; height: 20px; }
+.brandText { display: flex; flex-direction: column; gap: 2px; }
+.brandText strong { font-size: 20px; line-height: 24px; letter-spacing: 0; }
+.brandText > span { font-size: 11px; color: var(--muted-foreground); }
+.toggle { flex-shrink: 0; }
+.content { gap: 0; padding: 8px 0; }
+.section { padding: 10px 8px; }
+.section + .section { border-top: 1px solid var(--sidebar-border); margin-top: 6px; }
+.sectionLabel { height: 30px; margin-bottom: 6px; padding-inline: 10px; font-size: 11px; font-weight: 600; color: var(--muted-foreground); }
+.menuButton { position: relative; min-height: 40px; height: auto; gap: 10px; border-radius: 6px; padding: 9px 10px; }
+.label { flex: 1; min-width: 0; white-space: normal; line-height: 22px; }
+.menuButton[data-active] { background: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+.menuButton[data-active]:hover { background: var(--primary); color: var(--primary-foreground); }
+.badge { margin-inline-start: auto; flex-shrink: 0; min-width: 22px; height: 22px; padding-inline: 5px; border-radius: 5px; background: color-mix(in oklch, var(--destructive) 12%, var(--sidebar)); color: var(--destructive); font-size: 11px; font-weight: 600; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.menuButton[data-active] .badge { background: color-mix(in oklch, var(--primary-foreground) 18%, transparent); color: inherit; }
+.chevron { margin-inline-start: auto; transition: transform 160ms ease; }
+.submenu { margin-block: 6px 2px; margin-inline: 18px 4px; padding-inline: 10px 0; gap: 3px; }
+.subButton { min-height: 34px; height: auto; padding: 6px 10px; border-radius: 6px; }
+.subButton > span { white-space: normal; overflow: visible; line-height: 22px; }
+.subButton[data-active] { color: var(--sidebar-primary); background: color-mix(in oklch, var(--sidebar-primary) 12%, var(--sidebar)); font-weight: 600; }
+.footer { border-top: 1px solid var(--sidebar-border); padding: 10px 8px; }
+:global([data-collapsible="icon"]) .header { padding: 16px 8px; justify-content: center; }
+:global([data-collapsible="icon"]) .brandText,
+:global([data-collapsible="icon"]) .toggle,
+:global([data-collapsible="icon"]) .label,
+:global([data-collapsible="icon"]) .chevron { display: none; }
+:global([data-collapsible="icon"]) .sectionLabel { margin-bottom: 0; }
+:global([data-collapsible="icon"]) .menuButton { min-height: 32px; overflow: visible; }
+:global([data-collapsible="icon"]) .badge { position: absolute; top: -3px; inset-inline-end: -4px; min-width: 14px; height: 14px; padding-inline: 2px; font-size: 9px; }
+@media (prefers-reduced-motion: reduce) { .chevron { transition: none; } }
