@@ -1,5 +1,6 @@
 "use client"
 
+import { calculateOrderCount } from "@/lib/order-count";
 import { calculateOrderTotal } from "@/lib/order-credit"
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -56,13 +57,12 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
             </div>
         }
     },
-    // {
-    //     accessorKey: "orderItems",
-    //     header: () => <div className="text-center">تعداد سفارش ها</div>,
-    //     cell: ({ row }) => {
-    //         return <div className="text-center">{row.original._count.orderItems}</div>
-    //     }
-    // },
+    {
+        id: "orderCount",
+        accessorFn: (order) => calculateOrderCount(order.orderItems),
+        header: () => <div className="text-center">تعداد سفارش ها</div>,
+        cell: ({ row }) => <div className="text-center">{calculateOrderCount(row.original.orderItems)}</div>,
+    },
     {
         accessorKey: "status",
         header: () => <div className="text-center">

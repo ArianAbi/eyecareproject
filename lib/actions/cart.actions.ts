@@ -1,5 +1,6 @@
 "use server";
 
+import { calculateOrderCount } from "@/lib/order-count";
 import { writeAudit } from "../audit";
 import { orderEvents } from "../order-event";
 import { chargeOrderCredit } from "../order-credit";
@@ -177,6 +178,17 @@ export async function DeleteItemFromCartAction(
   }
 }
 
+export async function ClearCartAction() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("ابتدا وارد حساب شوید");
+  const userId = session.user.id;
+  await prisma.$transaction(async (tx) => {
+    const deleted = await tx.cartItem.deleteMany({ where: { cart: { userId } } });
+    await writeAudit(tx, userId, "CART_CLEARED", "User", userId, `count: ${deleted.count}`);
+  });
+  return { success: true };
+}
+
 export async function SubmitCartOrderAction({
   customerNote,
   deliveryPrice,
@@ -268,7 +280,7 @@ export async function SubmitCartOrderAction({
       await BALE_SendMessage(`${emojis.glass} سفارش جدید
                 کاربر : ${session.user.username}
                 کد سفارش : ${orderBatch.orederIdentification}
-                تعداد آیتمای سفارش : ${orderBatch.orderItems.length}
+                تعداد آیتمای سفارش : ${calculateOrderCount(orderBatch.orderItems)}
                 مبلغ سفارش : ${orderBatch.creditCharged.toLocaleString()}
 
                 ${bale_hashtags.order_submited}

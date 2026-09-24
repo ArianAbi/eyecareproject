@@ -1,6 +1,7 @@
 "use client"
 
 
+import { calculateOrderCount } from "@/lib/order-count";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -79,10 +80,11 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
         }
     },
     {
-        accessorKey: "orderItems",
+        id: "orderCount",
+        accessorFn: (order) => calculateOrderCount(order.orderItems),
         header: () => <div className="text-center">تعداد سفارش ها</div>,
         cell: ({ row }) => {
-            return <div className="text-center">{row.original._count.orderItems}</div>
+            return <div className="text-center">{calculateOrderCount(row.original.orderItems)}</div>
         }
     },
     {

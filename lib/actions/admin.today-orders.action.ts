@@ -1,5 +1,6 @@
 "use server"
 
+import { calculateOrderCount } from "@/lib/order-count";
 import { requireAdmin } from "../access"
 import prisma from "../db"
 import { getSettings } from "../settings"
@@ -36,7 +37,7 @@ export async function ADMIN_GetTodayOrdersAction(rawDay?: string) {
         createdAt: order.createdAt.toISOString(), total: calculateOrderTotal(order),
         deliveryPrice: order.deliveryPrice, customerNote: order.customerNote,
         itemCount: order.orderItems.length,
-        lensCount: order.orderItems.reduce((sum, item) => sum + (item.odOnly ? 1 : 2), 0),
+        lensCount: calculateOrderCount(order.orderItems),
         user: order.user,
     }))
     const charges = receipts.flatMap(receipt => {

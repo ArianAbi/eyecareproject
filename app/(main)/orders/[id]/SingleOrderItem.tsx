@@ -1,4 +1,5 @@
-﻿import type { GetSingleOrder } from "@/lib/actions/orders.action"
+﻿import { calculateOrderCount } from "@/lib/order-count";
+import type { GetSingleOrder } from "@/lib/actions/orders.action"
 import type { ActionData } from "@/types/actions"
 import { OrderStatusFarsi } from "@/lib/order-status-farsi-map"
 import { calculateOrderTotal } from "@/lib/order-credit"
@@ -19,7 +20,7 @@ export default function SingleOrderItem({ data }: { data: NonNullable<ActionData
             <div className="flex items-center gap-2">
                 وضعیت: <span className={`${status.bg} size-3 rounded-full`} /> {status.text}
             </div>
-            <p>تعداد اقلام: {data.orderItems.length.toLocaleString()}</p>
+            <p>تعداد اقلام: {calculateOrderCount(data.orderItems).toLocaleString()}</p>
             <p>جمع مبلغ: {calculateOrderTotal(data).toLocaleString()} تومان</p>
             {data.customerNote && <p className="whitespace-pre-wrap break-words">یادداشت شما: {data.customerNote}</p>}
         </section>

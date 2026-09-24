@@ -19,11 +19,7 @@ export async function ADMIN_GetOrdersAction(filters: OrderFilters) {
                 where: whereFilter,
                 ...(PaginationObjectDB(filters.page)),
                 include: {
-                    _count: {
-                        select: {
-                            orderItems: true
-                        }
-                    },
+                    orderItems: { select: { odOnly: true } },
                     user: {
                         select: {
                             id: true,

@@ -1,5 +1,6 @@
 "use client";
 
+import { calculateOrderCount } from "@/lib/order-count";
 import { CategoryDialog } from "@/components/core/CategoryDialog";
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -21,24 +22,34 @@ import {
 } from "@/types/order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  BrushCleaning,
   Copy,
   CornerUpLeft,
   Handbag,
   SprayCan,
   TowelRack,
+  Trash,
   XIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 import CartOrderItem from "./CartOrderItem";
-import { AddItemToCartAction } from "@/lib/actions/cart.actions";
-import { ADMIN_AddItemToCartAction } from "@/lib/actions/admin.cart.actions";
+import {
+  AddItemToCartAction,
+  ClearCartAction,
+} from "@/lib/actions/cart.actions";
+import {
+  ADMIN_AddItemToCartAction,
+  ADMIN_ClearCartAction,
+} from "@/lib/actions/admin.cart.actions";
 import SubmitOrderBtn from "./SubmitOrderBtn";
 import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -171,6 +182,14 @@ export default function GlasslensOrderPage({
   const [sourceCartItems, setSourceCartItems] = useState(cartItems);
   const [pendingChanges, setPendingChanges] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const clearDisabled =
+    submitting ||
+    clearing ||
+    pendingChanges > 0 ||
+    orderProductItems.length === 0 ||
+    orderProductItems.some((item) => item.cartStatus === "pending");
   const onCartPendingChange = (pending: boolean) =>
     setPendingChanges((count) => count + (pending ? 1 : -1));
 
@@ -226,6 +245,7 @@ export default function GlasslensOrderPage({
   const range = useWatch({ control }) as z.infer<typeof schema>;
 
   async function AddItemToOrder(item: CartItemProductItemType) {
+    if (clearing || clearDialogOpen) return;
     item.rawOrCut = false;
 
     const tempId = crypto.randomUUID();
@@ -273,9 +293,35 @@ export default function GlasslensOrderPage({
     }
   }
 
+  async function clearOrders() {
+    if (clearDisabled) return;
+    setClearing(true);
+    try {
+      await (adminUserId
+        ? ADMIN_ClearCartAction(adminUserId)
+        : ClearCartAction());
+      setOrderProductItems([]);
+      setClearDialogOpen(false);
+      toast.add({
+        type: "success",
+        title: "همه سفارش‌ها از سبد خرید حذف شدند",
+      });
+    } catch {
+      toast.add({
+        type: "error",
+        title: "حذف سفارش‌ها انجام نشد",
+        description: "لطفاً دوباره تلاش کنید.",
+      });
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  const orderCount = calculateOrderCount(orderProductItems);
+
   return (
     <fieldset
-      disabled={submitting}
+      disabled={submitting || clearing || clearDialogOpen}
       className="border p-3 max-md:p-2 max-md:pb-20 space-y-2 rounded-md min-w-0"
     >
       <section className="flex flex-col-reverse md:flex-row gap-2 p-2 border border-white/50 border-dashed rounded-lg w-full items-end justify-between ">
@@ -492,7 +538,53 @@ export default function GlasslensOrderPage({
                 <TableHead className="text-center">نمره</TableHead>
                 <TableHead className="text-center">قیمت</TableHead>
                 <TableHead className="text-center">تراش</TableHead>
-                <TableHead></TableHead>
+                <TableHead>
+                  <Dialog
+                    open={clearDialogOpen}
+                    onOpenChange={(open) => {
+                      if (!clearing) setClearDialogOpen(open);
+                    }}
+                  >
+                    <DialogTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={clearDisabled}
+                        />
+                      }
+                    >
+                      <BrushCleaning />
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>حذف همه سفارش‌ها</DialogTitle>
+                        <DialogDescription>
+                          آیا از حذف همه {orderCount} سفارش از سبد خرید مطمئن
+                          هستید؟
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={clearDisabled}
+                          onClick={clearOrders}
+                        >
+                          {clearing ? "در حال حذف..." : "حذف همه"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={clearing}
+                          onClick={() => setClearDialogOpen(false)}
+                        >
+                          لغو
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </TableHead>
               </TableRow>
             </TableHeader>
 
@@ -516,7 +608,7 @@ export default function GlasslensOrderPage({
 
         {/* order summery */}
         <ResponsiveOrderSummary
-          itemCount={orderProductItems.length}
+          itemCount={orderCount}
           totalPrice={orderSumPrice}
         >
           <div className="col-span-3 max-md:col-span-1 max-md:min-w-0 rounded-lg p-2 max-h-fit sticky top-2 max-md:static border border-dashed border-white/50 flex flex-col">
@@ -608,7 +700,7 @@ export default function GlasslensOrderPage({
                 {/* order count */}
                 <tr>
                   <td className="pt-4">تعداد سفارش</td>
-                  <td className="pt-4">{orderProductItems.length}</td>
+                  <td className="pt-4">{orderCount}</td>
                 </tr>
 
                 {/* order price */}

@@ -1,5 +1,6 @@
 'use client'
 
+import { calculateOrderCount } from "@/lib/order-count";
 import { ADMIN_GetSingleOrder, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
 import { ActionData } from "@/types/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
@@ -111,7 +112,7 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
                 <div className="flex items-center gap-1">
                     <span>تعداد سفارش : </span>
                     <span className="flex items-center gap-1">
-                        {data.orderItems.length}
+                        {calculateOrderCount(data.orderItems)}
                     </span>
                 </div>
 

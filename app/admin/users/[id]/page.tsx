@@ -1,3 +1,4 @@
+import { calculateOrderCount } from "@/lib/order-count";
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
@@ -69,7 +70,7 @@ export default async function SingleUserPage({ params, searchParams }: {
                 {data.tickets.map(ticket => <TableRow key={ticket.id}><TableCell className="max-w-72 whitespace-normal break-words">{ticket.subject}</TableCell><TableCell><Badge variant={ticket.status === 'OPEN' ? 'destructive' : 'outline'}>{ticket.status === 'OPEN' ? 'باز' : 'بسته'}</Badge></TableCell><TableCell>{ticket._count.messages}</TableCell><TableCell>{date(ticket.createdAt)}</TableCell><TableCell>{date(ticket.updatedAt)}</TableCell><TableCell><Link className="underline" href={`/admin/tickets/${ticket.id}`}>مشاهده و پاسخ</Link></TableCell></TableRow>)}
             </Records></TabsContent>
             <TabsContent value="orders"><Records headings={['شماره سفارش', 'وضعیت', 'تعداد اقلام', 'مبلغ کل', 'هزینه ارسال', 'یادداشت مشتری', 'تاریخ', 'عملیات']} total={user._count.orders} pageKey="ordersPage">
-                {data.orders.map(order => <TableRow key={order.id}><TableCell>#{order.orederIdentification}</TableCell><TableCell><Badge variant="outline" className={OrderStatusFarsi(order.status).bg}>{OrderStatusFarsi(order.status).text}</Badge></TableCell><TableCell>{order.orderItems.length}</TableCell><TableCell>{money(calculateOrderTotal(order))}</TableCell><TableCell>{money(order.deliveryPrice)}</TableCell><TableCell className="max-w-60 whitespace-normal break-words">{order.customerNote || '—'}</TableCell><TableCell>{date(order.createdAt)}</TableCell><TableCell><Link className="underline" href={`/admin/orders/${order.id}`}>مشاهده و مدیریت</Link></TableCell></TableRow>)}
+                {data.orders.map(order => <TableRow key={order.id}><TableCell>#{order.orederIdentification}</TableCell><TableCell><Badge variant="outline" className={OrderStatusFarsi(order.status).bg}>{OrderStatusFarsi(order.status).text}</Badge></TableCell><TableCell>{calculateOrderCount(order.orderItems)}</TableCell><TableCell>{money(calculateOrderTotal(order))}</TableCell><TableCell>{money(order.deliveryPrice)}</TableCell><TableCell className="max-w-60 whitespace-normal break-words">{order.customerNote || '—'}</TableCell><TableCell>{date(order.createdAt)}</TableCell><TableCell><Link className="underline" href={`/admin/orders/${order.id}`}>مشاهده و مدیریت</Link></TableCell></TableRow>)}
             </Records></TabsContent>
             <TabsContent value="cart" className="space-y-3">
                 <p className="text-muted-foreground">قیمت‌ها، قیمت فعلی محصول هستند؛ هزینه برش و ارسال هنگام ثبت سفارش محاسبه می‌شود.</p>

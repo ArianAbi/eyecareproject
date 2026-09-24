@@ -67,6 +67,16 @@ export async function ADMIN_DeleteItemFromCartAction(userId: string, itemId: str
     return { success: true }
 }
 
+export async function ADMIN_ClearCartAction(userId: string) {
+    const actor = await requireAdmin()
+    userId = idSchema.parse(userId)
+    await prisma.$transaction(async tx => {
+        const deleted = await tx.cartItem.deleteMany({ where: { cart: { userId } } })
+        await writeAudit(tx, actor.id, 'ADMIN_CART_CLEARED', 'User', userId, `count: ${deleted.count}`)
+    })
+    return { success: true }
+}
+
 export async function ADMIN_SubmitCartOrderAction(userId: string, input: { customerNote: string, deliveryPrice: number }) {
     const actor = await requireAdmin()
     userId = idSchema.parse(userId)

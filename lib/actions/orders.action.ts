@@ -34,6 +34,7 @@ export async function GetOrdersAction(filters: OrderFilters) {
                     },
                     orderItems: {
                         select: {
+                            odOnly: true,
                             purchasedPrice: true,
                             cutPrice: true
                         }
