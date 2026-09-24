@@ -173,6 +173,7 @@ export default function GlasslensOrderPage({
         tempId: item.id, // reuse the real DB id as tempId, since it's already stable+unique
         cartStatus: "success", // it's already persisted, so it's not "pending"
         cartItemId: item.id,
+        guaranteeClientName: item.guaranteeClientName,
       })),
     [cartItems],
   );
@@ -538,6 +539,7 @@ export default function GlasslensOrderPage({
                 <TableHead className="text-center">نمره</TableHead>
                 <TableHead className="text-center">قیمت</TableHead>
                 <TableHead className="text-center">تراش</TableHead>
+                <TableHead className="text-center">گارانتی</TableHead>
                 <TableHead>
                   <Dialog
                     open={clearDialogOpen}

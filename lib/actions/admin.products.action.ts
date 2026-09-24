@@ -1,5 +1,7 @@
 "use server"
 
+import { z } from "zod"
+
 import { requireAdmin } from "../access"
 import { priceSchema } from "../schemas/settings"
 import { writeAudit } from "../audit"
@@ -18,6 +20,7 @@ export async function ADMIN_CreateProductsAction(
         type: ProductType;
         categoryId: string;
         tagIds: string[];
+        includesGuarantee: boolean,
         includesBag: boolean,
         includesSpray: boolean,
         includesCloth: boolean,
@@ -45,6 +48,7 @@ export async function ADMIN_CreateProductsAction(
                     ...(input.tagIds !== undefined && {
                         tags: { connect: input.tagIds.map((tagId) => ({ id: tagId })) },
                     }),
+                    includesGuarantee: z.boolean().parse(input.includesGuarantee),
                     includesBag: input.includesBag,
                     includesCleaningCloth: input.includesCloth,
                     includesCleaningSpray: input.includesSpray
@@ -161,6 +165,7 @@ export async function ADMIN_UpdateProduct(
         type?: ProductType;
         categoryId?: string;
         tagIds?: string[];
+        includesGuarantee: boolean,
         includesBag: boolean,
         includesSpray: boolean,
         includesCloth: boolean,
@@ -190,6 +195,7 @@ export async function ADMIN_UpdateProduct(
 
             const data: Prisma.ProductUpdateInput = {
                 ...scalarFields,
+                includesGuarantee: z.boolean().parse(input.includesGuarantee),
                 ...(input.price !== undefined && { price: priceSchema.parse(input.price) }),
                 ...(categoryId !== undefined && {
                     categoryRel: { connect: { id: categoryId } },

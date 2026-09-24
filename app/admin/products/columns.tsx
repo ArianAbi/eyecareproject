@@ -25,7 +25,14 @@ import { cn } from "@/lib/utils";
 import { ActionData } from "@/types/actions";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { BanIcon, Handbag, SprayCan, TowelRack, TrashIcon } from "lucide-react";
+import {
+  BanIcon,
+  Handbag,
+  Shield,
+  SprayCan,
+  TowelRack,
+  TrashIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -138,17 +145,40 @@ export const AdminProductsColumn: ColumnDef<NonNullable<Column>>[] = [
     },
   },
   {
+    accessorKey: "includesGuarantee",
+    header: "گارانتی",
+    cell: ({ row }) => (
+      <span>
+        {row.original.includesGuarantee ? "گارانتی دارد" : "بدون گارانتی"}
+      </span>
+    ),
+  },
+  {
     accessorKey: "packagingInclusion",
     header: () => {
       return <div className="text-center">بسته بندی</div>;
     },
     cell: ({ row }) => {
+      const includesGuarantee = row.original.includesGuarantee;
       const includesBag = row.original.includesBag;
       const includesSpray = row.original.includesCleaningSpray;
       const includesCloth = row.original.includesCleaningCloth;
 
       return (
         <div className="w-full text-center flex justify-between gap-1">
+          <div className="relative">
+            {!includesGuarantee && (
+              <div className="absolute z-10 stroke-red-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <BanIcon strokeWidth={2.5} stroke="inherit" />
+              </div>
+            )}
+
+            <Shield
+              className={`${!includesBag ? "stroke-gray-200 scale-85" : "stroke-white"}`}
+              stroke="inherit"
+            />
+          </div>
+
           <div className="relative">
             {!includesBag && (
               <div className="absolute z-10 stroke-red-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

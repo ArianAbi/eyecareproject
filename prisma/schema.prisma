@@ -129,6 +129,7 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
 
+  includesGuarantee     Boolean @default(false)
   includesBag           Boolean @default(false)
   includesCleaningSpray Boolean @default(false)
   includesCleaningCloth Boolean @default(false)
@@ -179,6 +180,7 @@ model Cart {
 }
 
 model CartItem {
+  guaranteeClientName String @default("")
   id String @id @default(uuid())
 
   productId String
@@ -237,6 +239,8 @@ enum RawOrCutType {
 }
 
 model OrderItem {
+  guaranteeClientName String @default("")
+  includesGuarantee Boolean @default(false)
   id String @id @default(uuid())
 
   productId String

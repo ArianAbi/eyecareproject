@@ -88,6 +88,8 @@ export async function ADMIN_SubmitCartOrderAction(userId: string, input: { custo
         if (!cart?.cartItems.length) throw new Error('سبد خرید کاربر خالی است')
         if (cart.cartItems.some(item => !item.product.active || item.product.type !== 'LENS')) throw new Error('سبد خرید دارای محصول غیرقابل سفارش است')
         const items = cart.cartItems.map(item => ({
+            includesGuarantee: item.product.includesGuarantee,
+            guaranteeClientName: item.product.includesGuarantee ? item.guaranteeClientName : "",
             productId: item.productId, purchasedPrice: item.odOnly ? Math.round(item.product.price / 2) : item.product.price,
             cutPrice: 0, odSph: item.odSph, odCyl: item.odCyl, odAux: item.odAux,
             osSph: item.osSph, osCyl: item.osCyl, osAux: item.osAux, odOnly: item.odOnly, rawOrCut: item.rawOrCut,

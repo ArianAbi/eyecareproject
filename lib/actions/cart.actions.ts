@@ -248,6 +248,8 @@ export async function SubmitCartOrderAction({
             orderItems: {
               create: cart.cartItems.map((item) => ({
                 productId: item.productId,
+                includesGuarantee: item.product.includesGuarantee,
+                guaranteeClientName: item.product.includesGuarantee ? item.guaranteeClientName : "",
                 purchasedPrice: item.odOnly
                   ? Math.round(item.product.price / 2)
                   : item.product.price,

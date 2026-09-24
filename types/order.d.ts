@@ -10,6 +10,7 @@ export interface CartItemProductItemType extends Product {
 type CartStatus = "pending" | "success" | "error"
 
 type OrderProductItemWithStatus = CartItemProductItemType & {
+    guaranteeClientName?: string
     tempId: string        // stable client-side id, see note below
     cartStatus: CartStatus
     cartItemId?: string   // real DB id, filled in once the insert succeeds

@@ -122,6 +122,7 @@ export function OrderTable({
                         />
                     </TableHead>
 
+                    <TableHead>گارانتی / نام مشتری</TableHead>
                     <TableHead>آکس</TableHead>
                     <TableHead>نمره</TableHead>
 
@@ -174,6 +175,9 @@ export function OrderTable({
                                 }
                             </TableCell>
 
+                            <TableCell className="max-w-64 whitespace-normal break-words">
+                                {item.guaranteeClientName || (item.includesGuarantee ? "نام ثبت نشده" : "ندارد")}
+                            </TableCell>
                             <TableCell>
                                 {/* AUX */}
                                 <div className="flex flex-col items-start">

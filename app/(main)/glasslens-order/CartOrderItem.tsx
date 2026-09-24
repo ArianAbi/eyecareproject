@@ -12,6 +12,7 @@ import type { OrderProductItemWithStatus } from "@/types/order"
 import { Trash } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { Dispatch, SetStateAction, useState } from "react"
+import GuaranteeDialog from "./GuaranteeDialog"
 
 export default function CartOrderItem({ listNumber, orderItem, updateOrderList, adminUserId, onPendingChange }: {
     adminUserId?: string,
@@ -155,6 +156,16 @@ export default function CartOrderItem({ listNumber, orderItem, updateOrderList, 
 
             </TableCell>
 
+            <TableCell>
+                {orderItem.includesGuarantee ? <GuaranteeDialog
+                    cartItemId={orderItem.cartItemId}
+                    clientName={orderItem.guaranteeClientName}
+                    adminUserId={adminUserId}
+                    disabled={loading || orderItem.cartStatus !== "success"}
+                    onPendingChange={pending => { setLoading(pending); onPendingChange?.(pending) }}
+                    onSaved={name => updateOrderList(prev => prev.map(item => item.tempId === orderItem.tempId ? { ...item, guaranteeClientName: name } : item))}
+                /> : "—"}
+            </TableCell>
             <TableCell>
                 {
                     user && user.id &&
