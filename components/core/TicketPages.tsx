@@ -8,20 +8,35 @@ import CustomPagination from "./CustomPagination"
 import { Badge } from "../ui/badge"
 import { ChevronRight } from "lucide-react"
 import { buttonVariants } from "../ui/button"
+import { Avatar, AvatarFallback } from "../ui/avatar"
+import { AdminTicketTabs } from "./AdminTicketTabs"
 
 const date = (value: Date) => new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tehran' }).format(value)
 
 export async function TicketList({ admin = false, filters }: { admin?: boolean, filters: { page?: string, status?: string } }) {
-    const { data } = await (admin ? ADMIN_GetTicketsAction : GetTicketsAction)(filters)
-    return <div className="mx-auto max-w-5xl space-y-5 p-3">
-        <h1 className="text-xl font-semibold">{admin ? 'مدیریت تیکت‌ها' : 'پشتیبانی و تیکت‌ها'}</h1>
-        {!admin && <TicketForm />}
-        <QueryFilters date={false} statuses={[{ value: 'OPEN', label: 'باز' }, { value: 'CLOSED', label: 'بسته' }]} />
+    const status = filters.status === 'CLOSED' ? 'CLOSED' : 'OPEN'
+    const { data } = await (admin ? ADMIN_GetTicketsAction : GetTicketsAction)(admin ? { ...filters, status } : filters)
+    const tickets = <>
         <div className="divide-y rounded-lg border">{data.tickets.length ? data.tickets.map(ticket => <Link key={ticket.id} href={`${admin ? '/admin' : ''}/tickets/${ticket.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-muted">
-            <div><p className="font-medium">{ticket.subject}</p><p className="mt-1 text-xs text-muted-foreground">{admin && `${ticket.user.username} · `}{date(ticket.updatedAt)} · {ticket._count.messages} پیام</p></div>
+            <div className="min-w-0 space-y-2">
+                {admin && <div className="flex items-center gap-2">
+                    <Avatar><AvatarFallback>{Array.from(ticket.user.username.trim()).slice(0, 2).join('').toLocaleUpperCase()}</AvatarFallback></Avatar>
+                    <p className="font-semibold wrap-anywhere">{ticket.user.username}</p>
+                </div>}
+                <p className="font-medium wrap-anywhere">{ticket.subject}</p>
+                <p className="text-xs text-muted-foreground">{date(ticket.updatedAt)} · {ticket._count.messages} پیام</p>
+            </div>
             <Badge variant="outline">{ticket.status === 'CLOSED' ? 'بسته' : ticket.messages[0]?.fromAdmin ? 'پاسخ پشتیبانی' : 'در انتظار پشتیبانی'}</Badge>
         </Link>) : <p className="p-8 text-center text-muted-foreground">تیکتی یافت نشد.</p>}</div>
         <CustomPagination total={data.total} paramKey="page" />
+    </>
+    return <div className="mx-auto max-w-5xl space-y-5 p-3">
+        <h1 className="text-xl font-semibold">{admin ? 'مدیریت تیکت‌ها' : 'پشتیبانی و تیکت‌ها'}</h1>
+        {admin ? <AdminTicketTabs status={status}>{tickets}</AdminTicketTabs> : <>
+            <TicketForm />
+            <QueryFilters date={false} statuses={[{ value: 'OPEN', label: 'باز' }, { value: 'CLOSED', label: 'بسته' }]} />
+            {tickets}
+        </>}
     </div>
 }
 

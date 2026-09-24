@@ -25,7 +25,10 @@ function refreshTickets(id?: string) {
   revalidatePath("/tickets", "layout");
   revalidatePath("/admin/tickets", "layout");
   revalidatePath("/admin/summary");
-  if (id) revalidatePath(`/tickets/${id}`);
+  if (id) {
+    revalidatePath(`/tickets/${id}`);
+    revalidatePath(`/admin/tickets/${id}`);
+  }
 }
 
 async function listTickets(filters: Filters, userId?: string) {

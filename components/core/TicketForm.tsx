@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { CreateTicketAction, ReplyTicketAction, ADMIN_ReplyTicketAction } from "@/lib/actions/tickets.action"
 import { Input } from "../ui/input"
@@ -18,19 +18,39 @@ export function TicketForm({ ticketId, admin = false }: { ticketId?: string, adm
     const [error, setError] = useState('')
     const router = useRouter()
 
-    if (ticketId) return <>
-        {/* <div className="fixed bottom-2 left-1/2 -translate-x-1/2 min-h-10 max-w-4xl w-full">
-        <Textarea className="border" placeholder="GGG"/>
-    </div> */}
-        <div className="min-h-10 w-full">
-            <h2>پیام جدید</h2>
+    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        if (pending) return
+        const form = event.currentTarget
+        const data = new FormData(form)
+        const message = String(data.get('message') ?? '').trim()
+        if (!message) {
+            setError('متن پیام را وارد کنید.')
+            return
+        }
+        startTransition(async () => {
+            setError('')
+            try {
+                if (ticketId) await (admin ? ADMIN_ReplyTicketAction : ReplyTicketAction)(ticketId, message)
+                else {
+                    const result = await CreateTicketAction({ subject: String(data.get('subject') ?? ''), message })
+                    router.push(`/tickets/${result.data.id}`)
+                }
+                form.reset()
+                router.refresh()
+            } catch { setError('ارسال پیام انجام نشد. متن و وضعیت تیکت را بررسی کنید.') }
+        })
+    }
 
-            <Textarea className="mt-2" />
-            <Button className={'mt-2'} variant={'green'}>
-                ارسال
-            </Button>
-        </div>
-    </>
+    if (ticketId) return <form className="min-h-10 w-full space-y-2" onSubmit={handleSubmit} aria-busy={pending}>
+        <Label htmlFor="ticket-reply">پیام جدید</Label>
+        <Textarea id="ticket-reply" name="message" required maxLength={5000} rows={4} disabled={pending} />
+        {error && <div role="alert"><TextError>{error}</TextError></div>}
+        <Button type="submit" variant="green" disabled={pending}>
+            {pending ? 'در حال ارسال' : 'ارسال'}
+            {pending && <Spinner />}
+        </Button>
+    </form>
 
     return <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
@@ -46,24 +66,7 @@ export function TicketForm({ ticketId, admin = false }: { ticketId?: string, adm
 
             <div className="border-t"></div>
 
-            <form className="space-y-3 rounded-lg p-4" onSubmit={event => {
-                event.preventDefault()
-                const form = event.currentTarget
-                const data = new FormData(form)
-                startTransition(async () => {
-                    setError('')
-                    try {
-                        const message = String(data.get('message') ?? '')
-                        if (ticketId) await (admin ? ADMIN_ReplyTicketAction : ReplyTicketAction)(ticketId, message)
-                        else {
-                            const result = await CreateTicketAction({ subject: String(data.get('subject') ?? ''), message })
-                            router.push(`/tickets/${result.data.id}`)
-                        }
-                        form.reset()
-                        router.refresh()
-                    } catch { setError('ارسال پیام انجام نشد. متن و وضعیت تیکت را بررسی کنید.') }
-                })
-            }}>
+            <form className="space-y-3 rounded-lg p-4" onSubmit={handleSubmit}>
 
                 {!ticketId &&
                     <div className="space-y-2">
