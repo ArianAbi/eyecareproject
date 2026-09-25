@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,11 +41,11 @@ export default function GuaranteeDialog({
     setSaving(true);
     onPendingChange?.(true);
     try {
-      const result = await UpdateCartItemGuaranteeAction(
+      const result = unwrapActionResult(await UpdateCartItemGuaranteeAction(
         cartItemId,
         name,
         adminUserId,
-      );
+      ));
       onSaved(result.guaranteeClientName);
       setOpen(false);
     } catch {

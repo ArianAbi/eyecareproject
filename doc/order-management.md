@@ -12,13 +12,13 @@ All access and mutations require admin authorization. These management controls 
 
 ## Grouped view
 
-Orders are selected by creation date in the `Asia/Tehran` business timezone, using an inclusive midnight start and exclusive next-day midnight end. Every status is included initially, including pending and rejected/on-hold orders. Groups are not split across pages.
+Orders are selected by creation date in the `Asia/Tehran` business timezone, using an inclusive midnight start and exclusive next-day midnight end. Every status is included initially, including pending and rejected/on-hold orders. Groups are not split across pages: dailyPage paginates 20 whole user groups, and fee receipts are scoped to those users.
 
 Each user has one collapsible group, initially closed. Its summary shows username, store name when available, **current** credit balance, matching order count and matching order total. The username links to the admin user page. The details button supports keyboard navigation and exposes expanded state through Base UI Collapsible.
 
 Expanding reveals order numbers, Tehran timestamps, row/lens counts, totals, existing delivery charges, status controls, notes and links to full order management. Closing a group preserves its mounted form state. Changing the selected date resets the groups and filters.
 
-The user dropdown contains only users with orders on the selected day. Status filtering does not remove users from that dropdown. User and status filters apply together; group counts and totals reflect matching orders. Clearing filters restores all orders for that day. Refresh loads current server data.
+The user dropdown contains only users on the current page with orders on the selected day. Status filtering does not remove users from that dropdown. User and status filters apply together; group counts and totals reflect matching orders. Clearing filters restores all orders for the displayed user page. Refresh loads current server data.
 
 Order statuses and credit balances are current values, even when browsing historical order dates; this is not an archived financial snapshot. Historical orders can still be managed through the status controls and detail links.
 
@@ -42,7 +42,7 @@ No schema change or migration is required. Existing `User`, `Setting`, `AuditLog
 
 ## Implementation
 
-- `lib/actions/admin.today-orders.action.ts`: authorized date-scoped query and fee action. `ADMIN_GetTodayOrdersAction(rawDay?)` accepts an optional Gregorian day and returns `isToday` with the orders and fee receipts.
+- `lib/actions/admin.today-orders.action.ts`: authorized date-scoped query and fee action. `ADMIN_GetTodayOrdersAction(rawDay?, page?)` accepts an optional Gregorian day and user-group page and returns `isToday` with the orders and fee receipts.
 - `lib/todays-orders.ts`: client-safe grouping and user-dropdown helpers.
 - `components/core/TodaysOrdersSection.tsx`: shared server loader for the dashboard and both grouped tabs.
 - `components/core/TodaysOrders.tsx`: filters, summaries, collapsible groups and status management.
@@ -54,7 +54,15 @@ Validation commands:
 
 ```sh
 node --test tests/todays-orders.test.cjs
-node node_modules/typescript/bin/tsc --noEmit --incremental false
+npm run typecheck
 ```
 
 The tests do not exercise a live database or browser. Manual verification should cover keyboard expansion, collapsed defaults, tab navigation, a date with no orders, a historical date, Latin digits and fee controls appearing only for today. Verify real fee deductions only with a designated test account.
+
+## Checkout and history policy (2026-09-25)
+
+Delivery remains in this daily-fee workflow; new checkout rejects nonzero per-order delivery fees. Cutting fees remain disabled. Existing historical per-order fees are not rewritten. A refunded order cannot leave ONHOLD; place a new charged order instead. CREDIT PAID is a balance grant, not a cash receipt.
+
+New order items snapshot product name/category/color/packaging. Old null snapshots retain current-catalog fallback. Order-detail items/updates paginate at 50 rows; totals and lens counts remain full-order aggregates. Pending badges poll the shared database every 15 seconds, including after status changes. Only the active `/admin/orders` tab loads its data.
+
+The daily-fee feature itself uses existing models, but the broader F-01?F-18 release requires the [hardening migration](../docs/hardening-deployment.md).

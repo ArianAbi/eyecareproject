@@ -1,6 +1,6 @@
 'use client'
 
-import { calculateOrderCount } from "@/lib/order-count";
+import { unwrapActionResult } from "@/lib/action-result";
 import { ADMIN_GetSingleOrder, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
 import { ActionData } from "@/types/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
@@ -18,7 +18,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import OrderUpdateHistory from "@/components/OrderUpdateHistory";
-import { calculateOrderTotal } from "@/lib/order-credit";
 
 export default function AdminSingleOrderItem({ data }: { data: NonNullable<ActionData<typeof ADMIN_GetSingleOrder>> }) {
 
@@ -39,13 +38,13 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
         try {
             setLoading(true)
 
-            await ADMIN_UpdateOrderStatus({
+            unwrapActionResult(await ADMIN_UpdateOrderStatus({
                 id: data.id,
                 newStatus: selectedStatus === data.status ? undefined : selectedStatus,
                 message,
                 adminOnly,
                 refundCredit: canRefund && refundCredit,
-            })
+            }))
 
             toast.add({
                 type: "Success",
@@ -112,7 +111,7 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
                 <div className="flex items-center gap-1">
                     <span>تعداد سفارش : </span>
                     <span className="flex items-center gap-1">
-                        {calculateOrderCount(data.orderItems)}
+                        {data.lensCount}
                     </span>
                 </div>
 
@@ -120,7 +119,7 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
                 <div className="flex items-center gap-1">
                     <span>جمع مبلغ : </span>
                     <span className="flex items-center gap-1">
-                        {calculateOrderTotal(data).toLocaleString() + " "}
+                        {data.totalPrice.toLocaleString() + " "}
                         <span className="text-emerald-500 font-semibold">تومان</span>
                     </span>
                 </div>

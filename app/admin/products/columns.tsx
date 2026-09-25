@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import {
   colorOptionsType,
   colorSelectMap,
@@ -30,7 +31,7 @@ import {
   Handbag,
   Shield,
   SprayCan,
-  TowelRack,
+  RectangleHorizontal as TowelRack,
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -307,7 +308,7 @@ function ProductDeleteBtn({
     try {
       setLoading(true);
 
-      await ADMIN_DeleteProduct(product.id, lensId);
+      unwrapActionResult(await ADMIN_DeleteProduct(product.id, lensId));
 
       toast.add({
         title: "محصول حذف شد",

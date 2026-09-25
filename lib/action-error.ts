@@ -1,3 +1,4 @@
+import { ClientActionError } from "./action-result";
 // lib/action-error.ts
 
 type ActionErrorShape = {
@@ -9,7 +10,7 @@ export class ActionError extends Error {
   payload: ActionErrorShape;
 
   constructor(payload: ActionErrorShape) {
-    super(JSON.stringify(payload)); // this survives the server->client boundary
+    super(JSON.stringify(payload)); // Legacy server-side error only; mutation boundaries return actionResult.
     this.name = "ActionError";
     this.payload = payload;
   }
@@ -17,6 +18,7 @@ export class ActionError extends Error {
 
 // Client-side helper to safely parse it back out
 export function parseActionError(error: unknown): ActionErrorShape {
+  if (error instanceof ClientActionError) return { error: error.message };
   if (error instanceof Error) {
     try {
       const parsed = JSON.parse(error.message);

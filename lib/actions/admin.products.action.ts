@@ -1,5 +1,8 @@
 "use server"
 
+import { actionResult, ExpectedError } from "../action-result";
+import { productSchema } from "../schemas/product"
+import { PaginationObjectDB } from "../pagination-object"
 import { z } from "zod"
 
 import { requireAdmin } from "../access"
@@ -34,12 +37,17 @@ export async function ADMIN_CreateProductsAction(
         };
     }
 ) {
-    try {
-        const actor = await requireAdmin()
-        return await prisma.$transaction(async tx => {
+    return actionResult(async () => {
 
+        const actor = await requireAdmin()
+        input = productSchema.parse(input) as typeof input
+        const committed = await prisma.$transaction(async tx => {
+
+            const category = await tx.subCategory.findUniqueOrThrow({ where: { id: input.categoryId }, include: { masterCategory: true } })
+            if (category.masterCategory.type !== input.type || (input.type === 'LENS' && !input.lens)) throw new ExpectedError('Invalid product category or lens')
             const data = await tx.product.create({
                 data: {
+                    active: input.active,
                     name: input.name,
                     description: input.description,
                     price: priceSchema.parse(input.price),
@@ -55,7 +63,7 @@ export async function ADMIN_CreateProductsAction(
                 }
             })
 
-            if (input.lens && data) {
+            if (input.type === 'LENS' && input.lens && data) {
                 await tx.lens.create({
                     data: {
                         positiveFromSph: input.lens.positiveFromSph,
@@ -70,46 +78,40 @@ export async function ADMIN_CreateProductsAction(
             }
 
             await writeAudit(tx, actor.id, "ADMIN_CreateProductsAction", "Product", data.id)
-            revalidatePath('/admin/products')
+
             return { data, success: true }
 
         })
-    } catch (err) {
-        console.error("ADMIN_CreateProductsAction failed:", err);
+        revalidatePath('/admin/products')
+        revalidatePath("/admin/products/create");
+        revalidatePath("/admin/product-category");
+        revalidatePath("/glasslens-order");
+        revalidatePath("/admin/glasslens-order");
+        return committed;
 
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: `Failed to create product: ${err.message}`,
-            });
-        }
-
-        throw new ActionError({
-            error: "Failed to create product: Unknown error",
-        });
-    }
+    });
 }
 
-export async function ADMIN_GetProducts() {
+export async function ADMIN_GetProducts(page?: string) {
     try {
         await requireAdmin()
 
         const data = await prisma.product.findMany({
+            ...PaginationObjectDB(page),
             include: {
                 lens: true,
                 tags: true,
-                categoryRel:{
-                    select:{
-                        id:true,
-                        color:true,
-                        name:true
+                categoryRel: {
+                    select: {
+                        id: true,
+                        color: true,
+                        name: true
                     }
                 }
             },
-            orderBy: {
-                createdAt: "asc"
-            }
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }]
         })
-        return { data, success: true }
+        return { data, total: await prisma.product.count(), success: true }
     } catch (err) {
         console.error("ADMIN_GetProductsAction failed:", err);
 
@@ -179,9 +181,17 @@ export async function ADMIN_UpdateProduct(
         } | null;
     }
 ) {
-    try {
+    return actionResult(async () => {
+
         const actor = await requireAdmin()
-        return await prisma.$transaction(async tx => {
+        z.string().uuid().parse(id)
+        input = productSchema.partial().parse(input) as typeof input
+        const committed = await prisma.$transaction(async tx => {
+            const previous = await tx.product.findUniqueOrThrow({ where: { id }, include: { lens: true } })
+            const type = input.type ?? previous.type
+            const category = await tx.subCategory.findUniqueOrThrow({ where: { id: input.categoryId ?? previous.categoryId }, include: { masterCategory: true } })
+            if (category.masterCategory.type !== type || (type === 'LENS' && !(input.lens === undefined ? previous.lens : input.lens))) throw new ExpectedError('Invalid product category or lens')
+            if (type !== 'LENS') input.lens = previous.lens ? null : undefined
 
             const {
                 tagIds,
@@ -220,25 +230,25 @@ export async function ADMIN_UpdateProduct(
             });
 
             await writeAudit(tx, actor.id, "ADMIN_UpdateProduct", "Product", result.id)
-            revalidatePath('/admin/products')
+
             return { success: true, data: result };
 
         })
-    } catch (err) {
-        console.error("ADMIN_UpdateProduct failed:", err);
+        revalidatePath('/admin/products')
+        revalidatePath("/admin/products/create");
+        revalidatePath("/admin/product-category");
+        revalidatePath("/glasslens-order");
+        revalidatePath("/admin/glasslens-order");
+        return committed;
 
-        if (err instanceof Error) {
-            throw new ActionError({ error: `Failed to update product: ${err.message}` });
-        }
-
-        throw new ActionError({ error: "Failed to update product: Unknown error" });
-    }
+    });
 }
 
 export async function ADMIN_UpdateProductCategorys(id: string, name: string, description: string) {
-    try {
+    return actionResult(async () => {
+
         const actor = await requireAdmin()
-        return await prisma.$transaction(async tx => {
+        const committed = await prisma.$transaction(async tx => {
 
             const data = await tx.subCategory.update({
                 where: { id: id },
@@ -249,42 +259,47 @@ export async function ADMIN_UpdateProductCategorys(id: string, name: string, des
             })
 
             await writeAudit(tx, actor.id, "ADMIN_UpdateProductCategorys", "SubCategory", data.id)
-            revalidatePath(`/admin/product-category`)
 
             return { data, success: true }
 
         })
-    } catch (err) {
-        console.log(err);
-        throw new ActionError({ error: "failed to get product categorys, check console" })
-    }
+        revalidatePath(`/admin/product-category`)
+        revalidatePath("/admin/products/create");
+        revalidatePath("/admin/product-category");
+        revalidatePath("/glasslens-order");
+        revalidatePath("/admin/glasslens-order");
+        return committed;
+
+    });
 }
 
-export async function ADMIN_DeleteProduct(id: string, lensId: string | null) {
-    try {
-        const actor = await requireAdmin()
-        return await prisma.$transaction(async tx => {
+export async function ADMIN_DeleteProduct(id: string, _lensId: string | null) {
+    return actionResult(async () => {
 
-            if (lensId) {
-                await tx.lens.delete({
-                    where: { id: lensId }
-                })
+        void _lensId; // Compatibility only; the relation is always read from the database.
+        const actor = await requireAdmin()
+        const committed = await prisma.$transaction(async tx => {
+
+            z.string().uuid().parse(id)
+            const product = await tx.product.findUniqueOrThrow({ where: { id }, include: { lens: true, _count: { select: { orderItem: true, cartItems: true } } } })
+            if (product._count.orderItem || product._count.cartItems) {
+                await tx.product.update({ where: { id }, data: { active: false } })
+            } else {
+                if (product.lens) await tx.lens.delete({ where: { productId: id } })
+                await tx.product.delete({ where: { id } })
             }
 
-            await tx.product.delete({
-                where: {
-                    id
-                }
-            })
-
             await writeAudit(tx, actor.id, "ADMIN_DeleteProduct", "Product", id)
-            revalidatePath(`/admin/products`)
 
             return { success: true }
 
         })
-    } catch (err) {
-        console.log(err);
-        throw new ActionError({ error: "failed to delete product, check console" })
-    }
+        revalidatePath(`/admin/products`)
+        revalidatePath("/admin/products/create");
+        revalidatePath("/admin/product-category");
+        revalidatePath("/glasslens-order");
+        revalidatePath("/admin/glasslens-order");
+        return committed;
+
+    });
 }

@@ -1,5 +1,6 @@
 "use server"
 
+import { PaginationObjectDB } from "../pagination-object"
 import { calculateOrderCount } from "@/lib/order-count";
 import { requireAdmin } from "../access"
 import prisma from "../db"
@@ -10,13 +11,20 @@ import type { TodayOrder } from "../todays-orders"
 import { revalidatePath } from "next/cache"
 import { dailyChargeInput, DailyChargeError, deductDailyOrderCharge, type DailyChargeInput } from "../daily-order-charge"
 
-export async function ADMIN_GetTodayOrdersAction(rawDay?: string) {
+export async function ADMIN_GetTodayOrdersAction(rawDay?: string, page?: string) {
     await requireAdmin()
     const today = tehranDay()
     const day = validDay(rawDay) ? rawDay : today
+    const createdAt = parseDateFilterParam(JSON.stringify({ from: day }))!
+    const userWhere = { orders: { some: { createdAt } } }
+    const [users, totalUsers] = await Promise.all([
+        prisma.user.findMany({ where: userWhere, select: { id: true }, orderBy: { id: "asc" }, ...PaginationObjectDB(page, 20) }),
+        prisma.user.count({ where: userWhere }),
+    ])
+    const userIds = users.map(user => user.id)
     const [orders, settings, receipts] = await Promise.all([
         prisma.orderBatch.findMany({
-            where: { createdAt: parseDateFilterParam(JSON.stringify({ from: day }))! },
+            where: { createdAt, userId: { in: userIds } },
             orderBy: [{ createdAt: "desc" }, { id: "asc" }],
             select: {
                 id: true, orederIdentification: true, status: true, createdAt: true,
@@ -27,8 +35,10 @@ export async function ADMIN_GetTodayOrdersAction(rawDay?: string) {
         }),
         getSettings(),
         prisma.auditLog.findMany({
-            where: { action: "DAILY_ORDER_FEE_DEDUCTED", entityType: "User",
-                createdAt: parseDateFilterParam(JSON.stringify({ from: day }))! },
+            where: {
+                action: "DAILY_ORDER_FEE_DEDUCTED", entityType: "User", entityId: { in: userIds },
+                createdAt: parseDateFilterParam(JSON.stringify({ from: day }))!
+            },
             select: { id: true, entityId: true, detail: true }, orderBy: { createdAt: "desc" },
         }),
     ])
@@ -44,11 +54,13 @@ export async function ADMIN_GetTodayOrdersAction(rawDay?: string) {
         try {
             const detail = JSON.parse(receipt.detail ?? "{}")
             if (detail.day !== day || !receipt.entityId || !Number.isSafeInteger(detail.amount)) return []
-            return [{ id: receipt.id, userId: receipt.entityId, amount: detail.amount as number,
-                kind: String(detail.kind), reason: String(detail.reason) }]
+            return [{
+                id: receipt.id, userId: receipt.entityId, amount: detail.amount as number,
+                kind: String(detail.kind), reason: String(detail.reason)
+            }]
         } catch { return [] }
     })
-    return { day, isToday: day === today, orders: data, deliveryPrice: settings.deliveryPrice, charges }
+    return { totalUsers, day, isToday: day === today, orders: data, deliveryPrice: settings.deliveryPrice, charges }
 }
 
 export async function ADMIN_DeductDailyOrderFeeAction(input: DailyChargeInput) {

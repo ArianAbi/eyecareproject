@@ -5,7 +5,8 @@ import sharp from "sharp";
 import { MAX_IMAGE_BYTES, type StoredImage } from "./image-upload";
 
 export function imageStorageDirectory() {
-  return path.resolve(process.env.IMAGE_UPLOAD_DIR || path.join(process.cwd(), "storage/uploads"));
+  const configured = process.env.IMAGE_UPLOAD_DIR;
+  return configured ? path.resolve(/* turbopackIgnore: true */ configured) : path.join(process.cwd(), "storage", "uploads");
 }
 
 export class InvalidImageError extends Error {}

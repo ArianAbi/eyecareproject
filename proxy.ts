@@ -46,6 +46,8 @@ function reject(request: NextRequest, mode: "login" | "notFound" | "forbidden" =
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
+    if (pathname === "/invoices/verify") return NextResponse.next()
+
     // matches /admin, /admin/anything, and /admin-anything
     if (pathname.startsWith("/admin") && !(await canAccessAdmin())) {
         return reject(request, "notFound") // or "notFound" to hide that the route exists

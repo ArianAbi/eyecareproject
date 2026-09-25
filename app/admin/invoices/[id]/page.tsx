@@ -12,10 +12,11 @@ export default async function AdminInvoicePage({ params }: { params: Promise<{ i
         <Link href="/admin/invoices" className="underline">بازگشت به صورتحساب‌ها</Link>
         <h1 className="text-xl font-semibold">صورتحساب #{invoice.invoiceNumber}</h1>
         <Card><CardContent className="grid gap-4 pt-6 sm:grid-cols-2">
-            <p>کاربر: {invoice.user.username}</p><p>مبلغ: {invoice.amount.toLocaleString('fa-IR')} تومان</p>
+            <p>کاربر: {invoice.user.username}</p><p>مبلغ: {invoice.amount.toLocaleString()} تومان</p>
             <p>روش: {InvoicePaymentTypeFarsi(invoice.paymentType)}</p><p>وضعیت: {InvoiceStatusFarsi(invoice.status).text}</p>
             <p>تاریخ: {new Intl.DateTimeFormat('fa-IR').format(invoice.createdAt)}</p><p>کد پیگیری: {invoice.zarinpalRefId ?? '—'}</p>
         </CardContent></Card>
+        {invoice.status === 'PAID' && !invoice.creditAppliedAt && <p>?????? ?????? ???? ?????? ?????? ?? ?????? ????? ?????? ???.</p>}
         {invoice.status === 'WAITING_FOR_APPORVAL' && invoice.paymentType === 'CREDIT' && <InvoiceControls id={invoice.id} admin />}
     </div>
 }

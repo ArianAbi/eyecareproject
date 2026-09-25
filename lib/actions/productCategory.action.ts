@@ -8,6 +8,7 @@ export async function GetProductCategorys() {
         const data = await prisma.subCategory.findMany({
             include: {
                 products: {
+                    where: { active: true, type: "LENS" },
                     include: {
                         lens: true,
                         tags: true

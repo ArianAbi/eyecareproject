@@ -1,124 +1,80 @@
 # Bugs and design findings
 
-Reviewed 2026-09-24. This is a source review, not a penetration test or production incident report. Application behavior was not changed. **Confirmed** means directly supported by code or a recorded local check; **risk** means the failure depends on deployment, business policy or an untested runtime path. Priorities indicate recommended attention, not a measured exploit score. See [implementation guide](PROJECT_GUIDE.md) and [improvements](PROJECT_IMPROVEMENTS.md).
+Originally reviewed 2026-09-24; F-01?F-18 implementation updated 2026-09-25. The items below describe the fixes now in source. Deployment requires the new migration and configuration described in [deployment notes](hardening-deployment.md). Unit/action tests use mocks; they do not prove live database concurrency, gateway operation, hosting limits or browser behavior. No live payments/messages or database migrations were initiated.
 
-## High priority
+## Implemented fixes through F-18
 
-### F-01 — Customer checkout bypasses verification and product eligibility rules
+### F-01 ? Server order eligibility ? fixed
 
-**Confirmed missing server checks.** `AddItemToCartAction` and `SubmitCartOrderAction` in `lib/actions/cart.actions.ts` authenticate but do not enforce VERIFIED user status, active LENS products or prescription bounds. `GlasslensOrderPage.tsx` gates submission in the browser. Admin cart actions check verification at submission and active/type eligibility, but do not validate prescriptions against the selected product's Lens ranges either.
+`lib/lens-policy.ts` is shared by customer/admin additions and both checkout actions. The server reads current verification state and product activity/type/ranges, validates finite quarter-step powers and axis 0?180, and rechecks existing cart items at checkout. Invalid accounts/products/prescriptions fail before debit/order writes. Checkout remains Serializable. Tests directly invoke both action families, including products disabled after addition.
 
-An authenticated caller can bypass the UI. An unverified account with sufficient credit can submit; inactive products already in a cart remain orderable through customer submission. Product prices and available balance are checked server-side, so this is not a claim that clients can set product prices or spend arbitrary nonexistent credit.
+### F-02 ? Profile password disclosure ? fixed
 
-**Verify/fix:** direct action tests with unverified users, inactive/non-lens products, out-of-range/invalid eye values and a product disabled after adding. Share a server-side eligibility policy between customer/admin actions and recheck at checkout.
+Profile submission returns only success or a safe error, never a User record. Its conditional `updateMany` does not retrieve password hashes. Tests assert the minimal return shape.
 
-### F-02 — Profile save returns the password hash
+### F-03 ? OD/OS eligibility ? fixed
 
-**Confirmed return-shape defect.** `SaveProfileInfoAction` in `lib/actions/profile.action.ts` calls `prisma.user.update` without select/omit and returns `{success:true,data}`. The User scalar result includes `password`. `ProfileForm` invokes this from the browser, even though it ignores the response.
+`lensEligible` enforces `odValid && (odOnly || osValid)` for the component and server. The duplicate category calculation delegates to it. Truth-table tests cover all eye-validity/single-eye combinations, malformed values and invalid axes.
 
-This exposes the signed-in user's stored password hash unnecessarily in the action response; it is not evidence of another user's hash being exposed.
+### F-04 ? Privileged bot action boundary ? fixed
 
-**Verify/fix:** assert that successful action output never contains password; return success only or a small explicit DTO. Inspect other mutation return shapes similarly.
+`lib/actions/bale.actions.ts` is removed. `lib/bale.ts` imports `server-only` and is not a Server Action. Authorized business actions construct bounded notifications; public signup sends only after its validated transaction commits. No arbitrary bot transport is exported as an action.
 
-### F-03 — Lens availability expression can ignore the right-eye result
+### F-05 ? Profile validation/state/audit ? fixed
 
-**Confirmed expression defect.** `components/LensProductItem.tsx` builds InRange using `odValid && range.odOnly ? true : osValid` inside the surrounding expression. With two-eye mode, the ternary's condition is false and availability is decided by OS, even when OD is out of range. In OD-only mode with invalid OD, it can also fall back to valid OS.
+Only UNVERIFIED/REJECTED accounts can submit. A conditional state update and audit share one transaction. Server validation requires ten ASCII digits, a trimmed 2?100-character management name and 5?1000-character address. Waiting/verified states and malformed/oversized fields are covered by action tests.
 
-`components/core/CategoryDialog.tsx` separately assigns `odValue.cyl = range.od.sph` rather than `range.od.cyl`. Its computed `product.available` is not used by LensProductItem's final decision, so this second defect currently lives in duplicated/dead eligibility calculation rather than being the only source of the visible bug.
+### F-06 ? Single-eye pricing ? fixed
 
-**Verify/fix:** table-driven OD/OS tests covering each valid/invalid combination and OD-only. Use one shared expression equivalent to `odValid && (odOnly || osValid)`, and enforce the same policy on the server.
+`lensPrice` rounds a half-price to an integer Toman in product cards, cart rows, preview totals and both checkout actions. Tests charge two odd-priced single-eye rows at the exact rounded balance.
 
-### F-04 — Bale transport is declared as an unguarded Server Action
+### F-07 ? Catalog validation/create contract ? fixed
 
-**Confirmed unsafe boundary; remote reachability not probed.** `lib/actions/bale.actions.ts` has module-level `use server` and exports BALE_SendMessage with arbitrary message input and no authentication/authorization/length limit. A reusable privileged bot transport should not rely on the identity checks of whichever caller happens to use it. Whether this server-only-used export is exposed in a specific production action manifest was not tested.
+Shared strict Zod schemas bound names/descriptions, booleans, integer prices, UUIDs, tags, enum values and ordered quarter-step ranges. Create persists `active`; update parses an explicit allowlist and verifies category/type and lens consistency using current state. Non-lens products do not retain lens relations. Forms use the shared schema. Direct-action tests cover false activity and invalid schemas.
 
-**Verify/fix:** move the bot transport to a server-only module, with authorized business actions creating bounded messages. Review the production action manifest without sending real messages. Do not simply require login in the helper without considering public signup's legitimate notification flow.
+### F-08 ? Product deletion relationship ? fixed
 
-## Medium priority
+The legacy lens-ID argument is ignored. The server reads the target product's lens and deletes by productId. Products referenced by carts/orders are archived (`active=false`); unreferenced products and their own lens are deleted transactionally. Tests pass an unrelated lens ID and check archival behavior.
 
-### F-05 — Profile state restrictions exist only in the UI
+### F-09 ? Route invalidation ? fixed
 
-**Confirmed.** ProfileForm disables edits for VERIFIED/WAITING_FOR_APPROVAL. SaveProfileInfoAction only checks nationalCode length and always sets WAITING_FOR_APPROVAL. Direct invocation bypasses the intended state restriction; ten non-digit characters also pass its length check. Address/management name lack equivalent server limits and the mutation lacks a writeAudit entry.
+Master-category mutations invalidate `/admin/master-category` after commit, along with related category/product option loaders. Invalid `/admin/summary` targets now point to `/admin`. Product/category mutations invalidate builder consumers after commit. An action test verifies commit precedes invalidation. Open-browser counts use independent polling (F-13).
 
-**Verify/fix:** validate full input and current allowed state server-side, audit the change transactionally, and test verified/waiting accounts plus malformed and oversized fields.
+### F-10 ? Settings/billing policy ? fixed by explicit policy
 
-### F-06 — Client/server single-eye rounding differs
+User-approved policy: delivery stays in the once-per-user/day fee workflow; checkout rejects any nonzero caller delivery fee. Cutting charges remain zero/disabled rather than silently activating stored prices. Settings copy explains both rules. Bale uses the stored group ID with environment fallback. Telegram remains clearly labeled inactive. Tests reject delivery tampering in both checkout actions.
 
-**Confirmed.** GlasslensOrderPage and LensProductItem divide price by two directly; checkout actions use Math.round. For a product priced 101 Toman, the UI can display 50.5 while the recorded charge is 51. Multiple odd-price items compound the difference.
+### F-11 ? Production-safe mutation failures ? fixed
 
-**Verify/fix:** share an integer pricing helper between preview and checkout. Cover odd prices, multiple rows and balance exactly at the rounded total.
+Mutation boundaries return serializable `{success:false,error}` through `actionResult` or explicit result handling. Known business failures use `ExpectedError`; Zod failures return safe validation text; unexpected details stay in server logs. Client callers check results, including shared/conditional action handlers. Legacy query exceptions remain query exceptions; `ActionError` no longer claims its message survives production. JSON round-trip tests cover readable expected errors and no DB-detail disclosure. An invalid-signup HTTP request against the production server returned its safe failure/fieldErrors payload. Authenticated browser workflows still require deployment testing.
 
-### F-07 — Product validation and create contract are incomplete
+### F-12 ? Notification observation/commit ordering ? fixed
 
-**Confirmed.** `admin.products.action.ts` parses price and includesGuarantee but relies on TypeScript/Prisma for much of the remaining input. Client minimum name/description lengths and range rules are not enforced equivalently. Update spreads remaining scalar input into Prisma. Create accepts `active` but never writes it, so false is silently ignored and the DB default true wins. Current UI always sends true, limiting ordinary UI impact of that specific bug.
+Signup notification occurs after commit. Profile/invoice/ticket/order callers await the transport. The transport checks HTTP and API success, bounds text, uses an eight-second timeout, and observes/logs failure without reversing a committed operation. Ticket notifications use username. Tests cover API failure, rollback and post-commit delivery. Delivery is explicitly best effort; no durable outbox/retry guarantee is claimed.
 
-**Verify/fix:** shared complete Zod schema with explicit allowed fields, enum/UUID/length/range validation and intentional relation/type rules. Test direct invocation rather than only valid form submissions.
+### F-13 ? Order-count recovery ? fixed with polling
 
-### F-08 — Product deletion trusts an unrelated Lens ID
+The retained `/api/orders/order-stream` URL now returns authorized, no-store JSON from the shared database. AdminProviders polls every 15 seconds and cancels requests/timers on unmount. This recovers across workers, status changes and reconnects. Count changes no longer produce misleading new-order toasts. Tests verify independent DB reads and access denial. Full tables still require refresh.
 
-**Confirmed contract defect; normal UI sends matching IDs.** ADMIN_DeleteProduct(id,lensId) deletes Lens by caller-supplied ID without verifying product ownership of that Lens. A crafted admin call with a different product's lens and a deletable target without its own lens can remove unrelated lens data. Foreign keys can also make deletion of historically ordered/cart-referenced products fail with a generic error.
+### F-14 ? Unbounded list/report loading ? fixed for identified loaders
 
-**Verify/fix:** look up the related Lens on the server by product ID. Define archive/delete behavior for referenced products, and test mismatched IDs plus cart/order references. Transaction rollback protects failures but does not validate the supplied relationship.
+Admin product/user lists paginate. Order items, updates and ticket messages paginate at 50 per page; independent aggregates keep full order totals/lens counts correct. Daily queries page 20 whole user groups and constrain fee receipts to those users; local filters apply to the displayed page. Admin orders loads only its active tab. Financial data is aggregated in SQL by Tehran hour/day before Jalali bucketing. User audit filtering uses database subqueries and a bounded page, rather than transferring all related IDs. Complete per-user daily groups can still be large; representative production query-plan/latency profiling remains an operational check.
 
-### F-09 — Master-category actions invalidate the wrong route
+### F-15 ? Payment lifecycle/recovery ? fixed
 
-**Confirmed path mismatch; user-visible staleness depends on navigation/refresh.** All three mutations in `admin.masterCategory.actions.ts` invalidate `/admin/product-category`, while the management list is `/admin/master-category`. Existing client behavior may mask this. Several order/invoice/ticket actions also invalidate nonexistent `/admin/summary`.
+PaymentAttempt stores authority history/check timestamps. A 15-minute local reuse window triggers provider inquiry; age alone never proves expiry. Only a provider-reported FAILED attempt is replaced; unknown/active states stay blocked from replacement. Requests serialize per invoice. Callback reconciliation is server-only and session-independent; provider verification, not browser Status, proves payment. Owner retry/reconciliation is available. Configuration is explicit with no placeholder merchant/default mode; HTTP calls time out. Verified receipts persist before bounded, idempotent credit application, so a full balance leaves a visible pending-credit receipt that can be reconciled later. Existing paid invoices are backfilled as already credited. See [payment recovery](payment-recovery.md) for provider references and limitations. Tests use gateway/DB mocks, including concurrent retries and balance overflow.
 
-**Verify/fix:** invalidate actual affected list/detail/count routes after commit. Confirm list and related option data update after create/edit/delete without manual reload.
+### F-16 ? Refund/history policy ? fixed
 
-### F-10 — Settings have only partial consumers
+User-approved policy forbids reopening a refunded order; a new order must be charged instead. Refund increments check balance headroom atomically. New order items snapshot product name, category/color and packaging flags in addition to existing prices/guarantee data; detail loaders restore snapshots. Legacy null snapshots explicitly retain live-catalog fallback rather than inventing history. CREDIT PAID is a balance grant, not cash receipts, and daily fees remain outside original refundable totals.
 
-**Confirmed incomplete integration, not proof of a billing requirement.** cutPrice is stored but both checkout actions hard-code zero. SubmitOrderBtn sends delivery zero, while actions accept caller-supplied delivery. Setting.deliveryPrice is consumed by the separate daily-fee workflow, not automatic checkout. Stored baleGroupId is ignored by the bot's BALE_CHAT_ID env lookup; telegramGroupId has no sender. SettingsForm's note saying costs are not applied predates daily delivery fees and is now overly broad.
+### F-17 ? Private uploads, quota and cleanup ? fixed
 
-**Verify/fix:** decide whether delivery is once per day or per order and how cutting should be charged, then implement the server rule. Either connect messaging settings or clearly label them as inactive. Avoid accidentally charging daily and per-order delivery twice.
+ImageAsset records ownership/size. GET requires owner/admin and uses private no-store caching. Upload quota is 100 assets/100 MiB per account, checked under a user lock, plus an operation rate limit. Form replacement/removal deletes files and metadata; `/profile/uploads` lets owners remove abandoned uploads. A dry-run-first orphan cleanup script handles old files with no metadata. Production upload requires explicit persistent storage configuration; multiple instances must mount the same storage. Legacy files without ownership metadata are denied until explicitly mapped. Sharp's validation/metadata stripping remains unchanged. See [image uploads](image-uploads.md).
 
-### F-11 — ActionError assumes error messages survive production
+### F-18 ? Application rate limits ? fixed
 
-**Confirmed fragile contract; production reproduction not run.** `lib/action-error.ts` comments that JSON Error.message survives the server/client boundary. Many actions throw it and clients parse it. Installed Next error-handling guidance says expected errors should be returned, and server error details may be sanitized in production. Meaningful validation messages may turn into a generic fallback. Some development errors include raw Prisma messages.
-
-**Verify/fix:** return typed expected-error objects with safe field/form messages; reserve thrown errors for unexpected failures. Test the production build's action failure behavior, not only dev serialization.
-
-### F-12 — Notifications can be lost or reject unobserved
-
-**Confirmed promise/error-handling gaps.** Signup, invoices, tickets and profile invoke BALE_SendMessage without awaiting/catching it. Signup does so inside a transaction before commit. Bot helper parses JSON but does not check HTTP/API success. Checkout does await it after commit in a separate catch, which is a better boundary, although API error JSON may still look like success to the caller. Ticket notification uses user.name while credentials populate username.
-
-**Verify/fix:** use post-commit observed delivery or an outbox, check response success and add timeouts. Mock delivery failures and rollbacks; do not send real messages in tests.
-
-### F-13 — Real-time order count has deployment and notification limits
-
-**Confirmed design limits.** `lib/order-event.ts` is process-local. Streams in another worker/instance do not receive events. Stream has no heartbeat/shared recovery mechanism. Submission emits a new count, but ADMIN_UpdateOrderStatus does not emit one, so the badge can remain stale after an order leaves PENDING. AdminProviders skips only the first toast and labels every later count event as a new order, including a reconnect's initial count.
-
-**Verify/fix:** publish count changes for status mutations, distinguish event types/count direction, test reconnect and status change, and choose shared pub/sub or polling for multiple instances. Review listener cleanup and long-lived connection behavior in the target host.
-
-### F-14 — List/report loading can grow without bounds
-
-**Confirmed scaling risks, not measured performance failures.** Product and main user lists fetch all matching records; daily grouped order queries intentionally fetch all orders for a day. Financial action fetches matching paid invoices and buckets them in JS, including all-time mode. Admin user detail first fetches all related entity IDs to construct audit queries. Order detail/history and ticket conversations are unbounded. Admin orders loads pending/rest plus grouped sections even when another tab is active.
-
-**Verify/fix:** profile realistic data; paginate where UX permits, aggregate reports in SQL, load active sections deliberately and avoid huge ID lists. Preserve complete daily user groups when adding pagination.
-
-### F-15 — Payment lifecycle is incomplete
-
-**Confirmed limitations, live gateway behavior unverified.** PayInvoiceAction always reuses a saved authority with no expiry/reconciliation flow. Callback requires a logged-in owner, so a lost session cannot complete local verification automatically. Sandbox/placeholder merchant defaults can hide missing deployment configuration. Integer credit increments can also exceed the DB limit even when each invoice amount itself is valid, causing transaction failure after an external payment.
-
-**Verify/fix:** model payment attempts, retry/reconciliation and bounded/expanded balances. Verify provider requirements in official docs before implementation. Use gateway mocks/designated sandbox; this review initiated no payments and does not claim the provider configuration is valid or invalid.
-
-### F-16 — Refund reopening and historical data require explicit policy
-
-**Confirmed behavior; business risk depends on policy.** saveOrderUpdate allows moving a refunded order to processing/sent without recharging. History reads current product name/category/packaging flags although prices and guarantee fields are snapshots. CREDIT PAID means a balance grant, not cash collection, and daily fees sit outside original order totals/refunds.
-
-**Verify/fix:** define permitted transitions after refund, snapshot requirements and reporting meanings before treating reports as accounting records. Test any chosen policy without inventing historical balances.
-
-### F-17 — Upload persistence/access controls are intentionally minimal
-
-**Confirmed design limitation.** Authenticated users can upload but there is no quota, owner/reference record or file cleanup; the GET route is public by UUID filename. UUID obscurity is not authorization. Form removal leaves files. Default local disk is unsuitable for ephemeral or independently replicated instances.
-
-**Verify/fix:** determine whether assets are public or private, add metadata/quota/cleanup and persistent shared storage as appropriate. Existing decoding/type/size limits and metadata stripping are useful protections and should be retained.
-
-### F-18 — Application-level rate limits were not found
-
-**Risk; infrastructure unknown.** No application limiter was found around login, signup, uploads, public traffic tracking or ticket creation. Password verification uses deliberately expensive scrypt; arbitrary session-cookie UUIDs can create repeated analytics rows. Host/WAF protections were not inspected.
-
-**Verify/fix:** document existing infrastructure limits and add per-operation controls where needed. Test with local mocks, not traffic against live services.
+Atomic PostgreSQL fixed-window counters cover login IP/account (before scrypt), signup, uploads, analytics, ticket creation/replies and payment operations/callbacks. Keys hash identities; expired windows are removed. `RATE_LIMIT_IP_HEADER` must name a header overwritten by a trusted proxy; without it, anonymous operations conservatively share one bucket. Tests verify thresholds and upload gates. Infrastructure/WAF protections were not inspected and are not assumed. See [deployment notes](hardening-deployment.md) for limits.
 
 ## Lower priority / maintainability
 
@@ -136,15 +92,15 @@ This exposes the signed-in user's stored password hash unnecessarily in the acti
 
 ### F-21 — Form/UI details are inconsistent
 
-**Confirmed source observations; accessibility effects need browser testing.** Combobox shorthand accepts emptySnapValue but never consumes it; null selection is ignored. Shorthand IDs are derived only from field name, allowing collisions if multiple forms with the same field are mounted. Select/combobox have custom next-focus logic. Some inclusion checkboxes have adjacent text/icons without associated labels. SubmitOrderBtn emits two error toasts for Error instances. Some toast types are uppercase, so icons are missing. Tabs accepts arbitrary URL values and can select no matching panel.
+**Confirmed source observations; accessibility effects need browser testing.** Combobox shorthand accepts emptySnapValue but never consumes it; null selection is ignored. Shorthand IDs are derived only from field name, allowing collisions if multiple forms with the same field are mounted. Select/combobox have custom next-focus logic. Some inclusion checkboxes have adjacent text/icons without associated labels. SubmitOrderBtn duplicate failure toasts were fixed alongside F-11. Some toast types are uppercase, so icons are missing. Tabs accepts arbitrary URL values and can select no matching panel.
 
 **Verify/fix:** remove or implement unused props, use per-instance IDs, label controls, test keyboard/focus in dialogs and repeated forms, normalize toasts and validate tab keys.
 
 ### F-22 — Tooling and setup documentation gaps
 
-**Confirmed local checks.** All 12 current tests pass; TypeScript passes. `npm.cmd run lint` exits 1: 20 errors in the three CJS test harnesses (require imports and module variable rule), 10 warnings for unused declarations in application files. package.json has no test script. env.example omits gateway/storage variables. tsconfig includes a nonexistent `app/admin/users/columns.txs` entry. Auth.js PrismaAdapter is configured without its OAuth/database-session model set; current credentials/JWT usage is not proof those future modes will work.
+**Partially addressed during F-01?F-18 work.** Test/typecheck scripts, intentional CJS lint configuration and environment names are now present. Current checks and build notes are in [deployment notes](hardening-deployment.md). Remaining F-22 work includes existing unused declarations, the nonexistent `app/admin/users/columns.txs` tsconfig entry, and PrismaAdapter's missing OAuth/database-session model set. Credentials/JWT use does not validate future auth modes.
 
-**Verify/fix:** scope lint rules for the intentional test format, remove unused code/typo, add reproducible scripts and complete env names. Review adapter/schema before expanding authentication.
+**Remaining verification:** review adapter/schema before expanding authentication; add CI/disposable PostgreSQL concurrency and migration replay checks, and clean remaining tooling warnings.
 
 ## Documentation cleanup performed
 
@@ -154,4 +110,4 @@ This exposes the signed-in user's stored password hash unnecessarily in the acti
 - Replaced starter README with current documentation links and commands.
 - Retained `doc/order-management.md` and `docs/image-uploads.md`, which still describe current feature contracts. Retained `todos.txt` as historical requirements, not current implementation documentation.
 
-No previous "passed" result was imported as a current check. A production build, browser reproduction, database migration replay/concurrency test and external integration verification remain unperformed.
+Original review results are historical. Current verification and remaining deployment checks are recorded in [hardening deployment notes](hardening-deployment.md).

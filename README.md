@@ -8,7 +8,9 @@ Persian RTL optical ordering application with a customer area and admin panel, b
 - [Bugs and design findings](docs/PROJECT_FINDINGS.md): evidence, impact, confidence and verification steps.
 - [Improvement suggestions](docs/PROJECT_IMPROVEMENTS.md): priorities and completion criteria.
 - [Daily order management](doc/order-management.md): grouped orders, history and daily fees.
-- [Image uploads](docs/image-uploads.md): reusable component and storage contract.
+- [Image uploads](docs/image-uploads.md): private assets, quota, ownership and cleanup.
+- [F-01?F-18 deployment](docs/hardening-deployment.md): required migration/configuration and validation limits.
+- [Payment recovery](docs/payment-recovery.md): attempts, reconciliation and delayed credit.
 
 Read [AGENTS.md](AGENTS.md) before changing code. Start with the implementation guide rather than assuming older Next.js or shadcn/Radix conventions.
 
@@ -17,8 +19,8 @@ Read [AGENTS.md](AGENTS.md) before changing code. Start with the implementation 
 Install using `npm ci`, configure environment/database as described in the guide, generate Prisma Client with `npx prisma generate`, and run `npm run dev`.
 
 ```sh
-node --test tests/guarantee.test.cjs tests/todays-orders.test.cjs tests/image-upload.test.cjs
-npx tsc --noEmit --incremental false
+npm test
+npm run typecheck
 npm run lint
 npm run build
 ```

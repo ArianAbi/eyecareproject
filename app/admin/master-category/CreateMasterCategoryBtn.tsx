@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldSelectShorthand } from "@/components/core/FormFieldSelectShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -36,7 +37,7 @@ export default function CreateMasterCategoryBtn() {
         try {
             console.log(values);
 
-            await ADMIN_CreateMasterCategoryAction(values.name, values.type)
+            unwrapActionResult(await ADMIN_CreateMasterCategoryAction(values.name, values.type))
 
             setAlertOpen(false)
 

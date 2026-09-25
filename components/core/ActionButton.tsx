@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "../ui/button"
@@ -27,7 +28,7 @@ export function ActionButton({ action, children }: { action: () => Promise<unkno
                     <Button variant={'destructive'} size='xs'
                         onClick={() => startTransition(async () => {
                             try {
-                                await action();
+                                unwrapActionResult(await action());
                                 router.refresh()
                                 setOpen(false)
                             }

@@ -1,9 +1,12 @@
 "use server"
 
+import { actionResult, ExpectedError } from "../action-result";
 import { requireAdmin } from "../access"
 import { orderWhere, type OrderFilters } from "../order-filters"
 import { orderUpdateInput, saveOrderUpdate } from "../order-updates"
 import { OrderItemStatus } from "@/generated/prisma/enums"
+import { orderDetailTotals } from "../order-detail-totals"
+import { restoreOrderSnapshots } from "../order-snapshot"
 import { ActionError } from "../action-error"
 import prisma from "../db"
 import { PaginationObjectDB } from "../pagination-object"
@@ -40,9 +43,9 @@ export async function ADMIN_GetOrdersAction(filters: OrderFilters) {
 
         })
 
-
         return { success: true, data, total }
     } catch (err) {
+        if (err instanceof ExpectedError) throw err;
         if (err instanceof Error) {
             throw new ActionError({
                 error: err.message
@@ -54,7 +57,7 @@ export async function ADMIN_GetOrdersAction(filters: OrderFilters) {
     }
 }
 
-export async function ADMIN_GetSingleOrder(id: string) {
+export async function ADMIN_GetSingleOrder(id: string, pages: { itemsPage?: string; updatesPage?: string } = {}) {
     try {
         await requireAdmin()
         const data = await prisma.orderBatch.findUnique({
@@ -62,7 +65,10 @@ export async function ADMIN_GetSingleOrder(id: string) {
                 id
             },
             include: {
+                _count: { select: { orderItems: true, orderUpdate: true } },
                 orderItems: {
+                    ...PaginationObjectDB(pages.itemsPage, 50),
+                    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
                     include: {
                         product: {
                             select: {
@@ -81,7 +87,7 @@ export async function ADMIN_GetSingleOrder(id: string) {
                         }
                     }
                 },
-                orderUpdate: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] },
+                orderUpdate: { ...PaginationObjectDB(pages.updatesPage, 50), orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] },
                 user: {
                     select: {
                         id: true,
@@ -91,8 +97,9 @@ export async function ADMIN_GetSingleOrder(id: string) {
             }
         })
 
-        return { sucess: true, data }
+        return { sucess: true, data: data ? restoreOrderSnapshots({ ...data, ...await orderDetailTotals(data.id, data.deliveryPrice) }) : null }
     } catch (err) {
+        if (err instanceof ExpectedError) throw err;
         if (err instanceof Error) {
             throw new ActionError({
                 error: err.message
@@ -107,29 +114,22 @@ export async function ADMIN_GetSingleOrder(id: string) {
 export async function ADMIN_UpdateOrderStatus(input: {
     id: string, newStatus?: OrderItemStatus, message?: string, adminOnly?: boolean, refundCredit?: boolean
 }) {
-    try {
+    return actionResult(async () => {
+
         const actor = await requireAdmin()
         const parsed = orderUpdateInput.safeParse(input)
-        if (!parsed.success) throw new Error("اطلاعات بروزرسانی سفارش نامعتبر است")
+        if (!parsed.success) throw new ExpectedError("اطلاعات بروزرسانی سفارش نامعتبر است")
         const { id } = parsed.data
         const data = await prisma.$transaction(tx => saveOrderUpdate(tx, actor.id, parsed.data))
         revalidatePath(`/admin/orders/${id}`)
         revalidatePath('/orders', 'layout')
-        revalidatePath('/admin/summary')
+        revalidatePath('/admin')
 
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/users/${data.userId}`)
         revalidatePath('/', 'layout')
 
         return { sucess: true, data }
-    } catch (err) {
-        if (err instanceof Error) {
-            throw new ActionError({
-                error: err.message
-            })
-        }
-        throw new ActionError({
-            error: "get orders admin:unknown error"
-        })
-    }
+
+    });
 }

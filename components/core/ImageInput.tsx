@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, useTransition } from "react";
 import { ImageIcon, LoaderCircleIcon, XIcon } from "lucide-react";
-import { uploadImageAction } from "@/lib/actions/images.action";
+import { uploadImageAction, deleteImageAction } from "@/lib/actions/images.action";
 import { IMAGE_ACCEPT, MAX_IMAGE_BYTES, type StoredImage } from "@/lib/image-upload";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -49,7 +49,12 @@ export function ImageInput({ value, onChange, onUploadingChange, onBlur,
         const formData = new FormData();
         formData.set("image", file);
         const result = await uploadImageAction(formData);
-        if (result.success) onChange(result.data);
+        if (result.success) {
+          if (value && !(await deleteImageAction(value.url)).success) {
+            await deleteImageAction(result.data.url);
+            setError("Could not remove the previous image. Try again.");
+          } else onChange(result.data);
+        }
         else setError(result.error);
       } catch {
         setError("Upload failed. Check your connection and try again.");
@@ -90,7 +95,10 @@ export function ImageInput({ value, onChange, onUploadingChange, onBlur,
           </AttachmentContent>
           <AttachmentActions>
             <AttachmentAction disabled={disabled || pending} aria-label={`Remove ${label}`}
-              onClick={() => { setError(null); onChange(null); }}><XIcon /></AttachmentAction>
+              onClick={() => startTransition(async () => {
+                if (value && !(await deleteImageAction(value.url)).success) { setError("Could not remove image. Try again."); return; }
+                setError(null); onChange(null);
+              })}><XIcon /></AttachmentAction>
           </AttachmentActions>
         </Attachment>
       )}

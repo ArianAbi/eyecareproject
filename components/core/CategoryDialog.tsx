@@ -5,8 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Prisma } from "@/generated/prisma/client"
 import { colorOptionsType, colorSelectMap, colorSelectMapBorder } from "./FormFieldColorSelectShorthand"
 import LensProductItem from "../LensProductItem"
-import { IsInRange } from "@/lib/is-in-range"
-import { toast } from "../ui/toast"
+import { lensEligible } from "@/lib/lens-policy"
 import { CartItemProductItemType } from "@/types/order"
 
 export function CategoryDialog({ category, range, AddToOrder }: {
@@ -43,47 +42,7 @@ export function CategoryDialog({ category, range, AddToOrder }: {
             tags: true
         }
     }>) {
-        const newProduct = { ...product, available: false }
-
-        const odValue = {
-            sph: range.od.sph,
-            cyl: range.od.sph,
-            aux: range.od.aux
-        }
-        const osValue = {
-            sph: range.os.sph,
-            cyl: range.os.cyl,
-            aux: range.os.aux
-        }
-
-        const lensRange = {
-            sphPositiveFrom: product.lens ? product.lens.positiveFromSph : "0.00",
-            sphPositiveTo: product.lens ? product.lens.positivToSph : "0.00",
-            sphNegativeFrom: product.lens ? product.lens.negativeFromSph : "0.00",
-            sphNegativeTo: product.lens ? product.lens.negativeToSph : "0.00",
-            cylFrom: product.lens ? product.lens.fromCyl : "0.00",
-            cylTo: product.lens ? product.lens.toCyl : "0.00",
-        }
-
-        const odAvailability = IsInRange(odValue, lensRange)
-        const osAvailability = range.odOnly ? { cylInRange: true, sphInRange: true } : IsInRange(osValue, lensRange)
-
-        if (!odAvailability || !osAvailability) {
-            toast.add({
-                type: "error",
-                title: "در تحلیل نمرات مشکلی پیش آمد",
-                description: "Range Conversion retured NaN"
-            })
-
-            newProduct.available = false
-            return newProduct
-        }
-
-        const available = (odAvailability.sphInRange && odAvailability.cylInRange)
-            && (osAvailability.sphInRange && osAvailability.cylInRange)
-
-        newProduct.available = available
-        return newProduct
+        return { ...product, available: product.active && product.type === "LENS" && lensEligible(product.lens, range) }
     }
 
     return <Dialog open={open} onOpenChange={setOpen}>

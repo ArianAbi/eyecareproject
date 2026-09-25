@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldTagsShorthand } from "@/components/core/FormFieldTagsShorthand";
@@ -18,12 +19,12 @@ import { ADMIN_UpdateProduct } from "@/lib/actions/admin.products.action";
 import { lensFilter } from "@/lib/lens-filter";
 import { NegativeLensRanges, PositiveLensRanges } from "@/lib/lens-range";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Handbag, Shield, SprayCan, TowelRack } from "lucide-react";
+import { Handbag, Shield, SprayCan, RectangleHorizontal as TowelRack } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
-import { priceSchema } from "@/lib/schemas/settings";
+import { productFormSchema } from "@/lib/schemas/product";
 
 export default function AdminEditProductForm({
   id,
@@ -41,28 +42,7 @@ export default function AdminEditProductForm({
   }>;
   tags: Tags[];
 }) {
-  const schema = z.object({
-    name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
-    description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
-    type: z.string(),
-    price: priceSchema,
-    categoryId: z
-      .string({ error: "زیرمجموعه الزامیست" })
-      .min(1, { error: "زیرمجموعه الزامیست" }),
-    tags: z.string().array(),
-    lens: z.object({
-      positiveFromSph: z.string(),
-      positivToSph: z.string(),
-      negativeFromSph: z.string(),
-      negativeToSph: z.string(),
-      fromCyl: z.string(),
-      toCyl: z.string(),
-    }),
-    includesGuarantee: z.boolean(),
-    includesBag: z.boolean(),
-    includesSpray: z.boolean(),
-    includesCloth: z.boolean(),
-  });
+  const schema = productFormSchema;
 
   type formType = z.infer<typeof schema>;
 
@@ -115,7 +95,7 @@ export default function AdminEditProductForm({
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await ADMIN_UpdateProduct(id, {
+      unwrapActionResult(await ADMIN_UpdateProduct(id, {
         name: values.name,
         description: values.description,
         type: values.type as ProductType,
@@ -128,7 +108,7 @@ export default function AdminEditProductForm({
         includesCloth: values.includesCloth,
         includesSpray: values.includesSpray,
         // tagIds omitted on purpose — this form doesn't manage tags
-      });
+      }));
 
       toast.add({
         title: "محصول اضافه شد",

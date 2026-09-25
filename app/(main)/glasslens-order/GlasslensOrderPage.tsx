@@ -1,5 +1,7 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
+import { lensPrice } from "@/lib/lens-policy";
 import { calculateOrderCount } from "@/lib/order-count";
 import { CategoryDialog } from "@/components/core/CategoryDialog";
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand";
@@ -27,7 +29,7 @@ import {
   CornerUpLeft,
   Handbag,
   SprayCan,
-  TowelRack,
+  RectangleHorizontal as TowelRack,
   Trash,
   XIcon,
 } from "lucide-react";
@@ -201,7 +203,7 @@ export default function GlasslensOrderPage({
     : false;
 
   const orderSumPrice = orderProductItems.reduce((acc, curr) => {
-    const price = curr.odOnly ? curr.price / 2 : curr.price;
+    const price = lensPrice(curr.price, curr.odOnly);
     return (acc += price);
   }, 0);
 
@@ -259,9 +261,9 @@ export default function GlasslensOrderPage({
     setOrderProductItems((prev) => [newItem, ...prev]);
 
     try {
-      const result = await (adminUserId
+      const result = unwrapActionResult(await (adminUserId
         ? ADMIN_AddItemToCartAction(adminUserId, item)
-        : AddItemToCartAction(item));
+        : AddItemToCartAction(item)));
 
       if (!result.success || !result.cartItem) {
         toast.add({
@@ -298,9 +300,9 @@ export default function GlasslensOrderPage({
     if (clearDisabled) return;
     setClearing(true);
     try {
-      await (adminUserId
+      unwrapActionResult(await (adminUserId
         ? ADMIN_ClearCartAction(adminUserId)
-        : ClearCartAction());
+        : ClearCartAction()));
       setOrderProductItems([]);
       setClearDialogOpen(false);
       toast.add({
@@ -712,7 +714,7 @@ export default function GlasslensOrderPage({
                     <span>
                       {orderProductItems
                         .reduce((acc, cur) => {
-                          const _price = cur.odOnly ? cur.price / 2 : cur.price;
+                          const _price = lensPrice(cur.price, cur.odOnly);
                           return (acc += _price);
                         }, 0)
                         .toLocaleString()}

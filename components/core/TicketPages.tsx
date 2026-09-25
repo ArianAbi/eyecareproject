@@ -40,8 +40,8 @@ export async function TicketList({ admin = false, filters }: { admin?: boolean, 
     </div>
 }
 
-export async function TicketDetail({ id, admin = false }: { id: string, admin?: boolean }) {
-    const ticket = await (admin ? ADMIN_GetSingleTicketAction : GetSingleTicketAction)(id)
+export async function TicketDetail({ id, admin = false, page }: { id: string, admin?: boolean, page?: string }) {
+    const ticket = await (admin ? ADMIN_GetSingleTicketAction : GetSingleTicketAction)(id, page)
     if (!ticket) notFound()
     return <div className="mx-auto max-w-3xl space-y-5 p-4">
         <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={`${admin ? '/admin' : ''}/tickets`}>
@@ -70,10 +70,11 @@ export async function TicketDetail({ id, admin = false }: { id: string, admin?: 
         </div>
 
 
-        <ol className="space-y-3">{ticket.messages.map(message => <li key={message.id} className={`rounded-lg border p-4 ${message.fromAdmin ? 'bg-muted' : 'bg-card'}`}>
+        <ol className="space-y-3">{[...ticket.messages].reverse().map(message => <li key={message.id} className={`rounded-lg border p-4 ${message.fromAdmin ? 'bg-muted' : 'bg-card'}`}>
             <div className="mb-3 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground"><span>{message.fromAdmin ? 'پشتیبانی' : message.author.username}</span><time dateTime={message.createdAt.toISOString()}>{date(message.createdAt)}</time></div>
             <p className="whitespace-pre-wrap wrap-break-word text-sm leading-7">{message.message}</p>
         </li>)}</ol>
+        <CustomPagination total={ticket._count.messages} pageSize={50} paramKey="messagesPage" />
         {ticket.status === 'OPEN' ?
             <>
                 <TicketForm ticketId={id} admin={admin} />

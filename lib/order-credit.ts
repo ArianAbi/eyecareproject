@@ -1,14 +1,15 @@
+import { ExpectedError } from "./action-result"
 import type { Prisma } from "@/generated/prisma/client"
 
 export async function chargeOrderCredit(tx: Prisma.TransactionClient, userId: string, amount: number) {
     if (!Number.isSafeInteger(amount) || amount < 0 || amount > 2147483647) {
-        throw new Error("مبلغ سفارش نامعتبر است")
+        throw new ExpectedError("مبلغ سفارش نامعتبر است")
     }
     const charged = await tx.user.updateMany({
         where: { id: userId, credit: { gte: amount } },
         data: { credit: { decrement: amount } },
     })
-    if (charged.count !== 1) throw new Error("موجودی شما کافی نیست")
+    if (charged.count !== 1) throw new ExpectedError("موجودی شما کافی نیست")
 }
 
 export function calculateOrderTotal(order: { orderItems: { purchasedPrice: number, cutPrice?: number }[], deliveryPrice: number }) {

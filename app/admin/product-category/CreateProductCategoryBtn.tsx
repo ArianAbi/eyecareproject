@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldColorSelectShorthand } from "@/components/core/FormFieldColorSelectShorthand";
 import { FormFieldSelectShorthand } from "@/components/core/FormFieldSelectShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
@@ -56,7 +57,7 @@ export default function CreateProductCategoryBtn({
     data.append("color", values.color);
 
     try {
-      await ADMIN_CreateProductCategoryAction(data);
+      unwrapActionResult(await ADMIN_CreateProductCategoryAction(data));
 
       setAlertOpen(false);
 

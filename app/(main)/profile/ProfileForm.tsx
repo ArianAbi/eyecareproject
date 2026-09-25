@@ -58,12 +58,13 @@ export default function ProfileForm({
           return;
         }
 
-        await SaveProfileInfoAction({
+        const result = await SaveProfileInfoAction({
           address: address,
           managementName: managementName,
           nationalCode: nationalCode,
         });
 
+        if (!result.success) { toast.add({ type: "error", title: result.error }); return; }
         router.refresh();
       } catch (err) {
         toast.add({

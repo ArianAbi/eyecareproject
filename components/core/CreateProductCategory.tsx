@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export default function CreateProductCategory() {
         data.append("name", values.name)
 
         try {
-            await ADMIN_CreateMasterCategoryAction(values.name, "LENS")
+            unwrapActionResult(await ADMIN_CreateMasterCategoryAction(values.name, "LENS"))
 
             setAlertOpen(false)
 

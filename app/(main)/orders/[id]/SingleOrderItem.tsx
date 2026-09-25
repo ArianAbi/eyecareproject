@@ -1,8 +1,6 @@
-﻿import { calculateOrderCount } from "@/lib/order-count";
 import type { GetSingleOrder } from "@/lib/actions/orders.action"
 import type { ActionData } from "@/types/actions"
 import { OrderStatusFarsi } from "@/lib/order-status-farsi-map"
-import { calculateOrderTotal } from "@/lib/order-credit"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
@@ -20,8 +18,8 @@ export default function SingleOrderItem({ data }: { data: NonNullable<ActionData
             <div className="flex items-center gap-2">
                 وضعیت: <span className={`${status.bg} size-3 rounded-full`} /> {status.text}
             </div>
-            <p>تعداد اقلام: {calculateOrderCount(data.orderItems).toLocaleString()}</p>
-            <p>جمع مبلغ: {calculateOrderTotal(data).toLocaleString()} تومان</p>
+            <p>تعداد اقلام: {data.lensCount.toLocaleString()}</p>
+            <p>جمع مبلغ: {data.totalPrice.toLocaleString()} تومان</p>
             {data.customerNote && <p className="whitespace-pre-wrap break-words">یادداشت شما: {data.customerNote}</p>}
         </section>
         <OrderUpdateHistory updates={data.orderUpdate} customerOrderId={data.id} />

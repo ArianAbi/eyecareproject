@@ -137,17 +137,13 @@ export async function ADMIN_GetFinancialSummaryAction(rawRange?: FinancialRange,
 
     const data = await prisma.$transaction(async tx => {
         const [paid, pending, balances] = await Promise.all([
-            tx.invoice.findMany({
-                where: {
-                    status: 'PAID',
-                    paidAt: paidAtFilter ?? { not: null }
-                },
-                select: {
-                    amount: true,
-                    paymentType: true,
-                    paidAt: true
-                }
-            }),
+            tx.$queryRaw<{ amount: number; paymentType: string; paidAt: Date }[]>`
+                SELECT SUM("amount")::double precision AS "amount", "paymentType"::text AS "paymentType",
+                  (date_trunc(${bucket === 'hour' ? 'hour' : 'day'}, ("paidAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tehran') AT TIME ZONE 'Asia/Tehran') AS "paidAt"
+                FROM "Invoice" WHERE "status" = 'PAID' AND "paidAt" IS NOT NULL
+                  AND (${paidAtFilter?.gte ?? null}::timestamp IS NULL OR "paidAt" >= ${paidAtFilter?.gte ?? null}::timestamp)
+                  AND "paidAt" < ${parseDateFilterParam(JSON.stringify({ from: day }))!.lt}::timestamp
+                GROUP BY 2, 3 ORDER BY 3`,
             // current snapshot, not range-dependent
             tx.invoice.aggregate({
                 where: {

@@ -1,7 +1,6 @@
 // contexts/OrderCountContext.tsx
 "use client"
 
-import { toast } from "@/components/ui/toast"
 import { createContext, useContext, useEffect, useState } from "react"
 
 const OrderCountContext = createContext<number | null>(null)
@@ -37,27 +36,17 @@ export function OrderCountProvider({ children }: { children: React.ReactNode }) 
   const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
-    let skipToastFlag = false
-
-    const eventSource = new EventSource("/api/orders/order-stream")
-
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      setCount(data.count)
-
-      if (!skipToastFlag) {
-        skipToastFlag = true
-        return
-      }
-
-      toast.add({
-        type: "Info",
-        title: "سفارش جدید ثبت شد",
-        timeout: 1500
-      })
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout>
+    const poll = async () => {
+      try {
+        const response = await fetch("/api/orders/order-stream", { cache: "no-store", signal: controller.signal })
+        if (response.ok) { const data = await response.json(); if (!controller.signal.aborted) setCount(data.count) }
+      } catch { /* Retry transient connection failures without announcing false new orders. */ }
+      finally { if (!controller.signal.aborted) timer = setTimeout(poll, 15000) }
     }
-
-    return () => eventSource.close()
+    void poll()
+    return () => { controller.abort(); clearTimeout(timer) }
   }, [])
 
   return (

@@ -1,3 +1,4 @@
+import { allowOperation, requestIdentity } from "./rate-limit"
 import { writeAudit } from "./audit"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import NextAuth from "next-auth"
@@ -23,6 +24,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const parsed = LoginSchema.safeParse(credentials)
                 if (!parsed.success) return null
 
+                if (!await allowOperation("login-ip", await requestIdentity(), 30, 900000) ||
+                    !await allowOperation("login-account", parsed.data.username.toLowerCase(), 10, 900000)) return null
                 const user = await prisma.user.findUnique({
                     where: {
                         username: parsed.data.username

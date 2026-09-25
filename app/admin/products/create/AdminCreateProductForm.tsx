@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldComboboxShorthand } from "@/components/core/FormFieldComboboxShorthand";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldTagsShorthand } from "@/components/core/FormFieldTagsShorthand";
@@ -13,11 +14,11 @@ import { ADMIN_CreateProductsAction } from "@/lib/actions/admin.products.action"
 import { lensFilter } from "@/lib/lens-filter";
 import { NegativeLensRanges, PositiveLensRanges } from "@/lib/lens-range";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Handbag, Shield, SprayCan, TowelRack } from "lucide-react";
+import { Handbag, Shield, SprayCan, RectangleHorizontal as TowelRack } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
-import { priceSchema } from "@/lib/schemas/settings";
+import { productFormSchema } from "@/lib/schemas/product";
 
 export default function AdminCreateProductForm({
   categorys,
@@ -26,28 +27,7 @@ export default function AdminCreateProductForm({
   categorys: SubCategory[];
   tags: Tags[];
 }) {
-  const schema = z.object({
-    name: z.string().min(3, { error: "نام حداقل 3 حرف باید باشد" }),
-    description: z.string().min(3, { error: "توضیحات حداقل 3 حرف باید باشد" }),
-    type: z.string(),
-    price: priceSchema,
-    categoryId: z
-      .string({ error: "زیرمجموعه الزامیست" })
-      .min(1, { error: "زیرمجموعه الزامیست" }),
-    tags: z.string().array(),
-    lens: z.object({
-      positiveFromSph: z.string(),
-      positivToSph: z.string(),
-      negativeFromSph: z.string(),
-      negativeToSph: z.string(),
-      fromCyl: z.string(),
-      toCyl: z.string(),
-    }),
-    includesGuarantee: z.boolean(),
-    includesBag: z.boolean(),
-    includesSpray: z.boolean(),
-    includesCloth: z.boolean(),
-  });
+  const schema = productFormSchema;
 
   type formType = z.infer<typeof schema>;
 
@@ -83,7 +63,7 @@ export default function AdminCreateProductForm({
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await ADMIN_CreateProductsAction({
+      unwrapActionResult(await ADMIN_CreateProductsAction({
         name: values.name,
         active: true,
         description: values.description,
@@ -96,7 +76,7 @@ export default function AdminCreateProductForm({
         includesBag: values.includesBag,
         includesCloth: values.includesCloth,
         includesSpray: values.includesSpray,
-      });
+      }));
 
       toast.add({
         title: "محصول اضافه شد",

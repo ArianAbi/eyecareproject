@@ -1,5 +1,6 @@
 "use server"
 
+import { allowOperation, requestIdentity } from "../rate-limit"
 import { cookies, headers } from "next/headers"
 import { z } from "zod"
 import prisma from "../db"
@@ -14,6 +15,7 @@ export async function TrackTrafficVisitAction(input: { referrerDomain: string | 
         utmSource: z.string().max(80).nullable(),
     }).safeParse(input)
     if (!parsed.success) return { success: false }
+    if (!await allowOperation("analytics", await requestIdentity(), 30)) return { success: false }
     const cookieStore = await cookies()
     const sessionId = z.string().uuid().safeParse(cookieStore.get(trafficSessionCookie)?.value)
     if (!sessionId.success) return { success: false }
@@ -22,9 +24,11 @@ export async function TrackTrafficVisitAction(input: { referrerDomain: string | 
     const domain = parsed.data.referrerDomain ? normalizeReferrerDomain(`https://${parsed.data.referrerDomain}`) : null
     const referrerDomain = domain === ownDomain ? null : domain
     const utmSource = normalizeUtmSource(parsed.data.utmSource)
-    await prisma.trafficVisit.createMany({ data: [{
-        sessionId: sessionId.data, source: classifyTrafficSource(referrerDomain, utmSource), referrerDomain, utmSource,
-    }], skipDuplicates: true })
+    await prisma.trafficVisit.createMany({
+        data: [{
+            sessionId: sessionId.data, source: classifyTrafficSource(referrerDomain, utmSource), referrerDomain, utmSource,
+        }], skipDuplicates: true
+    })
     return { success: true }
 }
 

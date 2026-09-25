@@ -1,5 +1,6 @@
 'use client'
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { DataTable } from "@/components/ui/data-table";
 import { ADMIN_GetOrdersAction, ADMIN_UpdateOrderStatus } from "@/lib/actions/admin.orders.action";
 import { ActionData } from "@/types/actions";
@@ -27,10 +28,10 @@ export default function AdminOrderDataTableWrapper({
         columns={AdminOrdersColumn}
         enableRowSelection
         onBulkAction={async (row, newStatus) => {
-            await ADMIN_UpdateOrderStatus({
+            unwrapActionResult(await ADMIN_UpdateOrderStatus({
                 id: row.id,
                 newStatus: newStatus as OrderItemStatus
-            })
+            }))
         }}
         onBulkActionFinish={() => router.refresh()}
         renderBulkAction={({ disabled, trigger }) => (

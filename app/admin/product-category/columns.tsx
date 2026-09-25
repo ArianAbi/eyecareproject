@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import {
   colorOptionsType,
   colorSelectMap,
@@ -152,7 +153,7 @@ function ProductCategoryDeleteBtn({
 
       setLoading(true);
 
-      await ADMIN_DeleteProductCategorys(data.id);
+      unwrapActionResult(await ADMIN_DeleteProductCategorys(data.id));
 
       toast.add({
         title: "دسته بندی حذف شد",
@@ -233,12 +234,12 @@ function ProductCategoryEditBtn({ data }: { data: SubCategory }) {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await ADMIN_UpdateProductCategorys(
+      unwrapActionResult(await ADMIN_UpdateProductCategorys(
         data.id,
         values.name,
         values.description,
         values.color,
-      );
+      ));
 
       toast.add({
         title: "دسته بندی بروزرسانی شد",

@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import Link from "next/link"
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
@@ -40,7 +41,7 @@ function OrderStatusControl({ order }: { order: TodayOrder }) {
                 setError("")
                 startTransition(async () => {
                     try {
-                        await ADMIN_UpdateOrderStatus({ id: order.id, newStatus: status as TodayOrder["status"] })
+                        unwrapActionResult(await ADMIN_UpdateOrderStatus({ id: order.id, newStatus: status as TodayOrder["status"] }))
                         router.refresh()
                     } catch { setError("تغییر وضعیت انجام نشد. دوباره تلاش کنید.") }
                 })

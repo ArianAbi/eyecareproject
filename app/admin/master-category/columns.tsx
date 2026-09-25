@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand";
 import { FormFieldSwitchShorthand } from "@/components/core/FormFieldSwitchShorthand";
 import { AlertDialog, AlertDialogTrigger, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogContent } from "@/components/ui/alert-dialog";
@@ -121,7 +122,7 @@ function MasterCategoryDeleteBtn({ data }: { data: MasterCategory & { subCategor
 
             setLoading(true)
 
-            await ADMIN_DeleteMasterCategorys(data.id)
+            unwrapActionResult(await ADMIN_DeleteMasterCategorys(data.id))
 
             toast.add({
                 title: "دسته بندی حذف شد",
@@ -221,7 +222,7 @@ function MasterCategoryEditBtn({ data }: { data: MasterCategory }) {
 
     const onSubmit = handleSubmit(async values => {
         try {
-            await ADMIN_UpdateMasterCategorys(data.id, values.name, values.active)
+            unwrapActionResult(await ADMIN_UpdateMasterCategorys(data.id, values.name, values.active))
 
             toast.add({
                 title: "دسته بندی بروزرسانی شد",

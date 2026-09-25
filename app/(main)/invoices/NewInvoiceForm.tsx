@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { FormFieldShorthand } from "@/components/core/FormFieldShorthand"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -47,11 +48,11 @@ export function NewInvoiceForm({ defaultAmount, orderBatchId, defaultOpen, defau
         try {
             setLoading(true)
 
-            const res = await CreateInvoiceAction({
+            const res = unwrapActionResult(await CreateInvoiceAction({
                 amount: values.amount,
                 paymentType: values.paymentType,
                 ...(orderBatchId ? { orderBatchId: orderBatchId } : {})
-            })
+            }))
 
 
             toast.add({

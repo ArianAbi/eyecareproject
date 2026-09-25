@@ -1,74 +1,43 @@
-// Thin wrapper around ZarinPal's v4 JSON payment gateway API.
-// Docs: https://www.zarinpal.com/docs/paymentGateway/connectToGateway
-
-const ZARINPAL_MERCHANT_ID = process.env.ZARINPAL_MERCHANT_ID || "00000000-0000-0000-0000-000000000000"
-// Default to sandbox unless explicitly turned off — safer default for a project still in dev.
-const ZARINPAL_SANDBOX = process.env.ZARINPAL_SANDBOX !== "false"
-
-const API_BASE = ZARINPAL_SANDBOX ? "https://sandbox.zarinpal.com" : "https://payment.zarinpal.com"
-const STARTPAY_HOST = ZARINPAL_SANDBOX ? "https://sandbox.zarinpal.com" : "https://www.zarinpal.com"
-
-// IMPORTANT: verify this against ZarinPal's current docs before going live.
-// The v4 API expects amount in Rial. Your app's `amount` fields are in Toman (based on
-// the تومان labels throughout the UI), so we multiply by 10 here.
-function tomanToRial(amountToman: number) {
-    return amountToman * 10
+import "server-only";
+import { ExpectedError } from "./action-result";
+// API routes/request fields checked against ZarinPal/Android-SDK-Kotlin (see docs/payment-recovery.md).
+function configuration() {
+  const merchant = process.env.ZARINPAL_MERCHANT_ID;
+  const mode = process.env.ZARINPAL_SANDBOX;
+  if (!merchant || !/^[0-9a-f-]{36}$/i.test(merchant) || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(merchant) || !["true", "false"].includes(mode ?? ""))
+    throw new ExpectedError("Payment gateway is not configured.");
+  return { merchant, sandbox: mode === "true" };
 }
-
-export async function zarinpalRequestPayment(params: {
-    amountToman: number
-    description: string
-    callbackUrl: string
-    mobile?: string
-    email?: string
-}) {
-    const res = await fetch(`${API_BASE}/pg/v4/payment/request.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            merchant_id: ZARINPAL_MERCHANT_ID,
-            amount: tomanToRial(params.amountToman),
-            callback_url: params.callbackUrl,
-            description: params.description,
-            metadata: {
-                mobile: params.mobile,
-                email: params.email
-            }
-        })
-    })
-
-    const json = await res.json()
-
-    if (!json.data || json.data.code !== 100) {
-        throw new Error(json.errors?.message || "خطا در اتصال به درگاه پرداخت")
-    }
-
-    return {
-        authority: json.data.authority as string,
-        paymentUrl: `${STARTPAY_HOST}/pg/StartPay/${json.data.authority}`
-    }
+export function paymentUrl(authority: string) {
+  const { sandbox } = configuration();
+  return `${sandbox ? "https://sandbox.zarinpal.com" : "https://www.zarinpal.com"}/pg/StartPay/${encodeURIComponent(authority)}`;
 }
-
-export async function zarinpalVerifyPayment(params: {
-    amountToman: number
-    authority: string
-}) {
-    const res = await fetch(`${API_BASE}/pg/v4/payment/verify.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            merchant_id: ZARINPAL_MERCHANT_ID,
-            amount: tomanToRial(params.amountToman),
-            authority: params.authority
-        })
-    })
-
-    const json = await res.json()
-
-    // code 100 = verified just now, 101 = was already verified before — both count as success.
-    if (json.data && (json.data.code === 100 || json.data.code === 101)) {
-        return { success: true, refId: json.data.ref_id as number }
-    }
-
-    return { success: false, refId: null }
+async function request(operation: string, input: Record<string, unknown>) {
+  const { merchant, sandbox } = configuration();
+  const response = await fetch(`${sandbox ? "https://sandbox.zarinpal.com" : "https://payment.zarinpal.com"}/pg/v4/payment/${operation}.json`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(10000),
+    body: JSON.stringify({ merchant_id: merchant, ...input }),
+  });
+  if (!response.ok) throw new ExpectedError("Payment provider unavailable. Try again later.");
+  return response.json();
+}
+function amount(amountToman: number) {
+  if (!Number.isSafeInteger(amountToman) || amountToman < 1000 || amountToman > 2147483647) throw new ExpectedError("Invalid payment amount.");
+  return amountToman * 10;
+}
+export async function zarinpalRequestPayment(params: { amountToman: number; description: string; callbackUrl: string }) {
+  const json = await request("request", { amount: amount(params.amountToman), description: params.description, callback_url: params.callbackUrl });
+  if (json.data?.code !== 100 || typeof json.data.authority !== "string" || !/^[A-Za-z0-9]{20,100}$/.test(json.data.authority)) throw new ExpectedError("Payment session could not be created.");
+  return { authority: json.data.authority as string, paymentUrl: paymentUrl(json.data.authority) };
+}
+export async function zarinpalVerifyPayment(params: { amountToman: number; authority: string }) {
+  const json = await request("verify", { amount: amount(params.amountToman), authority: params.authority });
+  if ([100, 101].includes(json.data?.code) && (typeof json.data.ref_id === "string" || Number.isSafeInteger(json.data.ref_id)))
+    return { success: true as const, refId: String(json.data.ref_id) };
+  return { success: false as const, refId: null };
+}
+export async function zarinpalInquiry(authority: string) {
+  const json = await request("inquiry", { authority });
+  if (json.data?.code !== 100 || typeof json.data.status !== "string") throw new ExpectedError("Payment status is uncertain. Please retry reconciliation later.");
+  return json.data.status.toUpperCase() as string;
 }

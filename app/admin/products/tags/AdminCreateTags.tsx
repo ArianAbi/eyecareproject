@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { colorOptionsType, ColorSelect } from "@/components/core/FormFieldColorSelectShorthand"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -31,7 +32,7 @@ export function AdminCreateTagBtn() {
 
                 return
             }
-            await ADMIN_CreateTag(tag, color)
+            unwrapActionResult(await ADMIN_CreateTag(tag, color))
 
             setTag("")
 

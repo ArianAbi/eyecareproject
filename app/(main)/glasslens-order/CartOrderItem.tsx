@@ -1,5 +1,7 @@
 "use client";
 
+import { lensPrice } from "@/lib/lens-policy";
+import { unwrapActionResult } from "@/lib/action-result";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -54,13 +56,13 @@ export default function CartOrderItem({
       setRawOrCut(value);
       setLoading(true);
 
-      await (adminUserId
+      unwrapActionResult(await (adminUserId
         ? ADMIN_UpdateCartItemRawOrCutAction(
             adminUserId,
             orderItem.cartItemId,
             value,
           )
-        : UpdateCartItemRawOrCutAction(orderItem.cartItemId, value));
+        : UpdateCartItemRawOrCutAction(orderItem.cartItemId, value)));
       updateOrderList((prev) =>
         prev.map((item) =>
           item.tempId === orderItem.tempId
@@ -148,7 +150,7 @@ export default function CartOrderItem({
 
         <TableCell>
           {orderItem.odOnly ? (
-            <span>{(orderItem.price / 2).toLocaleString() + " "}</span>
+            <span>{(lensPrice(orderItem.price, true)).toLocaleString() + " "}</span>
           ) : (
             <span>{orderItem.price.toLocaleString() + " "}</span>
           )}
@@ -242,9 +244,9 @@ function RemoveOrderPopover({
       setLoading(true);
 
       if (cartItemId) {
-        await (adminUserId
+        unwrapActionResult(await (adminUserId
           ? ADMIN_DeleteItemFromCartAction(adminUserId, cartItemId)
-          : DeleteItemFromCartAction(userId, cartItemId));
+          : DeleteItemFromCartAction(userId, cartItemId)));
       }
       onDeleteFromList();
     } catch (err) {

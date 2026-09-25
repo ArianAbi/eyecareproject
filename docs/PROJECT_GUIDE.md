@@ -1,11 +1,11 @@
 # Project implementation and LLM guide
 
-Reviewed: 2026-09-24. This describes the checked-out source, not a deployed environment. Read [findings](PROJECT_FINDINGS.md) before copying existing patterns. Proposed changes are separately recorded in [improvements](PROJECT_IMPROVEMENTS.md).
+Reviewed: 2026-09-24; F-01?F-18 updated 2026-09-25. This describes the checked-out source, not a deployed environment. Read [findings](PROJECT_FINDINGS.md) before copying existing patterns. Proposed changes are separately recorded in [improvements](PROJECT_IMPROVEMENTS.md).
 
 ## Instructions for future LLMs
 
 1. Read `AGENTS.md`, this guide, and relevant current source before editing. `CLAUDE.md` points to `AGENTS.md`. Newer user instructions take precedence.
-2. Follow the requirement to read relevant guides under `node_modules/next/dist/docs/` before writing code. Do not assume older Next.js or Radix conventions.
+2. Follow current user instructions: never inspect or modify node_modules, and never add `toLocaleString("fa-IR")`. This overrides the conflicting bundled-doc instruction in AGENTS.md. Do not assume older Next.js or Radix conventions.
 3. Preserve server page/client interaction boundaries, local shadcn/Base UI components, the admin shell, RTL, URL filters, authorization and transactional auditing.
 4. Treat every sensitive action as an independent entry point. Layouts, proxy checks and disabled controls do not replace action authorization or runtime validation.
 5. Do not edit generated Prisma code. Change schema/migrations deliberately and regenerate; preserve persisted field/enum spellings unless coordinating a migration.
@@ -31,9 +31,9 @@ Versions below are declarations in `package.json`, not an audit of every install
 | Tables/charts | TanStack React Table 8; Recharts 3 |
 | Dates | date-fns-jalali, Persian day picker, Intl/Asia/Tehran |
 | Images | Sharp and local filesystem; Node.js serving route |
-| Integrations | ZarinPal, Bale HTTP bot, SSE order count |
+| Integrations | ZarinPal, server-only Bale HTTP bot, database-polled order count |
 
-`next.config.ts` sets Server Action request size to 6 MiB for 5 MiB uploads plus multipart overhead. Cache Components are not enabled. `getSettings` uses React `cache` for render/request deduplication, not permanent global caching. Consult the installed `caching-without-cache-components.md` guide rather than applying examples requiring `cacheComponents: true`.
+`next.config.ts` sets Server Action request size to 6 MiB for 5 MiB uploads plus multipart overhead. Cache Components are not enabled. `getSettings` uses React `cache` for render/request deduplication, not permanent global caching. Use documentation appropriate to this configuration rather than examples requiring `cacheComponents: true`; honor the no-node_modules inspection instruction.
 
 ## Repository structure
 
@@ -43,7 +43,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `app/(auth)/` | Login/signup shell; parentheses do not appear in URL |
 | `app/(main)/` | Public landing and customer routes |
 | `app/admin/` | Admin shell, dashboard and management screens |
-| `app/api/` | Auth handlers, order SSE and image serving |
+| `app/api/` | Auth handlers, order-count JSON and private image serving |
 | `components/ui/` | Locally owned shadcn/Base UI primitives and custom infrastructure |
 | `components/core/` | Sidebar, shared domain controls, shorthand fields, filters, reports |
 | `components/forms/` | Auth forms and error helper |
@@ -54,7 +54,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `hooks/`, `types/` | URL/mobile hooks, action/order/lens/sidebar types, Auth.js augmentation |
 | `prisma/` | Schema and SQL migration history |
 | `generated/prisma/` | Generated, Git-ignored Prisma client; never edit manually |
-| `tests/` | Three Node test-runner CJS suites |
+| `tests/` | Node test-runner CJS suites for domain/action/integration boundaries |
 | `public/` | Landing MP4s, placeholder image, SVGs, verification text |
 | `storage/uploads/` | Default runtime image directory, Git-ignored |
 | `doc/`, `docs/` | Feature notes and current project references |
@@ -68,10 +68,11 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/` | `app/(main)/page.tsx`, Persian landing, `components/landing-video.tsx`, local MP4s |
 | `/login`, `/signup` | Auth route group and `components/forms/AuthForms.tsx` |
 | `/profile` | ProfileForm, ProfileAccountStatus, verification workflow |
+| `/profile/uploads` | Owner upload library/removal |
 | `/glasslens-order` | Server loader + GlasslensOrderPage, CartOrderItem, GuaranteeDialog, SubmitOrderBtn |
 | `/orders`, `/orders/[id]` | Customer-owned orders, filters, pagination, public updates and read acknowledgement |
 | `/invoices`, `/invoices/[id]` | Funding requests, NewInvoiceForm, shared InvoiceList/InvoiceControls |
-| `/invoices/verify` | GET payment callback calling authenticated verification action |
+| `/invoices/verify` | Session-independent GET callback using server-only provider verification |
 | `/tickets`, `/tickets/[id]` | Shared TicketPages server components and TicketForm client controls |
 | `/admin` | Today's grouped orders and summary tabs for orders/financial/tickets |
 | `/admin/products` | Server list, `columns.tsx`, create/edit links |
@@ -87,11 +88,11 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/admin/financial`, `/admin/analytics`, `/admin/logs` | Financial chart, traffic-source analytics, audit lists |
 | `/admin/settings` | Site name, fees, messaging group IDs |
 | `/api/auth/[...nextauth]` | Auth.js handlers |
-| `/api/orders/order-stream` | Admin-only SSE pending count |
-| `/api/images/[filename]` | Public uploaded WebP serving |
+| `/api/orders/order-stream` | Admin-only no-store JSON pending count, polled every 15 seconds |
+| `/api/images/[filename]` | Owner/admin-only uploaded WebP serving |
 | `/robots.txt`, `/sitemap.xml` | Metadata routes; sitemap lists landing URL |
 
-There is no `/admin/summary` page in this tree, despite remaining invalidation strings. Dynamic pages use promised `params`/`searchParams` and await them.
+There is no `/admin/summary` page; affected invalidations target `/admin`. Dynamic pages use promised `params`/`searchParams` and await them.
 
 ## Layout, providers and navigation
 
@@ -138,15 +139,15 @@ Complex forms use `useForm`, `zodResolver`, defaultValues and often `mode: onCha
 
 These use Controller plus `components/ui/field.tsx`, not the older shadcn Form/FormField context pattern. Helpers also include InputErrorMessage and TextError.
 
-Auth forms share `lib/schemas/auth.schema.ts`; signup returns field errors; login preserves redirect exceptions. Settings schema is shared client/server. Product schemas are duplicated locally and only partly mirrored on the server.
+Auth forms share `lib/schemas/auth.schema.ts`; signup returns field errors; login preserves redirect exceptions. Settings schema is shared client/server. Product forms and server actions share strict runtime schemas in lib/schemas/product.ts.
 
 Small workflows use controlled state/useTransition/form or click handlers instead: GuaranteeDialog, TicketForm, ProfileForm, InvoiceControls, DailyOrderFee and UserControls. There is no universal useActionState pattern; commented auth examples are not active code.
 
 GuaranteeDialog reloads the saved optional name on open and reports pending state to its parent. UpdateCartItemGuaranteeAction trims/max-limits the name, verifies ownership and current guarantee eligibility, and independently requires admin access for an adminUserId override.
 
-Action return contracts vary: raw data, `{success:true,data}`, returned validation errors, or thrown ActionError. `GetSingleOrder` spells one success flag `sucess`. ActionData only works for functions returning `{data}`. Inspect actual types.
+Mutation failures return safe result objects using actionResult or explicit handling. Queries retain their existing raw/data shapes and may throw. `GetSingleOrder` spells one success flag `sucess`. ActionData only works for functions returning `{data}`. Inspect actual types.
 
-Legacy ActionError encodes JSON in Error.message and clients call parseActionError. Do not assume that payload survives production error sanitization; expected-error result objects are safer for new work. Toasts use the local `toast.add({title,description,type})` manager, not Sonner. Icon types are lowercase success/info/warning/error/loading; existing uppercase values do not match.
+Legacy ActionError is retained for queries. Mutations return `{success:false,error}`; client unwrapActionResult throws a local ClientActionError only after receiving that serializable result. parseActionError recognizes the local error. Never depend on server exception messages surviving production sanitization. Toasts use the local `toast.add({title,description,type})` manager, not Sonner. Icon types are lowercase success/info/warning/error/loading; existing uppercase values do not match.
 
 ## shadcn/Base UI and styling
 
@@ -169,7 +170,7 @@ The actual admin orders page uses plain DataTable for pending/rest. AdminOrderDa
 - `hooks/useSearchParams.ts` wraps router/path/search params with get/getAll/set/setMany/remove/removeMany. `lib/search-params.ts` preserves unrelated keys.
 - QueryFilters, OrderFilters, DateFilter, AdminUserSearchFilter, SummaryDayFilter and CustomPagination compose list controls.
 - Admin orders have pendingPage/restPage. User detail tabs have invoicesPage/ticketsPage/ordersPage/cartPage/logsPage.
-- PaginationObjectDB defaults to 10 rows and bounds page input; dashboard summary uses 20. Main user/catalog lists are unpaginated.
+- PaginationObjectDB defaults to 10 rows and bounds page input; dashboard summary uses 20. Admin user/product lists use 10-row pages. Order items/updates and ticket messages use separate 50-row pages; full order totals are independently aggregated. Daily groups use 20 users per dailyPage and stay intact.
 - Selected user URL values may be JSON `{value,label}`; selectedUser extracts the ID.
 - Date filters use JSON `{from:"YYYY-MM-DD",to?:"YYYY-MM-DD"}`. parseDateFilterParam validates and returns inclusive Tehran midnight/exclusive next-day bounds; malformed/reversed values are ignored.
 - History uses separate Gregorian `day`. Displays often use Jalali; financial buckets use Persian calendar and Tehran hours. Numeric locales currently vary.
@@ -192,6 +193,9 @@ prisma/schema.prisma is authoritative. prisma.config.ts reads DATABASE_URL. lib/
 | TrafficVisit | Session UUID, source/referrer/UTM/time |
 | Setting | Singleton global: siteName, deliveryPrice, cutPrice, Bale/Telegram group IDs |
 | Notification | Schema exists; no complete workflow found |
+| PaymentAttempt | Gateway authority history, status and check timestamps |
+| ImageAsset | Private upload owner, size and filename |
+| RateLimit | Shared atomic operation counters and expiry |
 
 Preserve persisted spellings `orederIdentification`, `positivToSph`, `WAITING_FOR_APPORVAL`. User states are UNVERIFIED, WAITING_FOR_APPROVAL, VERIFIED, REJECTED. Order states are PENDING, APPROVED, INPROCESS, FINISHED, SENT, ONHOLD; ONHOLD displays as rejected.
 
@@ -201,31 +205,31 @@ Application amounts are integer Toman; respect PostgreSQL Int limits. Gateway co
 
 GlasslensOrderPage uses RHF for prescriptions and local cart rows with temporary IDs and pending/success/error states. Adds reconcile returned cart-item IDs. Pending counters coordinate guarantee/update/clear/submit. New server props resynchronize local rows. Admin mode switches action calls and edits the selected user's real cart.
 
-Both submit actions read database product prices, charge credit, create batch/items, clear the cart and audit within a Serializable transaction. chargeOrderCredit decrements conditionally on sufficient balance. Single-eye stored price is Math.round(price/2). Current submit UI sends deliveryPrice 0; both actions store cutPrice 0. Customer/admin validation differs; see F-01.
+Both submit actions read database product prices, charge credit, create batch/items, clear the cart and audit within a Serializable transaction. chargeOrderCredit decrements conditionally on sufficient balance. Shared lensPrice rounds single-eye prices identically in UI and checkout. Both action families use lens-policy to validate current VERIFIED status, active LENS products, powers/ranges and axes. Checkout requires deliveryPrice 0; cutPrice stays 0 by approved policy. Daily delivery fees remain separate.
 
-creditCharged snapshots the debit. OrderItem snapshots purchase price, prescription, guarantee flag/name. Product name/category/other packaging flags still come from live relations, so parts of historical display can change after editing the catalog.
+creditCharged snapshots the debit. OrderItem snapshots purchase price, prescription, guarantee flag/name. New items also store productSnapshot (name/category/color/packaging); detail loaders restore those values. Legacy null snapshots fall back to current catalog data and are not fabricated by migration.
 
 ### Updates/refunds/read acknowledgement
 
 saveOrderUpdate locks the batch with FOR UPDATE and atomically writes status/update/audit/optional refund. Message-only updates are supported; unchanged status without message/refund is a no-op. adminOnly hides that entry, not the batch's current status.
 
-Refund is explicit, requires resulting ONHOLD status, uses creditCharged and is once-only through creditRefundedAt. Legacy zero-charge orders cannot automatically refund. Moving a refunded order forward does not recharge. Daily fees are separate from original refundable charge.
+Refund is explicit, requires resulting ONHOLD status, uses creditCharged and is once-only through creditRefundedAt. Legacy zero-charge orders cannot automatically refund. Moving a refunded order out of ONHOLD is rejected; create a new charged order instead. Refunds check credit headroom before incrementing. Daily fees are separate from original refundable charge.
 
-Customer queries filter private entries in the DB. OrderUpdateHistory acknowledges only displayed IDs; MarkOrderUpdatesRead checks owner/batch/public/unread and accepts up to 500 IDs per call. Prefetch/listing alone does not mark read. Admin queries include full history.
+Customer queries filter private entries in the DB. OrderUpdateHistory acknowledges only displayed IDs; MarkOrderUpdatesRead checks owner/batch/public/unread and accepts up to 500 IDs per call. Prefetch/listing alone does not mark read. Admin history is available through updatesPage pagination; only displayed public entries are acknowledged.
 
 ### Daily fees
 
-TodaysOrdersSection is the server loader; TodaysOrders groups whole days by user and offers local filters/status controls. Historical dates select order creation day, while balances/status remain current.
+TodaysOrdersSection is the server loader; TodaysOrders groups whole users within a 20-user page and offers local filters/status controls for that page. Historical dates select order creation day, while balances/status remain current.
 
 deductDailyOrderCharge locks User, validates expected credit/current day/settings and writes debit, audit receipt and customer-visible update together. Delivery receipt IDs are `daily-delivery:<day>:<userId>`; custom IDs use request UUID. **Do not purge those audit receipts as ordinary logs: they prevent duplicate charges.** See [daily management](../doc/order-management.md).
 
 ### Invoices, support and user management
 
-- CASH starts PENDING, persists a gateway authority and credits balance only after verification. Conditional transitions prevent duplicate credits. Callback requires authenticated owner. Retry reuses authority; no expiry/attempt rotation exists.
+- CASH starts PENDING, persists a gateway authority and credits balance only after verification. Conditional transitions prevent duplicate credits. Callbacks verify with the provider without a browser session. PaymentAttempt retains authorities; retries reconcile first and replace only provider-confirmed FAILED attempts after a local 15-minute reuse window. PAID receipts persist separately from bounded, once-only credit application (creditAppliedAt). See [payment recovery](payment-recovery.md).
 - CREDIT starts WAITING_FOR_APPORVAL; admin approval marks PAID and increments credit transactionally; rejection marks CANCELED. Credit grants are not cash receipts or repayment records.
 - Tickets share UI but have separate customer/admin actions. Server chooses author/admin flag; reply/close serialize through the OPEN parent. No reopen/attachment integration exists.
-- Admin user detail loads paginated related lists. Status/credit edits compare expected values and audit transactionally. Customer profile editing is weaker; see findings.
-- FinancialSummaryCard calls ADMIN_GetFinancialSummaryAction with today/this month/months/this year/all time. Reports use paidAt and separate CASH/CREDIT; they are not profit/loss or a complete balance ledger. The dashboard's selected order day is not passed into the card.
+- Admin user detail loads paginated related lists. Status/credit edits compare expected values and audit transactionally. Customer profile submission enforces allowed state/complete validation, writes an audit and returns no User record.
+- Financial queries aggregate paid invoices in SQL by Tehran hour/day before Jalali bucketing. FinancialSummaryCard calls ADMIN_GetFinancialSummaryAction with today/this month/months/this year/all time. Reports use paidAt and separate CASH/CREDIT; they are not profit/loss or a complete balance ledger. The dashboard's selected order day is not passed into the card.
 
 ## Authorization and integrations
 
@@ -235,15 +239,15 @@ requireUser derives session identity; requireAdmin rechecks DB role. Customer ow
 
 | Integration | Implementation/limits |
 | --- | --- |
-| Bale | Exported Server Function reads env token/chat ID; several callers do not await; stored group setting unused; inspect action exposure risk |
-| ZarinPal | lib/zarinpal.ts defaults sandbox unless false and a placeholder merchant if absent; no live verification in this review |
-| SSE | Admin-only initial count and process-local EventEmitter; events are count updates, not complete table pushes |
+| Bale | lib/bale.ts is server-only; awaited post-commit, bounded, eight-second timeout, checked HTTP/API result; stored group ID takes precedence over env fallback |
+| ZarinPal | Explicit merchant/mode, timeout, persisted attempts, session-independent verification and owner reconciliation; live gateway not exercised |
+| Order count | Admin-only database polling every 15 seconds, no-store; no count-based new-order toast |
 | Analytics | Public validated UUID session cookie/source input; createMany skipDuplicates; first-touch tracker excludes admin; not trusted user identity |
 | Uploads | Signed-in users; still JPEG/PNG/WebP <=5 MiB and <=40MP; Sharp strips metadata/re-encodes <=2048 edge; UUID WebP and 10x10 blur data URL |
 
-Uploaded files are publicly served with immutable caching, not private document storage. ImageInput is reusable infrastructure; Product has no image persistence fields. Remove/replacement clears form state without deleting files. Persistent/shared storage and cleanup matter; see [image uploads](image-uploads.md).
+Uploaded files are private to owner/admin with no-store caching. ImageAsset tracks ownership/size; quotas, rate limits, deletion, an owner library and orphan cleanup are implemented. Product has no image reference field. Production requires explicit persistent shared storage; see [image uploads](image-uploads.md).
 
-Revalidation is not a broadcast to other open browsers. SSE is process-local and does not automatically refresh full order tables. Server-fed badge counts need refreshed layout data.
+Revalidation is not a broadcast. Pending-order badges poll shared database state across workers; full tables and other server-fed badges still need refreshed data.
 
 ## Setup and verification
 
@@ -254,23 +258,24 @@ Revalidation is not a broadcast to other open browsers. SSE is process-local and
 | APP_URL | Metadata/SEO origin and payment callback |
 | NEXT_SUPPORT_NUMBER | Server-rendered footer number |
 | BALE_CHAT_ID, BALE_BOT_TOKEN | Current bot integration |
-| ZARINPAL_MERCHANT_ID, ZARINPAL_SANDBOX | Gateway; missing from env.example |
-| IMAGE_UPLOAD_DIR | Optional persistent upload directory; missing from env.example |
+| ZARINPAL_MERCHANT_ID, ZARINPAL_SANDBOX | Explicit merchant and true/false mode required; see env.example |
+| IMAGE_UPLOAD_DIR | Required persistent upload directory in production |
+| RATE_LIMIT_IP_HEADER | Trusted ingress-overwritten identity header; blank uses shared anonymous bucket |
 
 Use npm lockfile (`npm ci`), configure environment and a prepared PostgreSQL DB, then `npx prisma generate` and `npm run dev`. Build runs `prisma generate && next build`; start serves a built app. Build does not apply migrations. Root font uses Google font download in ordinary uncached builds.
 
-`npm run prisma` runs **db push** then generation and can change schema outside migration history. Review target DB state and SQL before applying migrations. Current tree has a September initial migration and status, analytics, order-update, settings and guarantee migrations. This review did not verify a deployed DB, apply SQL or reset data.
+`npm run prisma` runs **db push** then generation and can change schema outside migration history. Review target DB state and SQL before applying migrations. Current tree has a September initial migration and status, analytics, order-update, settings guarantee migrations, and the F-01?F-18 hardening migration. This review did not verify a deployed DB, apply SQL or reset data.
 
 ```sh
-node --test tests/guarantee.test.cjs tests/todays-orders.test.cjs tests/image-upload.test.cjs
-npx tsc --noEmit --incremental false
+npm test
+npm run typecheck
 npm run lint
 npm run build
 ```
 
 On PowerShell use npm.cmd/npx.cmd if execution policy blocks .ps1 launchers.
 
-Observed: 12 tests passed; TypeScript passed; lint failed with 20 errors and 10 warnings (CJS test-rule conflicts and unused application declarations). Tests cover mocked guarantee/fee logic, grouping/date helpers and real Sharp processing, not live DB concurrency/browser workflows. No production build, live checkout, bot message or browser test was performed.
+Current verification: see [hardening deployment notes](hardening-deployment.md). The new migration was prepared, not applied. Tests mock transaction/gateway boundaries; production build/type/lint checks do not replace live PostgreSQL concurrency or browser testing.
 
 ## Adding a feature while preserving the admin structure
 
@@ -325,11 +330,11 @@ Source-derived export index at review time. An export is not proof that a contro
 | `lib/actions/admin.users.actions.ts` | `ADMIN_GetUsersActions`, `ADMIN_GetSingleUserAction`, `ADMIN_SearchUserAction`, `ADMIN_GetUserDetailsAction`, `ADMIN_SetUserStatusAction`, `ADMIN_AdjustUserCreditAction`, `ADMIN_UpdateUserProfileAction` |
 | `lib/actions/analytics.actions.ts` | `TrackTrafficVisitAction`, `ADMIN_GetTrafficAnalyticsAction` |
 | `lib/actions/auth.actions.ts` | `CreateUserAction`, `LoginAction` |
-| `lib/actions/bale.actions.ts` | `BALE_SendMessage` |
+| `lib/bale.ts` (server-only, not an action) | `BALE_SendMessage` |
 | `lib/actions/cart.actions.ts` | `GetUserCartItemsAction`, `AddItemToCartAction`, `UpdateCartItemRawOrCutAction`, `DeleteItemFromCartAction`, `ClearCartAction`, `SubmitCartOrderAction` |
 | `lib/actions/guarantee.actions.ts` | `UpdateCartItemGuaranteeAction` |
-| `lib/actions/images.action.ts` | `uploadImageAction` |
-| `lib/actions/invoices.action.ts` | `GetInvoicesAction`, `GetSingleInvoiceAction`, `CreateInvoiceAction`, `PayInvoiceAction`, `VerifyInvoicePaymentAction` |
+| `lib/actions/images.action.ts` | `uploadImageAction`, `deleteImageAction` |
+| `lib/actions/invoices.action.ts` | `GetInvoicesAction`, `GetSingleInvoiceAction`, `CreateInvoiceAction`, `PayInvoiceAction`, `ReconcileInvoiceAction` |
 | `lib/actions/isAdmin.action.ts` | `isAdmin`, `isLoggedIn` |
 | `lib/actions/orders.action.ts` | `GetOrdersAction`, `GetSingleOrder`, `MarkOrderUpdatesRead` |
 | `lib/actions/productCategory.action.ts` | `GetProductCategorys`, `GetProductCategoryItems` |

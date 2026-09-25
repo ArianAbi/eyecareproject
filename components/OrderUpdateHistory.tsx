@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { useEffect, useState } from "react"
 import type { OrderUpdate } from "@/generated/prisma/client"
 import { MarkOrderUpdatesRead } from "@/lib/actions/orders.action"
@@ -21,7 +22,7 @@ export default function OrderUpdateHistory({ updates, customerOrderId }: {
         async function acknowledge() {
             try {
                 for (let offset = 0; offset < ids.length; offset += 500) {
-                    await MarkOrderUpdatesRead({ orderId: customerOrderId!, updateIds: ids.slice(offset, offset + 500) })
+                    unwrapActionResult(await MarkOrderUpdatesRead({ orderId: customerOrderId!, updateIds: ids.slice(offset, offset + 500) }))
                 }
                 setReadError(false)
             } catch {

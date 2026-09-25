@@ -239,6 +239,7 @@ enum RawOrCutType {
 }
 
 model OrderItem {
+  productSnapshot Json?
   guaranteeClientName String @default("")
   includesGuarantee Boolean @default(false)
   id String @id @default(uuid())
@@ -309,6 +310,8 @@ enum InvoiceStatus {
 }
 
 model Invoice {
+  creditAppliedAt DateTime?
+  paymentAttempts PaymentAttempt[]
   id     String @id @default(uuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -402,4 +405,30 @@ model Setting {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Shared fixed-window limits; expired windows are removed during subsequent requests.
+model RateLimit {
+  key String @id
+  count Int
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+
+model ImageAsset {
+  filename String @id
+  ownerId String
+  size Int
+  createdAt DateTime @default(now())
+  @@index([ownerId, createdAt])
+}
+
+model PaymentAttempt {
+  authority String @id
+  invoiceId String
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  status String @default("PENDING")
+  createdAt DateTime @default(now())
+  checkedAt DateTime?
+  @@index([invoiceId, createdAt])
 }

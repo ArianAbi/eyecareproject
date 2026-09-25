@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@/generated/prisma/client";
@@ -41,7 +42,7 @@ function useUserMutation() {
     setError("");
     startTransition(async () => {
       try {
-        await action();
+        unwrapActionResult(await action());
         toast.add({ title: "تغییرات ذخیره شد", type: "success" });
         done?.();
         router.refresh();

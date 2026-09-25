@@ -1,6 +1,9 @@
 "use server"
 
+import { actionResult } from "../action-result";
 import { orderWhere, type OrderFilters } from "../order-filters"
+import { orderDetailTotals } from "../order-detail-totals"
+import { restoreOrderSnapshots } from "../order-snapshot"
 import { ActionError } from "../action-error"
 import { auth } from "../Auth"
 import prisma from "../db"
@@ -55,7 +58,6 @@ export async function GetOrdersAction(filters: OrderFilters) {
             return { orders, total }
         })
 
-
         return { success: true, data }
     } catch (err) {
         if (err instanceof Error) {
@@ -69,8 +71,7 @@ export async function GetOrdersAction(filters: OrderFilters) {
     }
 }
 
-
-export async function GetSingleOrder(id: string) {
+export async function GetSingleOrder(id: string, pages: { itemsPage?: string; updatesPage?: string } = {}) {
     try {
         const session = await auth()
 
@@ -84,7 +85,10 @@ export async function GetSingleOrder(id: string) {
                 userId: session.user.id
             },
             include: {
+                _count: { select: { orderItems: true, orderUpdate: { where: { adminOnly: false } } } },
                 orderItems: {
+                    ...PaginationObjectDB(pages.itemsPage, 50),
+                    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
                     include: {
                         product: {
                             select: {
@@ -104,6 +108,7 @@ export async function GetSingleOrder(id: string) {
                     }
                 },
                 orderUpdate: {
+                    ...PaginationObjectDB(pages.updatesPage, 50),
                     where: { adminOnly: false },
                     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
                 },
@@ -116,7 +121,7 @@ export async function GetSingleOrder(id: string) {
             }
         })
 
-        return { sucess: true, data }
+        return { sucess: true, data: data ? restoreOrderSnapshots({ ...data, ...await orderDetailTotals(data.id, data.deliveryPrice) }) : null }
     } catch (err) {
         if (err instanceof Error) {
             throw new ActionError({
@@ -130,12 +135,16 @@ export async function GetSingleOrder(id: string) {
 }
 
 export async function MarkOrderUpdatesRead(input: { orderId: string, updateIds: string[] }) {
-    const user = await requireUser()
-    const { orderId, updateIds } = z.object({
-        orderId: z.string().uuid(), updateIds: z.array(z.string().uuid()).max(500),
-    }).parse(input)
-    // Only acknowledge records actually rendered, never newer updates or private notes.
-    const result = await markVisibleOrderUpdatesRead(prisma, user.id, orderId, updateIds)
-    if (result.count > 0) revalidatePath('/orders', 'layout')
-    return { success: true }
+    return actionResult(async () => {
+
+        const user = await requireUser()
+        const { orderId, updateIds } = z.object({
+            orderId: z.string().uuid(), updateIds: z.array(z.string().uuid()).max(500),
+        }).parse(input)
+        // Only acknowledge records actually rendered, never newer updates or private notes.
+        const result = await markVisibleOrderUpdatesRead(prisma, user.id, orderId, updateIds)
+        if (result.count > 0) revalidatePath('/orders', 'layout')
+        return { success: true }
+
+    });
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { auth } from "@/lib/Auth";
@@ -46,7 +47,8 @@ export default async function ProfilePage() {
           <Input disabled value={profile.number} />
         </div>
 
-        <ProfileForm profile={profile} />
+        <Link className="underline" href="/profile/uploads">?????? ?????? ????????????</Link>
+      <ProfileForm profile={profile} />
       </div>
     </div>
   );

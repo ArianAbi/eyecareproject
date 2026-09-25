@@ -1,8 +1,9 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { PayInvoiceAction } from "@/lib/actions/invoices.action"
+import { PayInvoiceAction, ReconcileInvoiceAction } from "@/lib/actions/invoices.action"
 import { ADMIN_ApproveInvoiceAction, ADMIN_RejectInvoiceAction } from "@/lib/actions/admin.invoices.action"
 import { Button } from "../ui/button"
 import TextError from "../TextError"
@@ -12,15 +13,16 @@ export function InvoiceControls({ id, admin = false, largePayBtn = false }: { id
     const [pending, startTransition] = useTransition()
     const [error, setError] = useState('')
     const router = useRouter()
-    function run(action: 'pay' | 'approve' | 'reject') {
+    function run(action: 'pay' | 'approve' | 'reject' | 'reconcile') {
         startTransition(async () => {
             setError('')
             try {
-                if (action === 'pay') {
-                    const result = await PayInvoiceAction(id)
+                if (action === 'reconcile') { unwrapActionResult(await ReconcileInvoiceAction(id)); router.refresh(); }
+                else if (action === 'pay') {
+                    const result = unwrapActionResult(await PayInvoiceAction(id))
                     window.location.assign(result.redirectUrl)
                 } else {
-                    await (action === 'approve' ? ADMIN_ApproveInvoiceAction : ADMIN_RejectInvoiceAction)(id)
+                    unwrapActionResult(await (action === 'approve' ? ADMIN_ApproveInvoiceAction : ADMIN_RejectInvoiceAction)(id))
                     router.refresh()
                 }
             } catch { setError('عملیات انجام نشد؛ دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.') }
@@ -44,7 +46,7 @@ export function InvoiceControls({ id, admin = false, largePayBtn = false }: { id
                 </Button>
             </>
                 :
-                <Button
+                <><Button disabled={pending} variant="outline" onClick={() => run('reconcile')}>????? ????? ??????</Button><Button
                     disabled={pending}
                     className={
                         cn(
@@ -58,7 +60,7 @@ export function InvoiceControls({ id, admin = false, largePayBtn = false }: { id
                         'اتصال به درگاه…'
                         :
                         'پرداخت آنلاین'}
-                </Button>
+                </Button></>
             }
 
         </div>{error &&

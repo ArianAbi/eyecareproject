@@ -1,3 +1,4 @@
+import { unwrapActionResult } from "@/lib/action-result";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Popover,
@@ -35,12 +36,12 @@ export default function SubmitOrderBtn({
       setLoading(true);
       onPendingChange?.(true);
 
-      const result = await (adminUserId
+      const result = unwrapActionResult(await (adminUserId
         ? ADMIN_SubmitCartOrderAction(adminUserId, {
             deliveryPrice: 0,
             customerNote,
           })
-        : SubmitCartOrderAction({ deliveryPrice: 0, customerNote }));
+        : SubmitCartOrderAction({ deliveryPrice: 0, customerNote })));
       if (!result.success)
         throw new Error("سفارش ثبت نشد؛ حساب و سبد خرید را بررسی کنید");
 
@@ -52,17 +53,7 @@ export default function SubmitOrderBtn({
       setOpen(false);
       router.refresh();
     } catch (err) {
-      if (err instanceof Error) {
-        toast.add({
-          type: "error",
-          title: "مشکلی در ثبت سفارش پیش آمده. با پشتیبانی در ارتباط باشید",
-          description: err.message,
-        });
-      }
-      toast.add({
-        type: "error",
-        title: "مشکلی در ثبت سفارش پیش آمده. با پشتیبانی در ارتباط باشید",
-      });
+      toast.add({ type: "error", title: "????? ??? ???", description: err instanceof Error ? err.message : "?????? ???? ????" });
     } finally {
       setLoading(false);
       onPendingChange?.(false);

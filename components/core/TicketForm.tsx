@@ -1,5 +1,6 @@
 "use client"
 
+import { unwrapActionResult } from "@/lib/action-result";
 import { useState, useTransition, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { CreateTicketAction, ReplyTicketAction, ADMIN_ReplyTicketAction } from "@/lib/actions/tickets.action"
@@ -31,9 +32,9 @@ export function TicketForm({ ticketId, admin = false }: { ticketId?: string, adm
         startTransition(async () => {
             setError('')
             try {
-                if (ticketId) await (admin ? ADMIN_ReplyTicketAction : ReplyTicketAction)(ticketId, message)
+                if (ticketId) unwrapActionResult(await (admin ? ADMIN_ReplyTicketAction : ReplyTicketAction)(ticketId, message))
                 else {
-                    const result = await CreateTicketAction({ subject: String(data.get('subject') ?? ''), message })
+                    const result = unwrapActionResult(await CreateTicketAction({ subject: String(data.get('subject') ?? ''), message }))
                     router.push(`/tickets/${result.data.id}`)
                 }
                 form.reset()
