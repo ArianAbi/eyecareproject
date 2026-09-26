@@ -499,7 +499,7 @@ const UserSidebarData: SidebarDataType = {
       icon: List,
       items: [
         {
-          title: "سفارش ها",
+          title: "پیگیری سفارش ها",
           path: `/orders`,
         },
       ],
@@ -515,7 +515,7 @@ const UserSidebarData: SidebarDataType = {
       ],
     },
     {
-      group_title: "صورتحساب ها",
+      group_title: "مالی",
       icon: BanknoteArrowUp,
       items: [
         {
