@@ -47,7 +47,7 @@ export default function Home() {
               <Link
                 href={"/login"}
                 className={buttonVariants({
-                  variant: "green",
+                  variant: "secondary",
                 })}
               >
                 ورود به حساب
