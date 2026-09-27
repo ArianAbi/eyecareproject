@@ -72,7 +72,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/glasslens-order` | Server loader + GlasslensOrderPage, CartOrderItem, GuaranteeDialog, SubmitOrderBtn |
 | `/orders`, `/orders/[id]` | Customer-owned orders, filters, pagination, public updates and read acknowledgement |
 | `/invoices`, `/invoices/[id]` | Funding requests, NewInvoiceForm, shared InvoiceList/InvoiceControls |
-| `/financial` | Customer credit history and current balance, with pagination |
+| `/financial` | Customer credit history and current balance, with pagination and a full A4 PDF statement |
 | `/invoices/verify` | Session-independent GET callback using server-only provider verification |
 | `/tickets`, `/tickets/[id]` | Shared TicketPages server components and TicketForm client controls |
 | `/admin` | Today's grouped orders and summary tabs for orders/financial/tickets |
@@ -82,7 +82,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/admin/discounts` | Paginated discount table with code/title, status and amount-type filters; create/edit dialog |
 | `/admin/master-category` | Top-level category/type/active controls |
 | `/admin/product-category` | Subcategory/parent/color/description management |
-| `/admin/users`, `/admin/users/[id]` | User filters, related-record tabs including a paginated مالی ledger, status/profile/credit controls; create dialog unfinished |
+| `/admin/users`, `/admin/users/[id]` | User filters, related-record tabs including a paginated مالی ledger and full PDF statement, status/profile/credit controls; create dialog unfinished |
 | `/admin/glasslens-order` | Customer selector and shared builder with `adminUserId` |
 | `/admin/orders`, `/admin/orders/[id]` | Daily/history/pending/other tabs; status/message/private/refund controls |
 | `/admin/invoices`, `/admin/invoices/[id]` | Review CREDIT requests and inspect payments |
@@ -92,6 +92,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/api/auth/[...nextauth]` | Auth.js handlers |
 | `/api/orders/order-stream` | Admin-only no-store JSON pending count, polled every 15 seconds |
 | `/api/images/[filename]` | Owner/admin-only uploaded WebP serving |
+| `/api/financial/print`, `/api/admin/users/[id]/financial/print` | Authenticated owner/admin-only A4 credit statements for all transactions |
 | `/robots.txt`, `/sitemap.xml` | Metadata routes; sitemap lists landing URL |
 
 There is no `/admin/summary` page; affected invalidations target `/admin`. Dynamic pages use promised `params`/`searchParams` and await them.
@@ -209,6 +210,10 @@ Application amounts are integer Toman; respect PostgreSQL Int limits. Gateway co
 ### Credit history
 
 `CreditTransaction` records actual balance movements (invoice funding, order debits, refunds, daily charges and admin adjustments) in the same database transaction as the credit update. Positive amounts increase credit; negative amounts decrease it. Zero-value orders do not create a movement. The customer `/financial` page and the admin user detail `مالی` tab use the same paginated, user-scoped query; the admin tab rechecks admin authorization. Both show current credit independently of the historical running balance.
+
+The `پرینت معین حساب` link on both financial views downloads the full ledger as a private, no-store A4 PDF with Persian text, current balance, debit/credit columns, repeated table headers and page numbers. The owner export always derives user ID from the session; the admin export checks the current admin flag in the database. PDF rows are loaded in 250-row batches rather than relying on UI pagination. The export embeds the Noto Sans Arabic regular font, matching the font family selected in `app/layout.tsx` and styled via `--font-sans` in `app/globals.css`. The PDF embeds its own local TTF because browser CSS fonts do not carry over into generated PDFs. The bundled font license is in `assets/fonts/LICENSE.txt`; both print routes include the font through `next.config.ts` output tracing.
+
+To change the exported PDF font, place a TTF file with the required Persian, Latin and number glyphs in `assets/fonts/` and include its license. Change the filename in the `readFileSync` call in `lib/credit-statement.ts` and in both `outputFileTracingIncludes` entries in `next.config.ts`. For a different typeface, also update `app/layout.tsx` and the font configuration in `app/globals.css` if the site should match. Render a sample multipage statement to confirm right-to-left text, columns and page breaks, then rebuild and deploy so both PDF routes include the new font.
 
 The migration reconstructs previous movements from applied invoices, charged orders, refunded order updates, daily-fee audit receipts and parseable admin adjustment audit entries. An explicitly labeled opening balance reconciles historical activity with the stored current balance when the source records are incomplete. Historical ordering can be approximate when legacy source timestamps reflect invoice settlement or delayed recovery. No provider payment or pending invoice is counted until credit was applied. Production Vercel builds run `prisma migrate deploy` between Prisma generation and Next.js compilation; preview and local builds skip migrations. Production `DATABASE_URL` must point to the intended database, and Vercel must use the package build script (no overriding build command). A failed migration stops the build before new application code is deployed.
 

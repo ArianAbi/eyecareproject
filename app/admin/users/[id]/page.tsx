@@ -60,7 +60,7 @@ export default async function SingleUserPage({ params, searchParams }: {
                 <TabsTrigger value="logs">گزارش فعالیت‌ها</TabsTrigger>
             </TabsList></div>
             <TabsContent value="general"><UserControls key={`${user.id}-${user.updatedAt.toISOString()}`} user={user} /></TabsContent>
-            <TabsContent value="financial" className="space-y-4"><UserCreditControls user={user} /><CreditLedger {...ledger} pageKey="financialPage" admin /></TabsContent>
+            <TabsContent value="financial" className="space-y-4"><UserCreditControls user={user} /><CreditLedger {...ledger} pageKey="financialPage" admin printHref={`/api/admin/users/${user.id}/financial/print`} /></TabsContent>
             <TabsContent value="invoices" className="space-y-4">
                 <Records headings={['شماره', 'مبلغ', 'روش پرداخت', 'وضعیت', 'تاریخ ایجاد', 'سررسید', 'تاریخ پرداخت', 'عملیات']} total={user._count.invoices} pageKey="invoicesPage">
                     {data.invoices.map(invoice => <TableRow key={invoice.id}>

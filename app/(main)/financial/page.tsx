@@ -11,6 +11,6 @@ export default async function FinancialPage({ searchParams }: { searchParams: Pr
   ])
   return <div className="space-y-5 p-4"><h1 className="text-xl font-semibold">مالی</h1>
     <p className="rounded-lg border p-4">اعتبار فعلی: <strong>{new Intl.NumberFormat("fa-IR").format(account.credit)} تومان</strong></p>
-    <CreditLedger {...ledger} />
+    <CreditLedger {...ledger} printHref="/api/financial/print" />
   </div>
 }
