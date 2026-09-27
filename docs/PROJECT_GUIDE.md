@@ -15,7 +15,7 @@ Reviewed: 2026-09-24; F-01?F-18 updated 2026-09-25. This describes the checked-o
 
 This is a Persian B2B optical ordering portal. Customers register, request profile verification, build prescription-based lens orders, fund a credit balance through invoices, view order updates and contact support. Admins manage users, catalog, orders, credit, daily fees, tickets, reports and settings. Admins can build orders using a selected customer's existing cart.
 
-Branding currently mixes ICN with the settings fallback SalimOptic. Product types include LENS, FRAME and OTHER, but the implemented builder/forms focus on lenses. There is no stock/inventory model or full credit repayment ledger.
+Branding currently mixes ICN with the settings fallback SalimOptic. Product types include LENS, FRAME and OTHER, but the implemented builder/forms focus on lenses. There is no stock/inventory model. Credit movements now have a dedicated ledger; it tracks account credit, not outstanding debt repayment.
 
 Versions below are declarations in `package.json`, not an audit of every installed transitive version.
 
@@ -72,6 +72,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/glasslens-order` | Server loader + GlasslensOrderPage, CartOrderItem, GuaranteeDialog, SubmitOrderBtn |
 | `/orders`, `/orders/[id]` | Customer-owned orders, filters, pagination, public updates and read acknowledgement |
 | `/invoices`, `/invoices/[id]` | Funding requests, NewInvoiceForm, shared InvoiceList/InvoiceControls |
+| `/financial` | Customer credit history and current balance, with pagination |
 | `/invoices/verify` | Session-independent GET callback using server-only provider verification |
 | `/tickets`, `/tickets/[id]` | Shared TicketPages server components and TicketForm client controls |
 | `/admin` | Today's grouped orders and summary tabs for orders/financial/tickets |
@@ -81,7 +82,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/admin/discounts` | Paginated discount table with code/title, status and amount-type filters; create/edit dialog |
 | `/admin/master-category` | Top-level category/type/active controls |
 | `/admin/product-category` | Subcategory/parent/color/description management |
-| `/admin/users`, `/admin/users/[id]` | User filters, related-record tabs, status/profile/credit controls; create dialog unfinished |
+| `/admin/users`, `/admin/users/[id]` | User filters, related-record tabs including a paginated مالی ledger, status/profile/credit controls; create dialog unfinished |
 | `/admin/glasslens-order` | Customer selector and shared builder with `adminUserId` |
 | `/admin/orders`, `/admin/orders/[id]` | Daily/history/pending/other tabs; status/message/private/refund controls |
 | `/admin/invoices`, `/admin/invoices/[id]` | Review CREDIT requests and inspect payments |
@@ -191,6 +192,7 @@ prisma/schema.prisma is authoritative. prisma.config.ts reads DATABASE_URL. lib/
 | OrderBatch -> OrderItem | User order/status/delivery/note/charge/refund marker; item snapshots |
 | OrderUpdate | Batch/item optional relations, message/status, adminOnly/readAt/creditRefunded |
 | Invoice | CASH/CREDIT funding, amount/status/authority/ref ID/paidAt, invoice number |
+| CreditTransaction | Per-user signed credit change, balance after, reason, source reference, optional admin actor and timestamp |
 | Ticket -> TicketMessage | OPEN/CLOSED conversation, owner/author/admin-origin flag |
 | AuditLog | Actor/action/entity/detail; also daily-fee idempotency receipts |
 | TrafficVisit | Session UUID, source/referrer/UTM/time |
@@ -203,6 +205,12 @@ prisma/schema.prisma is authoritative. prisma.config.ts reads DATABASE_URL. lib/
 Preserve persisted spellings `orederIdentification`, `positivToSph`, `WAITING_FOR_APPORVAL`. User states are UNVERIFIED, WAITING_FOR_APPROVAL, VERIFIED, REJECTED. Order states are PENDING, APPROVED, INPROCESS, FINISHED, SENT, ONHOLD; ONHOLD displays as rejected.
 
 Application amounts are integer Toman; respect PostgreSQL Int limits. Gateway code multiplies by 10. This records implementation, not verification of current external gateway requirements.
+
+### Credit history
+
+`CreditTransaction` records actual balance movements (invoice funding, order debits, refunds, daily charges and admin adjustments) in the same database transaction as the credit update. Positive amounts increase credit; negative amounts decrease it. Zero-value orders do not create a movement. The customer `/financial` page and the admin user detail `مالی` tab use the same paginated, user-scoped query; the admin tab rechecks admin authorization. Both show current credit independently of the historical running balance.
+
+The migration reconstructs previous movements from applied invoices, charged orders, refunded order updates, daily-fee audit receipts and parseable admin adjustment audit entries. An explicitly labeled opening balance reconciles historical activity with the stored current balance when the source records are incomplete. Historical ordering can be approximate when legacy source timestamps reflect invoice settlement or delayed recovery. No provider payment or pending invoice is counted until credit was applied. Run migrations before deploying code that reads the ledger.
 
 ### Cart and checkout
 

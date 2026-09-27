@@ -44,6 +44,7 @@ function mockTx() {
             credit -= data.credit.decrement
             return { count: 1 }
         } },
+        creditTransaction: { create: async ({ data }) => { events.push({ ledger: data }); return data } },
         orderUpdate: { create: async ({ data }) => { events.push(data); return data } },
     }
 }
@@ -54,9 +55,10 @@ test("daily delivery deducts once across different requests and creates a custom
     assert.equal((await deductDailyOrderCharge(tx, "admin2", { ...first, requestId: "different" })).alreadyApplied, true)
     assert.equal(tx.balance(), 50)
     assert.equal(tx.receipts.size, 1)
-    assert.equal(tx.events.length, 1)
-    assert.equal(tx.events[0].adminOnly, false)
-    assert.equal(tx.events[0].orderBatchId, "order")
+    assert.equal(tx.events.length, 2)
+    assert.equal(tx.events[0].ledger.amount, -50)
+    assert.equal(tx.events[1].adminOnly, false)
+    assert.equal(tx.events[1].orderBatchId, "order")
 })
 
 test("custom fee retries are idempotent and changed replay payloads fail", async () => {

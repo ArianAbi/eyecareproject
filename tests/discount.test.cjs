@@ -56,9 +56,10 @@ test('customer and admin checkout both charge the reduced total and record one r
   const product = { id: productId, price: 1000, name: 'Lens', active: true, type: 'LENS', lens, includesGuarantee: false, includesBag: false, includesCleaningCloth: false, includesCleaningSpray: false, categoryRel: { name: 'Category', color: 'blue' } };
   const row = { id: 'cart-item', productId, product, odSph: '1.00', odCyl: '-1.00', odAux: '90', osSph: '1.00', osCyl: '-1.00', osAux: '90', odOnly: false, rawOrCut: 'RAW', guaranteeClientName: '' };
   for (const admin of [false, true]) {
-    let charged, created, reserved = 0;
+    let charged, created, ledger, reserved = 0;
     const tx = {
       user: { findUniqueOrThrow: async () => ({ userStatus: 'VERIFIED', credit: 2000 }), updateMany: async ({ data }) => { charged = data.credit.decrement; return { count: 1 }; } },
+      creditTransaction: { create: async ({ data }) => { ledger = data; } },
       cart: { findUnique: async () => ({ id: 'cart', cartItems: [row] }) },
       cartItem: { deleteMany: async () => ({ count: 1 }) },
       discount: { findFirst: async () => ({ id: 'discount', code: 'SAVE', title: 'Saving', active: true, expiresAt: null, maxUses: 1, usedCount: 0, amountType: 'PERCENT', value: 1000, usersRestricted: false, productsRestricted: false, users: [], products: [] }) },
@@ -79,6 +80,7 @@ test('customer and admin checkout both charge the reduced total and record one r
     const result = await (admin ? action.ADMIN_SubmitCartOrderAction(userId, input) : action.SubmitCartOrderAction(input));
     assert.equal(result.success, true, JSON.stringify({ admin, result }));
     assert.equal(charged, 900);
+    assert.equal(ledger.amount, -900);
     assert.equal(created.creditCharged, 900);
     assert.equal(created.discountRedemption.create.amountApplied, 100);
     assert.equal(created.discountRedemption.create.code, 'SAVE');

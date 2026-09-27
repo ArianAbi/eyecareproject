@@ -32,6 +32,7 @@ test('F-01/F-06/F-10 both checkout actions recheck eligibility, debit rounded to
     const row = { ...prescription, product: cartProduct, odSph: scenario === 'range' ? '9.00' : '1.00' };
     const tx = {
       user: { findUniqueOrThrow: async () => ({ userStatus: scenario === 'unverified' ? 'UNVERIFIED' : 'VERIFIED', credit: 102 }), updateMany: async ({ where, data }) => { assert.equal(where.credit.gte, 102); debit += data.credit.decrement; return { count: 1 }; } },
+      creditTransaction: { create: async () => {} },
       cart: { findUnique: async () => ({ id, cartItems: [row, row] }) },
       cartItem: { deleteMany: async () => { cleared = true; } },
       orderBatch: { create: async ({ data }) => { created = data; return { ...data, id, orderItems: [row, row] }; } },

@@ -199,6 +199,7 @@ export async function ADMIN_AdjustUserCreditAction(input: { id: string, amount: 
         await prisma.$transaction(async tx => {
             const result = await tx.user.updateMany({ where: { id, credit: expectedCredit }, data: { credit: { increment: amount } } })
             if (!result.count) throw new ExpectedError('موجودی حساب تغییر کرده است؛ صفحه را تازه کنید و دوباره تلاش کنید.')
+            await tx.creditTransaction.create({ data: { userId: id, type: "ADJUSTMENT", amount, balanceAfter: nextCredit, description: reason, actorId: actor.id } })
             await writeAudit(tx, actor.id, 'USER_CREDIT_ADJUSTED', 'User', id, `${expectedCredit} -> ${nextCredit} (${amount > 0 ? '+' : ''}${amount} تومان) | ${reason}`)
         })
         revalidatePath('/admin', 'layout')

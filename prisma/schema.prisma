@@ -42,6 +42,7 @@ model User {
   tickets             Ticket[]
   ticketMessages      TicketMessage[]
   auditLogs           AuditLog[]
+  creditTransactions CreditTransaction[]
   discounts           Discount[]
   discountRedemptions DiscountRedemption[]
 }
@@ -370,6 +371,30 @@ model TicketMessage {
   createdAt DateTime @default(now())
 
   @@index([ticketId, createdAt])
+}
+
+enum CreditTransactionType {
+  INVOICE
+  ORDER
+  REFUND
+  DAILY_FEE
+  ADJUSTMENT
+  OPENING_BALANCE
+}
+
+model CreditTransaction {
+  id           String @id @default(uuid())
+  userId       String
+  user         User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  type         CreditTransactionType
+  amount       Int
+  balanceAfter Int?
+  description  String
+  referenceId  String?
+  actorId      String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt, id])
 }
 
 model AuditLog {

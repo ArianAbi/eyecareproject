@@ -10,6 +10,10 @@ export async function chargeOrderCredit(tx: Prisma.TransactionClient, userId: st
         data: { credit: { decrement: amount } },
     })
     if (charged.count !== 1) throw new ExpectedError("موجودی شما کافی نیست")
+    if (amount) {
+        const account = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { credit: true } })
+        return account.credit
+    }
 }
 
 export function calculateOrderTotal(order: { orderItems: { purchasedPrice: number, cutPrice?: number }[], deliveryPrice: number }) {

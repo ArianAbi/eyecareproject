@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import CustomPagination from "@/components/core/CustomPagination"
 import { InvoiceControls } from "@/components/core/InvoiceControls"
+import { getCreditLedger } from "@/lib/credit-ledger"
+import { requireAdmin } from "@/lib/access"
+import { CreditLedger } from "@/components/core/CreditLedger"
 import { UserControls, UserCreditControls } from "./UserControls"
 
 const date = (value: Date) => new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Tehran' }).format(value)
@@ -26,10 +29,12 @@ function Records({ headings, total, pageKey, children }: { headings: string[], t
 
 export default async function SingleUserPage({ params, searchParams }: {
     params: Promise<{ id: string }>,
-    searchParams: Promise<{ invoicesPage?: string, ticketsPage?: string, ordersPage?: string, cartPage?: string, logsPage?: string }>,
+    searchParams: Promise<{ invoicesPage?: string, ticketsPage?: string, ordersPage?: string, cartPage?: string, logsPage?: string, financialPage?: string }>,
 }) {
     const { id } = await params
-    const data = await ADMIN_GetUserDetailsAction(id, await searchParams)
+    const pages = await searchParams
+    await requireAdmin()
+    const [data, ledger] = await Promise.all([ADMIN_GetUserDetailsAction(id, pages), getCreditLedger(id, pages.financialPage)])
     if (!data) notFound()
     const { user } = data
     const info = [
@@ -47,6 +52,7 @@ export default async function SingleUserPage({ params, searchParams }: {
         <Tabs paramKey="tab" defaultValue="general" className="space-y-3">
             <div className="overflow-x-auto pb-1"><TabsList>
                 <TabsTrigger value="general">کنترل‌های عمومی</TabsTrigger>
+                <TabsTrigger value="financial">مالی</TabsTrigger>
                 <TabsTrigger value="invoices">صورتحساب‌ها ({user._count.invoices.toLocaleString('fa-IR')})</TabsTrigger>
                 <TabsTrigger value="tickets">تیکت‌ها {data.openTickets > 0 && <Badge variant="destructive" aria-label={`${data.openTickets} تیکت باز`}>{data.openTickets.toLocaleString('fa-IR')}</Badge>}</TabsTrigger>
                 <TabsTrigger value="orders">سفارش‌ها {data.newOrders > 0 && <Badge variant="destructive" aria-label={`${data.newOrders} سفارش جدید`}>{data.newOrders.toLocaleString('fa-IR')}</Badge>}</TabsTrigger>
@@ -54,8 +60,8 @@ export default async function SingleUserPage({ params, searchParams }: {
                 <TabsTrigger value="logs">گزارش فعالیت‌ها</TabsTrigger>
             </TabsList></div>
             <TabsContent value="general"><UserControls key={`${user.id}-${user.updatedAt.toISOString()}`} user={user} /></TabsContent>
+            <TabsContent value="financial" className="space-y-4"><UserCreditControls user={user} /><CreditLedger {...ledger} pageKey="financialPage" admin /></TabsContent>
             <TabsContent value="invoices" className="space-y-4">
-                <UserCreditControls user={user} />
                 <Records headings={['شماره', 'مبلغ', 'روش پرداخت', 'وضعیت', 'تاریخ ایجاد', 'سررسید', 'تاریخ پرداخت', 'عملیات']} total={user._count.invoices} pageKey="invoicesPage">
                     {data.invoices.map(invoice => <TableRow key={invoice.id}>
                         <TableCell><Link className="underline" href={`/admin/invoices/${invoice.id}`}>#{invoice.invoiceNumber}</Link></TableCell>
