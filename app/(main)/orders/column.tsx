@@ -74,9 +74,9 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
     cell: ({ row }) =>
       row.original.discountRedemption ? (
         <span>
-          (−
+          −
           {row.original.discountRedemption.amountApplied.toLocaleString() + " "}
-          )<span className="text-emerald-500 font-semibold text-xs">تومان</span>
+          <span className="text-emerald-500 font-semibold text-xs">تومان</span>
         </span>
       ) : null,
   },
