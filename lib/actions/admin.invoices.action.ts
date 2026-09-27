@@ -39,6 +39,8 @@ export async function ADMIN_ApproveInvoiceAction(invoiceId: string) {
             const invoice = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } })
             const credited = await tx.user.updateMany({ where: { id: invoice.userId, credit: { lte: 2147483647 - invoice.amount } }, data: { credit: { increment: invoice.amount } } })
             if (!credited.count) throw new ExpectedError("Balance limit reached.")
+            const balance = await tx.user.findUniqueOrThrow({ where: { id: invoice.userId }, select: { credit: true } })
+            await tx.creditTransaction.create({ data: { userId: invoice.userId, type: "INVOICE", amount: invoice.amount, balanceAfter: balance.credit, description: `تایید صورتحساب #${invoice.invoiceNumber}`, referenceId: invoice.id, actorId: actor.id } })
             await writeAudit(tx, actor.id, 'INVOICE_APPROVED', 'Invoice', invoice.id, String(invoice.amount))
             return invoice
         })

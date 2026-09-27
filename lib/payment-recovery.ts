@@ -14,6 +14,8 @@ export async function applyInvoiceCredit(invoiceId: string) {
     const credited = await tx.user.updateMany({ where: { id: invoice.userId, credit: { lte: 2147483647 - invoice.amount } }, data: { credit: { increment: invoice.amount } } });
     if (!credited.count) return false;
     await tx.invoice.update({ where: { id: invoiceId }, data: { creditAppliedAt: new Date() } });
+    const balance = await tx.user.findUniqueOrThrow({ where: { id: invoice.userId }, select: { credit: true } });
+    await tx.creditTransaction.create({ data: { userId: invoice.userId, type: "INVOICE", amount: invoice.amount, balanceAfter: balance.credit, description: `پرداخت صورتحساب #${invoice.invoiceNumber}`, referenceId: invoiceId } });
     await writeAudit(tx, invoice.userId, "PAYMENT_CREDIT_APPLIED", "Invoice", invoiceId, String(invoice.amount));
     return true;
   });

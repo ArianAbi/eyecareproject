@@ -189,6 +189,7 @@ const userSections = [
       "/orders",
       "/invoices?addCreditOpen=true",
       "/invoices",
+      "/financial",
     ],
   },
   { title: "پشتیبانی", paths: ["/tickets"] },
@@ -525,9 +526,10 @@ const UserSidebarData: SidebarDataType = {
       icon: BanknoteArrowUp,
       items: [
         {
-          title: "صورتحساب ها",
-          path: `/invoices`,
+          title: "مالی",
+          path: `/financial`,
         },
+        { title: "صورتحساب‌ها", path: `/invoices` },
       ],
     },
   ],

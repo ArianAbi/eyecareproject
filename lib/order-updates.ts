@@ -39,6 +39,8 @@ export async function saveOrderUpdate(tx: Prisma.TransactionClient, actorId: str
         creditRefunded = previous.creditCharged
         const credited = await tx.user.updateMany({ where: { id: previous.userId, credit: { lte: 2147483647 - creditRefunded } }, data: { credit: { increment: creditRefunded } } })
         if (!credited.count) throw new ExpectedError("Balance limit reached; refund was not applied.")
+        const balance = await tx.user.findUniqueOrThrow({ where: { id: previous.userId }, select: { credit: true } })
+        await tx.creditTransaction.create({ data: { userId: previous.userId, type: "REFUND", amount: creditRefunded, balanceAfter: balance.credit, description: `بازگشت اعتبار سفارش #${previous.orederIdentification}`, referenceId: previous.id, actorId } })
         await writeAudit(tx, actorId, "ORDER_CREDIT_REFUNDED", "OrderBatch", input.id, `amount: ${creditRefunded}`)
     }
 

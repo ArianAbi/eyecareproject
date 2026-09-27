@@ -234,7 +234,7 @@ export async function SubmitCartOrderAction({
                 const total = orderSumPrice - (applied?.amount ?? 0);
                 if (!Number.isSafeInteger(total) || total < 0 || total > 2147483647) throw new ExpectedError("مبلغ سفارش نامعتبر است.");
                 if (applied) await reserveDiscount(tx, applied.discountId);
-                await chargeOrderCredit(tx, userId, total);
+                const balanceAfter = await chargeOrderCredit(tx, userId, total);
 
                 const batch = await tx.orderBatch.create({
                     data: {
@@ -266,6 +266,7 @@ export async function SubmitCartOrderAction({
                     include: { orderItems: true },
                 });
 
+                if (total) await tx.creditTransaction.create({ data: { userId, type: "ORDER", amount: -total, balanceAfter, description: `هزینه سفارش #${batch.orederIdentification}`, referenceId: batch.id } });
                 await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
 
                 await writeAudit(tx, userId, "ORDER_SUBMITTED", "OrderBatch", batch.id);

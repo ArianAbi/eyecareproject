@@ -119,13 +119,14 @@ export async function ADMIN_SubmitCartOrderAction(userId: string, input: { custo
             if (!Number.isSafeInteger(charged) || charged < 0 || charged > 2147483647) throw new ExpectedError('مبلغ سفارش نامعتبر است')
             if (user.credit < charged) throw new ExpectedError('اعتبار کاربر انتخاب‌شده کافی نیست')
             if (applied) await reserveDiscount(tx, applied.discountId)
-            await chargeOrderCredit(tx, userId, charged)
+            const balanceAfter = await chargeOrderCredit(tx, userId, charged)
             const batch = await tx.orderBatch.create({
                 data: {
                     userId, deliveryPrice, customerNote, status: 'PENDING', creditCharged: charged, orderItems: { create: items },
                     ...(applied && { discountRedemption: { create: { discountId: applied.discountId, userId, amountApplied: applied.amount, code: applied.code, title: applied.title } } }),
                 }, include: { orderItems: true }
             })
+            if (charged) await tx.creditTransaction.create({ data: { userId, type: "ORDER", amount: -charged, balanceAfter, description: `هزینه سفارش #${batch.orederIdentification}`, referenceId: batch.id, actorId: actor.id } })
             await tx.cartItem.deleteMany({ where: { cartId: cart.id, id: { in: cart.cartItems.map(item => item.id) } } })
             await writeAudit(tx, actor.id, 'ADMIN_ORDER_SUBMITTED', 'OrderBatch', batch.id, `userId: ${userId}`)
             return batch

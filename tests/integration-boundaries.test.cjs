@@ -23,7 +23,8 @@ function paymentDb(initialCredit = 0) {
   const db = {
     paymentAttempt: { findUnique: async () => ({ authority, invoice: { ...invoice } }), update: async () => {} },
     invoice: { findUniqueOrThrow: async () => ({ ...invoice }), updateMany: async ({ where, data }) => { if (where.status !== invoice.status) return { count: 0 }; Object.assign(invoice, data); return { count: 1 }; }, update: async ({ data }) => { Object.assign(invoice, data); } },
-    user: { updateMany: async ({ where, data }) => { if (credit > where.credit.lte) return { count: 0 }; credit += data.credit.increment; return { count: 1 }; } },
+    user: { findUniqueOrThrow: async () => ({ credit }), updateMany: async ({ where, data }) => { if (credit > where.credit.lte) return { count: 0 }; credit += data.credit.increment; return { count: 1 }; } },
+    creditTransaction: { create: async ({ data }) => { assert.equal(data.balanceAfter, credit); } },
     $queryRaw: async () => [],
     $transaction: callback => { const current = queue.then(() => callback(db)); queue = current.catch(() => {}); return current; },
   };

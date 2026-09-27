@@ -50,6 +50,7 @@ export async function deductDailyOrderCharge(tx: Prisma.TransactionClient, actor
     })
     if (result.count !== 1) throw new DailyChargeError("موجودی کاربر تغییر کرده است. صفحه را تازه کنید و دوباره تلاش کنید.")
     const reason = input.kind === "delivery" ? "هزینه ارسال سفارش‌های روز" : input.reason
+    await tx.creditTransaction.create({ data: { userId: input.userId, type: "DAILY_FEE", amount: -input.amount, balanceAfter: input.expectedCredit - input.amount, description: reason, referenceId: receiptId, actorId } })
     await tx.auditLog.create({ data: {
         id: receiptId, actorId, action: "DAILY_ORDER_FEE_DEDUCTED", entityType: "User", entityId: input.userId,
         detail: JSON.stringify({ day: input.day, kind: input.kind, amount: input.amount, reason,
