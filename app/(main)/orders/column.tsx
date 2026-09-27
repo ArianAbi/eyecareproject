@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import { calculateOrderCount } from "@/lib/order-count";
-import { calculateOrderTotal } from "@/lib/order-credit"
+import { calculateOrderTotal } from "@/lib/order-credit";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -12,123 +12,136 @@ import { cn } from "@/lib/utils";
 import { ActionData } from "@/types/actions";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns-jalali";
-import { EyeIcon, } from "lucide-react";
+import { EyeIcon } from "lucide-react";
 import Link from "next/link";
 
-type OrderActionType = ActionData<typeof GetOrdersAction>['orders'][0]
+type OrderActionType = ActionData<typeof GetOrdersAction>["orders"][0];
 
 export const OrdersColumn: ColumnDef<OrderActionType>[] = [
-    {
-        id: "unreadUpdates",
-        header: "بروزرسانی‌ها",
-        cell: ({ row }) => row.original._count.orderUpdate > 0 ? <Link
-            href={`/orders/${row.original.id}`}
-            className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800"
+  {
+    id: "unreadUpdates",
+    header: "بروزرسانی‌ها",
+    cell: ({ row }) =>
+      row.original._count.orderUpdate > 0 ? (
+        <Link
+          href={`/orders/${row.original.id}`}
+          className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800"
         >
-            {row.original._count.orderUpdate.toLocaleString()} بروزرسانی جدید
-        </Link> : null,
+          {row.original._count.orderUpdate.toLocaleString()} بروزرسانی جدید
+        </Link>
+      ) : null,
+  },
+  {
+    accessorKey: "id",
+    header: "",
+    cell: ({ row }) => {
+      return (
+        <Link
+          className={buttonVariants({ variant: "default", size: "sm" })}
+          href={`/orders/${row.original.id}`}
+        >
+          <EyeIcon />
+        </Link>
+      );
     },
-    {
-        accessorKey: "id",
-        header: "",
-        cell: ({ row }) => {
-            return <Link
-                className={buttonVariants({ variant: 'default', size: 'sm' })}
-                href={`/orders/${row.original.id}`}>
-                <EyeIcon />
-            </Link>
-        }
-    },
-    {
-        accessorKey: "total-price",
-        header: () => <div className="text-center">مبلغ سفارش</div>,
-        cell: ({ row }) => {
-            const total = row.original.discountRedemption ? row.original.creditCharged : calculateOrderTotal(row.original)
+  },
+  {
+    accessorKey: "total-price",
+    header: () => <div className="text-center">مبلغ سفارش</div>,
+    cell: ({ row }) => {
+      const total = row.original.discountRedemption
+        ? row.original.creditCharged
+        : calculateOrderTotal(row.original);
 
-            return <div className="text-center" title={row.original.discountRedemption ? `تخفیف ${row.original.discountRedemption.code}: ${row.original.discountRedemption.amountApplied.toLocaleString()} تومان` : undefined}>
-                <span>
-                    {
-                        total.toLocaleString() + " "
-                    }
-                </span>
-                <span className="text-xs text-emerald-500 font-semibold">
-                    تومان
-                </span>
-            </div>
-        }
+      return (
+        <div
+          className="text-center"
+          title={
+            row.original.discountRedemption
+              ? `تخفیف ${row.original.discountRedemption.code}: ${row.original.discountRedemption.amountApplied.toLocaleString()} تومان`
+              : undefined
+          }
+        >
+          <span>{total.toLocaleString() + " "}</span>
+          <span className="text-xs text-emerald-500 font-semibold">تومان</span>
+        </div>
+      );
     },
-    {
-        id: "discount",
-        header: "تخفیف",
-        cell: ({ row }) => row.original.discountRedemption
-            ? <span>{row.original.discountRedemption.code} (−{row.original.discountRedemption.amountApplied.toLocaleString()} تومان)</span>
-            : null,
+  },
+  {
+    id: "discount",
+    header: "تخفیف",
+    cell: ({ row }) =>
+      row.original.discountRedemption ? (
+        <span>
+          (−
+          {row.original.discountRedemption.amountApplied.toLocaleString() + " "}
+          )<span className="text-emerald-500 font-semibold text-xs">تومان</span>
+        </span>
+      ) : null,
+  },
+  {
+    id: "orderCount",
+    accessorFn: (order) => calculateOrderCount(order.orderItems),
+    header: () => <div className="text-center">تعداد سفارش ها</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {calculateOrderCount(row.original.orderItems)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: () => <div className="text-center">وضعیت</div>,
+    cell: ({ row }) => {
+      const { text, bg } = OrderStatusFarsi(row.original.status);
+      return (
+        <div className="flex items-center justify-center">
+          <div className={cn(bg, "size-3 rounded-full me-1")}></div>
+          <span>{text}</span>
+        </div>
+      );
     },
-    {
-        id: "orderCount",
-        accessorFn: (order) => calculateOrderCount(order.orderItems),
-        header: () => <div className="text-center">تعداد سفارش ها</div>,
-        cell: ({ row }) => <div className="text-center">{calculateOrderCount(row.original.orderItems)}</div>,
-    },
-    {
-        accessorKey: "status",
-        header: () => <div className="text-center">
-            وضعیت
-        </div>,
-        cell: ({ row }) => {
-            const { text, bg } = OrderStatusFarsi(row.original.status)
-            return <div className="flex items-center justify-center">
-                <div className={cn(bg, 'size-3 rounded-full me-1')}></div>
-                <span>{text}</span>
-            </div>
-        }
-    },
-    {
-        accessorKey: "customerNote",
-        header: () => <div>
-            یاداشت شما
-        </div>,
-        cell: ({ row }) => {
-            if (!row.original.customerNote) return <div className="px-4 italic">
-                یاداشتی ندارید
-            </div>
+  },
+  {
+    accessorKey: "customerNote",
+    header: () => <div>یاداشت شما</div>,
+    cell: ({ row }) => {
+      if (!row.original.customerNote)
+        return <div className="px-4 italic">یاداشتی ندارید</div>;
 
-            return <Dialog>
-                <DialogTrigger className={buttonVariants({ variant: 'default' })}>
-                    یاداشت مشتری
-                </DialogTrigger>
+      return (
+        <Dialog>
+          <DialogTrigger className={buttonVariants({ variant: "default" })}>
+            یاداشت مشتری
+          </DialogTrigger>
 
-                <DialogContent>
-                    <ScrollArea className="max-h-40 mt-4">
-                        {row.original.customerNote}
-                    </ScrollArea>
+          <DialogContent>
+            <ScrollArea className="max-h-40 mt-4">
+              {row.original.customerNote}
+            </ScrollArea>
 
-                    <Button variant={'default'}>بستن</Button>
-                </DialogContent>
-            </Dialog>
-        }
+            <Button variant={"default"}>بستن</Button>
+          </DialogContent>
+        </Dialog>
+      );
     },
-    {
-        accessorKey: "orederIdentification",
-        header: () => <div className="text-center">شناسه</div>,
-        cell: ({ row }) => {
-            return <div className="text-center">
-                {
-                    row.original.orederIdentification
-                }
-            </div>
-        }
+  },
+  {
+    accessorKey: "orederIdentification",
+    header: () => <div className="text-center">شناسه</div>,
+    cell: ({ row }) => {
+      return (
+        <div className="text-center">{row.original.orederIdentification}</div>
+      );
     },
+  },
 
-    {
-        accessorKey: "createdAt",
-        header: "تاریخ ساخت",
-        cell: ({ row }) => {
-            return <div>
-                {
-                    format(row.original.createdAt, "yyyy/MM/dd")
-                }
-            </div>
-        }
-    }
-]
+  {
+    accessorKey: "createdAt",
+    header: "تاریخ ساخت",
+    cell: ({ row }) => {
+      return <div>{format(row.original.createdAt, "yyyy/MM/dd")}</div>;
+    },
+  },
+];
