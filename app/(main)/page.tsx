@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings";
 import Link from "next/link";
 import { Glasses, ClipboardList, MessagesSquare, Wallet } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import LandingVideo from "@/components/landing-video";
@@ -31,18 +31,41 @@ export default function Home() {
     <>
       <div className="relative isolate">
         <LandingVideo trackElementId="video-trigger" topOffset={100}>
-          <div className="size-full flex items-center justify-center">
-            <div className="w-full max-w-lg mx-auto px-6 text-xl font-semibold text-wrap relative">
-              <div
-                className={cn(
-                  ".radial-gradient-shadow",
-                  "absolute size-full left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-110",
-                )}
-              ></div>
+          <div className="size-full flex flex-col items-center justify-center">
+            <h1 className="text-3xl font-bold text-shadow-2xs text-shadow-black">
+              SalimOptic
+            </h1>
 
-              <h1>
-                فروش عمده و فوری عدسی برای مغازه داران و فروشنده های اپتیک
+            <div className="w-full max-w-lg mx-auto px-6 text-xl lg:text-2xl font-semibold text-wrap relative">
+              <div className="radial-gradient-shadow z-[-1] scale-y-200"></div>
+              <h1 className="text-shadow-2xs text-shadow-black">
+                فروش و تحویل فوری عدسی برای مغازه داران و فروشنده های اپتیک
               </h1>
+            </div>
+
+            <div className="space-x-2 mt-6">
+              <Link
+                href={"/login"}
+                className={buttonVariants({
+                  variant: "green",
+                })}
+              >
+                ورود به حساب
+              </Link>
+
+              <Link
+                href={"/signup"}
+                className={buttonVariants({ variant: "boldOutline" })}
+              >
+                ساخت حساب
+              </Link>
+            </div>
+
+            <div className="mt-4 text-sm">
+              <h2>
+                <span>شماره تماس جهت مشاوره : </span>
+                <span dir="ltr">0912 003 4497</span>
+              </h2>
             </div>
           </div>
         </LandingVideo>
