@@ -8,10 +8,12 @@ type LandingVideoProps = {
   trackElementId?: string;
   /** Crossing line below the viewport top; use the sticky header height if needed. */
   topOffset?: number;
+  children: React.ReactNode;
 };
 
 export default function LandingVideo({
   trackElementId,
+  children,
   topOffset = 0,
 }: LandingVideoProps) {
   const first = useRef<HTMLVideoElement>(null);
@@ -260,13 +262,14 @@ export default function LandingVideo({
   }, [trackElementId]);
 
   // Size against the content area, including when a sidebar is present.
-  const widthFormula = "min(calc(100svh - 74px), 100%)";
+  // max height is 450px
+  const widthFormula = "min(calc(min(100svh - 74px,450px)), 100%)";
 
   return (
     <>
       {/* video */}
       <div
-        className="sticky top-0 mx-auto origin-top z-[-1] pointer-events-none w-full max-w-full aspect-square"
+        className="sticky top-0 mx-auto origin-top z-[-1] border border-emerald-500 pointer-events-none w-full max-w-full aspect-square"
         style={{ width: widthFormula }}
       >
         <div className="relative aspect-square w-full">
@@ -322,32 +325,7 @@ export default function LandingVideo({
           />
         </div>
       </div>
-
-      {/* actual dom */}
-      {/* <div
-        className="grid place-items-center text-xl md:text-4xl font-semibold text-shadow-2xs text-shadow-black"
-        style={{ height: "calc(100svh - 74px)" }}
-      ></div> */}
-
-      {/* <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button type="button" onClick={() => playSecondReverse()}>
-          پخش معکوس بخش دوم
-        </Button>
-        <Button type="button" variant="outline" onClick={togglePlayback}>
-          {playing ? "توقف" : finished ? "پخش دوباره بخش دوم" : "پخش"}
-        </Button>
-        <Button
-          type="button"
-          onClick={() => continueVideo()}
-          disabled={requested || part === 2}
-        >
-          {part === 2
-            ? "بخش دوم"
-            : requested
-              ? "ادامه پس از پایان بخش اول"
-              : "ادامه ویدیو"}
-        </Button>
-      </div> */}
+      <div className="absolute size-full left-0 top-0">{children}</div>
     </>
   );
 }

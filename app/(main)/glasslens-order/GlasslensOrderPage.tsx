@@ -46,6 +46,7 @@ import {
   ADMIN_ClearCartAction,
 } from "@/lib/actions/admin.cart.actions";
 import SubmitOrderBtn from "./SubmitOrderBtn";
+import DiscountCodeField from "./DiscountCodeField";
 import {
   Dialog,
   DialogClose,
@@ -91,15 +92,16 @@ function ResponsiveOrderSummary({
             render={
               <Button
                 type="button"
-                variant={"glass"}
-                className="h-12 w-full shadow-lg"
+                variant={"green"}
+                className="h-12 w-full shadow-emerald-200 bg-emerald-500/70 backdrop-blur-md border border-emerald-400 bg-gradient-custom"
+                style={{ boxShadow: "0px 0px 20px -2px #a4f4cf" }}
               />
             }
           >
-            <span>خلاصه و ثبت سفارش ({itemCount.toLocaleString()})</span>
+            <span>ثبت سفارش ({itemCount.toLocaleString()})</span>
             <span className="ms-auto text-xs">
               {totalPrice.toLocaleString() + " "}
-              <span className="font-semibold text-emerald-500">تومان</span>
+              <span className="font-semibold text-white">تومان</span>
             </span>
           </SheetTrigger>
 
@@ -185,6 +187,10 @@ export default function GlasslensOrderPage({
   const [sourceCartItems, setSourceCartItems] = useState(cartItems);
   const [pendingChanges, setPendingChanges] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string;
+    amount: number;
+  } | null>(null);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
   const clearDisabled =
@@ -206,6 +212,16 @@ export default function GlasslensOrderPage({
     const price = lensPrice(curr.price, curr.odOnly);
     return (acc += price);
   }, 0);
+  const cartKey = orderProductItems
+    .map(
+      (item) =>
+        `${item.tempId}:${item.price}:${item.odOnly}:${item.cartStatus}`,
+    )
+    .join("|");
+  const chargedPrice = Math.max(
+    0,
+    orderSumPrice - (appliedDiscount?.amount ?? 0),
+  );
 
   if (sourceCartItems !== cartItems) {
     setSourceCartItems(cartItems);
@@ -261,9 +277,11 @@ export default function GlasslensOrderPage({
     setOrderProductItems((prev) => [newItem, ...prev]);
 
     try {
-      const result = unwrapActionResult(await (adminUserId
-        ? ADMIN_AddItemToCartAction(adminUserId, item)
-        : AddItemToCartAction(item)));
+      const result = unwrapActionResult(
+        await (adminUserId
+          ? ADMIN_AddItemToCartAction(adminUserId, item)
+          : AddItemToCartAction(item)),
+      );
 
       if (!result.success || !result.cartItem) {
         toast.add({
@@ -300,9 +318,11 @@ export default function GlasslensOrderPage({
     if (clearDisabled) return;
     setClearing(true);
     try {
-      unwrapActionResult(await (adminUserId
-        ? ADMIN_ClearCartAction(adminUserId)
-        : ClearCartAction()));
+      unwrapActionResult(
+        await (adminUserId
+          ? ADMIN_ClearCartAction(adminUserId)
+          : ClearCartAction()),
+      );
       setOrderProductItems([]);
       setClearDialogOpen(false);
       toast.add({
@@ -613,7 +633,7 @@ export default function GlasslensOrderPage({
         {/* order summery */}
         <ResponsiveOrderSummary
           itemCount={orderCount}
-          totalPrice={orderSumPrice}
+          totalPrice={chargedPrice}
         >
           <div className="col-span-3 max-md:col-span-1 max-md:min-w-0 rounded-lg p-2 max-h-fit sticky top-2 max-md:static border border-dashed border-white/50 flex flex-col">
             <table className="text-sm">
@@ -711,7 +731,7 @@ export default function GlasslensOrderPage({
                 <tr>
                   <td className="py-2">جمع قیمت</td>
                   <td className="py-2">
-                    <span>
+                    <span className={appliedDiscount ? "line-through" : ""}>
                       {orderProductItems
                         .reduce((acc, cur) => {
                           const _price = lensPrice(cur.price, cur.odOnly);
@@ -728,6 +748,42 @@ export default function GlasslensOrderPage({
                 </tr>
               </tbody>
             </table>
+
+            <DiscountCodeField
+              adminUserId={adminUserId}
+              cartKey={cartKey}
+              onChange={setAppliedDiscount}
+            />
+            {appliedDiscount && (
+              <div>
+                <div className="text-sm">
+                  <span>تخفیف :</span>
+                  <span>
+                    <span>
+                      {" " + appliedDiscount.amount.toLocaleString() + " "}
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-500">
+                      تومان
+                    </span>
+                  </span>
+                </div>
+
+                <div className="text-sm my-2">
+                  <span>مبلغ قابل پرداخت :</span>
+                  <span>
+                    <span>{" " + chargedPrice.toLocaleString() + " "}</span>
+                    <span className="text-xs font-semibold text-emerald-500">
+                      تومان
+                    </span>
+                  </span>
+                </div>
+              </div>
+              // <p className="mb-2 text-sm text-emerald-400">
+              //   تخفیف {appliedDiscount.code}:{" "}
+              //   {appliedDiscount.amount.toLocaleString()} تومان — قابل پرداخت:{" "}
+              //   {chargedPrice.toLocaleString()} تومان
+              // </p>
+            )}
 
             <Dialog>
               <DialogTrigger
@@ -775,11 +831,12 @@ export default function GlasslensOrderPage({
               <>
                 <SubmitOrderBtn
                   customerNote={userNote}
+                  discountCode={appliedDiscount?.code}
                   adminUserId={adminUserId}
                   onPendingChange={setSubmitting}
                   disabled={
                     pendingChanges > 0 ||
-                    (userCredit ?? 0) < orderSumPrice ||
+                    (userCredit ?? 0) < chargedPrice ||
                     orderProductItems.length <= 0 ||
                     orderProductItems.some(
                       (item) => item.cartStatus !== "success",
@@ -787,7 +844,7 @@ export default function GlasslensOrderPage({
                   }
                 />
 
-                {(userCredit ?? 0) < orderSumPrice && (
+                {(userCredit ?? 0) < chargedPrice && (
                   <span className="text-amber-400 text-center text-sm">
                     {adminUserId
                       ? "اعتبار کاربر انتخاب‌شده کافی نیست"

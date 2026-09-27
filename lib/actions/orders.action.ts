@@ -29,6 +29,7 @@ export async function GetOrdersAction(filters: OrderFilters) {
                     userId: session.user.id
                 },
                 include: {
+                    discountRedemption: true,
                     _count: {
                         select: {
                             orderItems: true,
@@ -85,6 +86,7 @@ export async function GetSingleOrder(id: string, pages: { itemsPage?: string; up
                 userId: session.user.id
             },
             include: {
+                discountRedemption: true,
                 _count: { select: { orderItems: true, orderUpdate: { where: { adminOnly: false } } } },
                 orderItems: {
                     ...PaginationObjectDB(pages.itemsPage, 50),

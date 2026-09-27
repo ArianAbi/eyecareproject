@@ -6,6 +6,7 @@ export type TodayOrder = {
     status: OrderItemStatus
     createdAt: string
     total: number
+    discount?: { code: string, amountApplied: number } | null
     deliveryPrice: number
     itemCount: number
     lensCount: number

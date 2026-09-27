@@ -78,6 +78,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/admin/products` | Server list, `columns.tsx`, create/edit links |
 | `/admin/products/create`, `/admin/products/[id]` | Separate RHF product create/edit forms |
 | `/admin/products/tags` | Create/list tags; edit/delete placeholders |
+| `/admin/discounts` | Paginated discount table with code/title, status and amount-type filters; create/edit dialog |
 | `/admin/master-category` | Top-level category/type/active controls |
 | `/admin/product-category` | Subcategory/parent/color/description management |
 | `/admin/users`, `/admin/users/[id]` | User filters, related-record tabs, status/profile/credit controls; create dialog unfinished |
@@ -177,6 +178,8 @@ The actual admin orders page uses plain DataTable for pending/rest. AdminOrderDa
 
 ## Database and invariants
 
+Discounts are managed at `/admin/discounts` with a create/edit dialog and URL based code/title, status and amount-type filters. `Discount.value` is integer Toman for FLAT or basis points for PERCENT (10000 = 100%). Optional `maxUses` and `expiresAt` can be combined. Explicit `usersRestricted` and `productsRestricted` flags distinguish unrestricted discounts from restricted discounts whose target rows were later removed. The admin form requires at least one target for each enabled restriction. A discount applies to eligible cart product prices; for a flat amount, the reduction is capped at the eligible subtotal. Preview checks the saved cart against current product and prescription eligibility, and returns an actionable Persian error when a stale cart item is invalid. Checkout rechecks the code against current cart contents and atomically reserves one use in the existing Serializable transaction before charging credit. `DiscountRedemption` stores code/title and amount snapshots on the order batch. Cart preview is transient; checkout is authoritative. The applied amount reduces `creditCharged`, while order item `purchasedPrice` retains the undiscounted product price for historical detail.
+
 prisma/schema.prisma is authoritative. prisma.config.ts reads DATABASE_URL. lib/db.ts creates Prisma with PrismaPg, caches it in development with a field/version fingerprint and replaces incompatible cached clients. Regenerate/restart after schema changes as needed.
 
 | Models | Meaning |
@@ -205,7 +208,7 @@ Application amounts are integer Toman; respect PostgreSQL Int limits. Gateway co
 
 GlasslensOrderPage uses RHF for prescriptions and local cart rows with temporary IDs and pending/success/error states. Adds reconcile returned cart-item IDs. Pending counters coordinate guarantee/update/clear/submit. New server props resynchronize local rows. Admin mode switches action calls and edits the selected user's real cart.
 
-Both submit actions read database product prices, charge credit, create batch/items, clear the cart and audit within a Serializable transaction. chargeOrderCredit decrements conditionally on sufficient balance. Shared lensPrice rounds single-eye prices identically in UI and checkout. Both action families use lens-policy to validate current VERIFIED status, active LENS products, powers/ranges and axes. Checkout requires deliveryPrice 0; cutPrice stays 0 by approved policy. Daily delivery fees remain separate.
+Both submit actions read database product prices, charge credit, create batch/items, clear the cart and audit within a Serializable transaction. Checkout transactions allow up to 10 seconds to acquire a transaction and 15 seconds to run, accounting for remote database latency. chargeOrderCredit decrements conditionally on sufficient balance. Shared lensPrice rounds single-eye prices identically in UI and checkout. Both action families use lens-policy to validate current VERIFIED status, active LENS products, powers/ranges and axes. Checkout requires deliveryPrice 0; cutPrice stays 0 by approved policy. Daily delivery fees remain separate.
 
 creditCharged snapshots the debit. OrderItem snapshots purchase price, prescription, guarantee flag/name. New items also store productSnapshot (name/category/color/packaging); detail loaders restore those values. Legacy null snapshots fall back to current catalog data and are not fabricated by migration.
 
@@ -275,7 +278,7 @@ npm run build
 
 On PowerShell use npm.cmd/npx.cmd if execution policy blocks .ps1 launchers.
 
-Current verification: see [hardening deployment notes](hardening-deployment.md). The new migration was prepared, not applied. Tests mock transaction/gateway boundaries; production build/type/lint checks do not replace live PostgreSQL concurrency or browser testing.
+Current verification: see [hardening deployment notes](hardening-deployment.md). The discount normalization migration was applied to the configured database on 2026-09-27; other environments still require migration deployment. Tests mock transaction/gateway boundaries; production build/type/lint checks do not replace live PostgreSQL concurrency or browser testing.
 
 ## Adding a feature while preserving the admin structure
 
@@ -332,6 +335,7 @@ Source-derived export index at review time. An export is not proof that a contro
 | `lib/actions/auth.actions.ts` | `CreateUserAction`, `LoginAction` |
 | `lib/bale.ts` (server-only, not an action) | `BALE_SendMessage` |
 | `lib/actions/cart.actions.ts` | `GetUserCartItemsAction`, `AddItemToCartAction`, `UpdateCartItemRawOrCutAction`, `DeleteItemFromCartAction`, `ClearCartAction`, `SubmitCartOrderAction` |
+| `lib/actions/discount.actions.ts` | `ADMIN_SaveDiscount`, `ADMIN_SetDiscountActive`, `PreviewDiscount`, `ADMIN_SearchDiscountTargets` |
 | `lib/actions/guarantee.actions.ts` | `UpdateCartItemGuaranteeAction` |
 | `lib/actions/images.action.ts` | `uploadImageAction`, `deleteImageAction` |
 | `lib/actions/invoices.action.ts` | `GetInvoicesAction`, `GetSingleInvoiceAction`, `CreateInvoiceAction`, `PayInvoiceAction`, `ReconcileInvoiceAction` |

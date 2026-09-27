@@ -10,6 +10,7 @@ import {
   Eye,
   Clock,
   CreditCard,
+  BadgePercent,
   Globe,
   Hammer,
   Settings,
@@ -170,7 +171,7 @@ const adminSections = [
   },
   {
     title: "کاتالوگ محصولات",
-    paths: ["/admin/products", "/admin/master-category"],
+    paths: ["/admin/products", "/admin/master-category", "/admin/discounts"],
   },
   {
     title: "گزارش‌ها و آمار",
@@ -362,6 +363,11 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
 
 const AdminSidebarData: SidebarDataType = {
   menus: [
+    {
+      group_title: "کدهای تخفیف",
+      icon: BadgePercent,
+      items: [{ title: "کدهای تخفیف", path: "/admin/discounts" }],
+    },
     {
       group_title: "داشبورد",
       icon: LayoutDashboard,

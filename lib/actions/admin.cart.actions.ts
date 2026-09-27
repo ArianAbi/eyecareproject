@@ -9,6 +9,7 @@ import prisma from "../db"
 import { requireAdmin } from "../access"
 import { writeAudit } from "../audit"
 import { chargeOrderCredit } from "../order-credit"
+import { calculateDiscount, reserveDiscount } from "../discount"
 import type { CartItemProductItemType } from "@/types/order"
 
 const idSchema = z.string().uuid()
@@ -91,12 +92,12 @@ export async function ADMIN_ClearCartAction(userId: string) {
     });
 }
 
-export async function ADMIN_SubmitCartOrderAction(userId: string, input: { customerNote: string, deliveryPrice: number }) {
+export async function ADMIN_SubmitCartOrderAction(userId: string, input: { customerNote: string, deliveryPrice: number, discountCode?: string }) {
     return actionResult(async () => {
 
         const actor = await requireAdmin()
         userId = idSchema.parse(userId)
-        const { customerNote, deliveryPrice } = z.object({ customerNote: z.string().max(2000), deliveryPrice: z.literal(0) }).parse(input)
+        const { customerNote, deliveryPrice, discountCode } = z.object({ customerNote: z.string().max(2000), deliveryPrice: z.literal(0), discountCode: z.string().max(64).optional() }).parse(input)
         const orderBatch = await prisma.$transaction(async tx => {
             const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { credit: true, userStatus: true } })
             if (user.userStatus !== 'VERIFIED') throw new ExpectedError('حساب کاربر انتخاب‌شده تایید نشده است')
@@ -113,18 +114,22 @@ export async function ADMIN_SubmitCartOrderAction(userId: string, input: { custo
                 osSph: item.osSph, osCyl: item.osCyl, osAux: item.osAux, odOnly: item.odOnly, rawOrCut: item.rawOrCut,
             }))
             const total = items.reduce<number>((sum, item) => sum + item.purchasedPrice, deliveryPrice)
-            if (!Number.isSafeInteger(total) || total < 0 || total > 2147483647) throw new ExpectedError('مبلغ سفارش نامعتبر است')
-            if (user.credit < total) throw new ExpectedError('اعتبار کاربر انتخاب‌شده کافی نیست')
-            await chargeOrderCredit(tx, userId, total)
+            const applied = discountCode?.trim() ? await calculateDiscount(tx, discountCode, userId, cart.cartItems) : null
+            const charged = total - (applied?.amount ?? 0)
+            if (!Number.isSafeInteger(charged) || charged < 0 || charged > 2147483647) throw new ExpectedError('مبلغ سفارش نامعتبر است')
+            if (user.credit < charged) throw new ExpectedError('اعتبار کاربر انتخاب‌شده کافی نیست')
+            if (applied) await reserveDiscount(tx, applied.discountId)
+            await chargeOrderCredit(tx, userId, charged)
             const batch = await tx.orderBatch.create({
                 data: {
-                    userId, deliveryPrice, customerNote, status: 'PENDING', creditCharged: total, orderItems: { create: items },
+                    userId, deliveryPrice, customerNote, status: 'PENDING', creditCharged: charged, orderItems: { create: items },
+                    ...(applied && { discountRedemption: { create: { discountId: applied.discountId, userId, amountApplied: applied.amount, code: applied.code, title: applied.title } } }),
                 }, include: { orderItems: true }
             })
             await tx.cartItem.deleteMany({ where: { cartId: cart.id, id: { in: cart.cartItems.map(item => item.id) } } })
             await writeAudit(tx, actor.id, 'ADMIN_ORDER_SUBMITTED', 'OrderBatch', batch.id, `userId: ${userId}`)
             return batch
-        }, { isolationLevel: 'Serializable' })
+        }, { isolationLevel: 'Serializable', maxWait: 10000, timeout: 15000 })
 
         revalidatePath('/admin/glasslens-order')
         revalidatePath('/admin/orders')

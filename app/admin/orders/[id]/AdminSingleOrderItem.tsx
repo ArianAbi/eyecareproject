@@ -116,6 +116,7 @@ export default function AdminSingleOrderItem({ data }: { data: NonNullable<Actio
                 </div>
 
                 {/* ORDER TOTAL PRICE */}
+                {data.discountRedemption && <p>تخفیف {data.discountRedemption.code}: {data.discountRedemption.amountApplied.toLocaleString()} تومان؛ مبلغ پرداخت شده: {data.creditCharged.toLocaleString()} تومان</p>}
                 <div className="flex items-center gap-1">
                     <span>جمع مبلغ : </span>
                     <span className="flex items-center gap-1">

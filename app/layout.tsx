@@ -48,9 +48,6 @@ export default function RootLayout({
       dir="rtl"
       className={cn("h-full dark", "antialiased", fontSans.variable)}
     >
-      <head>
-        <meta name="enamad" content="49178649" />
-      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextTopLoader />
         <TrafficTracker />

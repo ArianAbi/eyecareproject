@@ -43,9 +43,9 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
         accessorKey: "total-price",
         header: () => <div className="text-center">مبلغ سفارش</div>,
         cell: ({ row }) => {
-            const total = calculateOrderTotal(row.original)
+            const total = row.original.discountRedemption ? row.original.creditCharged : calculateOrderTotal(row.original)
 
-            return <div className="text-center">
+            return <div className="text-center" title={row.original.discountRedemption ? `تخفیف ${row.original.discountRedemption.code}: ${row.original.discountRedemption.amountApplied.toLocaleString()} تومان` : undefined}>
                 <span>
                     {
                         total.toLocaleString() + " "
@@ -56,6 +56,13 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
                 </span>
             </div>
         }
+    },
+    {
+        id: "discount",
+        header: "تخفیف",
+        cell: ({ row }) => row.original.discountRedemption
+            ? <span>{row.original.discountRedemption.code} (−{row.original.discountRedemption.amountApplied.toLocaleString()} تومان)</span>
+            : null,
     },
     {
         id: "orderCount",

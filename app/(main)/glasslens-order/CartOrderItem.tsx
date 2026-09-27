@@ -74,14 +74,14 @@ export default function CartOrderItem({
       setRawOrCut(!value);
       if (err instanceof Error) {
         toast.add({
-          type: "Error",
+          type: "error",
           description: err.message,
           title: "سفارش بروزرسانی نشد",
         });
       } else {
         toast.add({
-          type: "Error",
-          description: "unkown error",
+          type: "error",
+          description: "خطای نامشخصی رخ داد. دوباره تلاش کنید.",
           title: "سفارش بروزرسانی نشد",
         });
       }
@@ -252,7 +252,7 @@ function RemoveOrderPopover({
     } catch (err) {
       if (err instanceof Error) {
         toast.add({
-          type: "Error",
+          type: "error",
           title: "سفارش از لیست حدف نشد",
           description: err.message,
         });

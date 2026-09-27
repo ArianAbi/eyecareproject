@@ -6,6 +6,7 @@ import { assertOrderEligibility, cartInputSchema, storedPrescription, lensPrice 
 import { calculateOrderCount } from "@/lib/order-count";
 import { writeAudit } from "../audit";
 import { chargeOrderCredit } from "../order-credit";
+import { calculateDiscount, reserveDiscount } from "../discount";
 
 import prisma from "@/lib/db";
 import { ActionError } from "../action-error";
@@ -54,12 +55,12 @@ export async function AddItemToCartAction(orderItem: CartItemProductItemType) {
     if (!session?.user?.id) {
         return {
             success: false as const,
-            error: "Please sign in again before adding items to your cart.",
+            error: "برای افزودن محصول به سبد، دوباره وارد حساب کاربری شوید.",
         };
     }
     const userId = session.user.id;
     const parsed = cartInputSchema.safeParse(orderItem);
-    if (!parsed.success) return { success: false as const, error: "Invalid prescription." };
+    if (!parsed.success) return { success: false as const, error: "نسخه واردشده معتبر نیست." };
     const { od, os, odOnly, rawOrCut, ...product } = parsed.data;
 
     try {
@@ -98,7 +99,7 @@ export async function AddItemToCartAction(orderItem: CartItemProductItemType) {
         console.error("Failed to add cart item", err);
         return {
             success: false as const,
-            error: "Could not save the cart item. Please try again.",
+            error: "ذخیره محصول در سبد انجام نشد. دوباره تلاش کنید.",
         };
     }
 }
@@ -182,9 +183,11 @@ export async function ClearCartAction() {
 export async function SubmitCartOrderAction({
     customerNote,
     deliveryPrice,
+    discountCode,
 }: {
     deliveryPrice: number;
     customerNote: string;
+    discountCode?: string;
 }) {
     return actionResult(async () => {
 
@@ -227,7 +230,11 @@ export async function SubmitCartOrderAction({
                         (lensPrice(item.product.price, item.odOnly)),
                     deliveryPrice,
                 );
-                await chargeOrderCredit(tx, userId, orderSumPrice);
+                const applied = discountCode?.trim() ? await calculateDiscount(tx, discountCode, userId, cart.cartItems) : null;
+                const total = orderSumPrice - (applied?.amount ?? 0);
+                if (!Number.isSafeInteger(total) || total < 0 || total > 2147483647) throw new ExpectedError("مبلغ سفارش نامعتبر است.");
+                if (applied) await reserveDiscount(tx, applied.discountId);
+                await chargeOrderCredit(tx, userId, total);
 
                 const batch = await tx.orderBatch.create({
                     data: {
@@ -235,7 +242,8 @@ export async function SubmitCartOrderAction({
                         deliveryPrice,
                         customerNote,
                         status: "PENDING",
-                        creditCharged: orderSumPrice,
+                        creditCharged: total,
+                        ...(applied && { discountRedemption: { create: { discountId: applied.discountId, userId, amountApplied: applied.amount, code: applied.code, title: applied.title } } }),
                         orderItems: {
                             create: cart.cartItems.map((item) => ({
                                 productId: item.productId,
@@ -264,7 +272,7 @@ export async function SubmitCartOrderAction({
 
                 return batch;
             },
-            { isolationLevel: "Serializable" },
+            { isolationLevel: "Serializable", maxWait: 10000, timeout: 15000 },
         );
 
         // Notify only after commit; notification failures must not undo a saved order.

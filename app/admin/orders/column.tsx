@@ -80,6 +80,13 @@ export const AdminOrdersColumn: ColumnDef<AdminOrderActionType>[] = [
         }
     },
     {
+        id: "discount",
+        header: "تخفیف",
+        cell: ({ row }) => row.original.discountRedemption
+            ? <span>{row.original.discountRedemption.code} (−{row.original.discountRedemption.amountApplied.toLocaleString()} تومان)</span>
+            : null,
+    },
+    {
         id: "orderCount",
         accessorFn: (order) => calculateOrderCount(order.orderItems),
         header: () => <div className="text-center">تعداد سفارش ها</div>,

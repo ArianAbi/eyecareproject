@@ -34,14 +34,16 @@ model User {
 
   userStatus UserVerifyType @default(UNVERIFIED)
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  orders         OrderBatch[]
-  invoices       Invoice[]
-  cart           Cart?
-  tickets        Ticket[]
-  ticketMessages TicketMessage[]
-  auditLogs      AuditLog[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  orders              OrderBatch[]
+  invoices            Invoice[]
+  cart                Cart?
+  tickets             Ticket[]
+  ticketMessages      TicketMessage[]
+  auditLogs           AuditLog[]
+  discounts           Discount[]
+  discountRedemptions DiscountRedemption[]
 }
 
 enum NotificationType {
@@ -136,6 +138,7 @@ model Product {
 
   orderItem OrderItem[]
   cartItems CartItem[]
+  discounts Discount[]
 }
 
 model Tags {
@@ -181,7 +184,7 @@ model Cart {
 
 model CartItem {
   guaranteeClientName String @default("")
-  id String @id @default(uuid())
+  id                  String @id @default(uuid())
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
@@ -216,6 +219,8 @@ model OrderBatch {
 
   orderUpdate OrderUpdate[]
 
+  discountRedemption DiscountRedemption?
+
   deliveryPrice Int @default(0)
 
   customerNote String @default("")
@@ -239,10 +244,10 @@ enum RawOrCutType {
 }
 
 model OrderItem {
-  productSnapshot Json?
-  guaranteeClientName String @default("")
-  includesGuarantee Boolean @default(false)
-  id String @id @default(uuid())
+  productSnapshot     Json?
+  guaranteeClientName String  @default("")
+  includesGuarantee   Boolean @default(false)
+  id                  String  @id @default(uuid())
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
@@ -312,9 +317,9 @@ enum InvoiceStatus {
 model Invoice {
   creditAppliedAt DateTime?
   paymentAttempts PaymentAttempt[]
-  id     String @id @default(uuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   paymentType InvoicePaymentType
   amount      Int
@@ -409,26 +414,84 @@ model Setting {
 
 // Shared fixed-window limits; expired windows are removed during subsequent requests.
 model RateLimit {
-  key String @id
-  count Int
+  key       String   @id
+  count     Int
   expiresAt DateTime
+
   @@index([expiresAt])
 }
 
 model ImageAsset {
-  filename String @id
-  ownerId String
-  size Int
+  filename  String   @id
+  ownerId   String
+  size      Int
   createdAt DateTime @default(now())
+
   @@index([ownerId, createdAt])
 }
 
 model PaymentAttempt {
-  authority String @id
+  authority String    @id
   invoiceId String
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
-  status String @default("PENDING")
-  createdAt DateTime @default(now())
+  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  status    String    @default("PENDING")
+  createdAt DateTime  @default(now())
   checkedAt DateTime?
+
   @@index([invoiceId, createdAt])
+}
+
+enum DiscountAmountType {
+  PERCENT
+  FLAT
+}
+
+model Discount {
+  id          String @id @default(uuid())
+  title       String
+  description String @default("")
+
+  code String @unique
+
+  amountType DiscountAmountType
+  // FLAT values are in Toman. PERCENT values use basis points (10000 = 100%).
+  value      Int
+
+  maxUses            Int?
+  usedCount          Int       @default(0)
+  expiresAt          DateTime?
+  active             Boolean   @default(true)
+  usersRestricted    Boolean   @default(false)
+  productsRestricted Boolean   @default(false)
+
+  // Restriction flags decide scope; an empty restricted list allows nobody.
+  users       User[]
+  products    Product[]
+  redemptions DiscountRedemption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+model DiscountRedemption {
+  id String @id @default(uuid())
+
+  discountId String
+  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Restrict)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  orderBatchId String     @unique
+  orderBatch   OrderBatch @relation(fields: [orderBatchId], references: [id], onDelete: Restrict)
+
+  amountApplied Int
+  code          String
+  title         String
+  createdAt     DateTime @default(now())
+
+  @@index([discountId, createdAt])
+  @@index([userId, createdAt])
 }

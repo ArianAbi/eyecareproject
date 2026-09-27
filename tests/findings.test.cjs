@@ -36,7 +36,7 @@ test('F-01/F-06/F-10 both checkout actions recheck eligibility, debit rounded to
       cartItem: { deleteMany: async () => { cleared = true; } },
       orderBatch: { create: async ({ data }) => { created = data; return { ...data, id, orderItems: [row, row] }; } },
     };
-    const db = { $transaction: async fn => fn(tx), orderBatch: { count: async () => 1 } };
+    const db = { $transaction: async (fn, options) => { assert.deepEqual(options, { isolationLevel: 'Serializable', maxWait: 10000, timeout: 15000 }); return fn(tx); }, orderBatch: { count: async () => 1 } };
     const action = load(admin ? 'lib/actions/admin.cart.actions.ts' : 'lib/actions/cart.actions.ts', deps(db), quiet);
     const input = { customerNote: '', deliveryPrice: scenario === 'delivery' ? 1 : 0 };
     const result = await (admin ? action.ADMIN_SubmitCartOrderAction(id, input) : action.SubmitCartOrderAction(input));

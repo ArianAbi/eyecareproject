@@ -91,7 +91,7 @@ export function TodaysOrders({ day, isToday, orders, deliveryPrice, charges }: {
                 <TableBody>{group.orders.map(order => <TableRow key={order.id}>
                     <TableCell><span>#{order.number}</span><p className="mt-1 text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleTimeString("fa-IR-u-nu-latn", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit" })}</p></TableCell>
                     <TableCell>{order.itemCount.toLocaleString("en-US")} ردیف / {order.lensCount.toLocaleString("en-US")} عدسی</TableCell>
-                    <TableCell>{money(order.total)}</TableCell><TableCell>{money(order.deliveryPrice)}</TableCell>
+                    <TableCell>{money(order.total)}{order.discount && <p className="text-xs text-emerald-500">تخفیف {order.discount.code}: −{money(order.discount.amountApplied)}</p>}</TableCell><TableCell>{money(order.deliveryPrice)}</TableCell>
                     <TableCell><OrderStatusControl key={`${order.id}-${order.status}`} order={order} /></TableCell>
                     <TableCell><Link className="text-sm underline" href={`/admin/orders/${order.id}`}>مدیریت سفارش</Link>{order.customerNote && <p className="mt-1 max-w-52 truncate text-xs text-muted-foreground" title={order.customerNote}>{order.customerNote}</p>}</TableCell>
                 </TableRow>)}</TableBody>

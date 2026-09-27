@@ -22,6 +22,7 @@ export async function ADMIN_GetOrdersAction(filters: OrderFilters) {
                 where: whereFilter,
                 ...(PaginationObjectDB(filters.page)),
                 include: {
+                    discountRedemption: true,
                     orderItems: { select: { odOnly: true } },
                     user: {
                         select: {
@@ -65,6 +66,7 @@ export async function ADMIN_GetSingleOrder(id: string, pages: { itemsPage?: stri
                 id
             },
             include: {
+                discountRedemption: true,
                 _count: { select: { orderItems: true, orderUpdate: true } },
                 orderItems: {
                     ...PaginationObjectDB(pages.itemsPage, 50),

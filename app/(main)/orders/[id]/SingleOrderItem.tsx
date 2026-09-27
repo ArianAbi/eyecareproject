@@ -20,6 +20,7 @@ export default function SingleOrderItem({ data }: { data: NonNullable<ActionData
             </div>
             <p>تعداد اقلام: {data.lensCount.toLocaleString()}</p>
             <p>جمع مبلغ: {data.totalPrice.toLocaleString()} تومان</p>
+            {data.discountRedemption && <p>تخفیف {data.discountRedemption.code}: {data.discountRedemption.amountApplied.toLocaleString()} تومان؛ مبلغ پرداخت شده: {data.creditCharged.toLocaleString()} تومان</p>}
             {data.customerNote && <p className="whitespace-pre-wrap break-words">یادداشت شما: {data.customerNote}</p>}
         </section>
         <OrderUpdateHistory updates={data.orderUpdate} customerOrderId={data.id} />

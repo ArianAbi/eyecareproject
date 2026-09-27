@@ -15,9 +15,14 @@ export function lensEligible(lens: Lens | null, prescription: Prescription): boo
   return valid(prescription.od) && (prescription.odOnly || valid(prescription.os));
 }
 
-export function assertOrderEligibility(userStatus: string, product: { active: boolean; type: string; lens: Lens | null } | null, prescription: Prescription) {
-  if (userStatus !== 'VERIFIED') throw new ExpectedError('Account must be verified before ordering.');
-  if (!product?.active || product.type !== 'LENS' || !lensEligible(product.lens, prescription)) throw new ExpectedError('Product or prescription is not eligible for ordering.');
+export function assertOrderEligibility(userStatus: string, product: { name?: string; active: boolean; type: string; lens: Lens | null } | null, prescription: Prescription) {
+  if (userStatus !== 'VERIFIED') throw new ExpectedError('حساب کاربری باید پیش از ثبت سفارش تأیید شود.');
+  if (!product?.active || product.type !== 'LENS' || !product.lens) {
+    throw new ExpectedError(`محصول «${product?.name ?? 'انتخاب‌شده'}» دیگر قابل سفارش نیست. آن را از سبد حذف کنید.`);
+  }
+  if (!lensEligible(product.lens, prescription)) {
+    throw new ExpectedError(`نسخه محصول «${product.name ?? 'انتخاب‌شده'}» خارج از محدوده مجاز است. آن را از سبد حذف کنید و با نسخه معتبر دوباره اضافه کنید.`);
+  }
 }
 
 export function lensPrice(price: number, odOnly: boolean) { return odOnly ? Math.round(price / 2) : price; }

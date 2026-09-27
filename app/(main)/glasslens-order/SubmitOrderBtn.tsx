@@ -16,11 +16,13 @@ import { useState } from "react";
 
 export default function SubmitOrderBtn({
   customerNote = "",
+  discountCode,
   disabled = false,
   adminUserId,
   onPendingChange,
 }: {
   customerNote?: string;
+  discountCode?: string;
   disabled?: boolean;
   adminUserId?: string;
   onPendingChange?: (pending: boolean) => void;
@@ -34,26 +36,37 @@ export default function SubmitOrderBtn({
     if (disabled || loading) return;
     try {
       setLoading(true);
+      setOpen(false);
       onPendingChange?.(true);
 
-      const result = unwrapActionResult(await (adminUserId
-        ? ADMIN_SubmitCartOrderAction(adminUserId, {
-            deliveryPrice: 0,
-            customerNote,
-          })
-        : SubmitCartOrderAction({ deliveryPrice: 0, customerNote })));
+      const result = unwrapActionResult(
+        await (adminUserId
+          ? ADMIN_SubmitCartOrderAction(adminUserId, {
+              deliveryPrice: 0,
+              customerNote,
+              discountCode,
+            })
+          : SubmitCartOrderAction({
+              deliveryPrice: 0,
+              customerNote,
+              discountCode,
+            })),
+      );
       if (!result.success)
-        throw new Error("سفارش ثبت نشد؛ حساب و سبد خرید را بررسی کنید");
+        throw new Error("سفارش ثبت نشد. حساب و سبد خرید را بررسی کنید.");
 
       toast.add({
-        type: "Success",
-        title: "سفارش ثبت شد",
+        type: "success",
+        title: "سفارش با موفقیت ثبت شد",
       });
 
-      setOpen(false);
       router.refresh();
     } catch (err) {
-      toast.add({ type: "error", title: "????? ??? ???", description: err instanceof Error ? err.message : "?????? ???? ????" });
+      toast.add({
+        type: "error",
+        title: "ثبت سفارش انجام نشد",
+        description: err instanceof Error ? err.message : "خطای نامشخصی رخ داد. دوباره تلاش کنید.",
+      });
     } finally {
       setLoading(false);
       onPendingChange?.(false);

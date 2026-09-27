@@ -29,6 +29,7 @@ export async function ADMIN_GetTodayOrdersAction(rawDay?: string, page?: string)
             select: {
                 id: true, orederIdentification: true, status: true, createdAt: true,
                 deliveryPrice: true, customerNote: true,
+                creditCharged: true, discountRedemption: { select: { code: true, amountApplied: true } },
                 user: { select: { id: true, username: true, storeName: true, credit: true } },
                 orderItems: { select: { purchasedPrice: true, cutPrice: true, odOnly: true } },
             },
@@ -44,7 +45,8 @@ export async function ADMIN_GetTodayOrdersAction(rawDay?: string, page?: string)
     ])
     const data: TodayOrder[] = orders.map(order => ({
         id: order.id, number: order.orederIdentification, status: order.status,
-        createdAt: order.createdAt.toISOString(), total: calculateOrderTotal(order),
+        createdAt: order.createdAt.toISOString(), total: order.discountRedemption ? order.creditCharged : calculateOrderTotal(order),
+        discount: order.discountRedemption,
         deliveryPrice: order.deliveryPrice, customerNote: order.customerNote,
         itemCount: order.orderItems.length,
         lensCount: calculateOrderCount(order.orderItems),
