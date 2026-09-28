@@ -20,14 +20,14 @@ type OrderActionType = ActionData<typeof GetOrdersAction>["orders"][0];
 export const OrdersColumn: ColumnDef<OrderActionType>[] = [
   {
     id: "unreadUpdates",
-    header: "بروزرسانی‌ها",
+    header: () => <div className="max-w-0 w-0"></div>,
     cell: ({ row }) =>
       row.original._count.orderUpdate > 0 ? (
         <Link
           href={`/orders/${row.original.id}`}
-          className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800"
+          className="rounded-full bg-blue-100 aspect-square grid place-items-center size-4 text-xs text-blue-800"
         >
-          {row.original._count.orderUpdate.toLocaleString()} بروزرسانی جدید
+          {row.original._count.orderUpdate.toLocaleString()}
         </Link>
       ) : null,
   },
@@ -70,7 +70,7 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
   },
   {
     id: "discount",
-    header: "تخفیف",
+    header: () => <div className="w-full text-center">تخفیف</div>,
     cell: ({ row }) =>
       row.original.discountRedemption ? (
         <span>
@@ -78,7 +78,11 @@ export const OrdersColumn: ColumnDef<OrderActionType>[] = [
           {row.original.discountRedemption.amountApplied.toLocaleString() + " "}
           <span className="text-emerald-500 font-semibold text-xs">تومان</span>
         </span>
-      ) : null,
+      ) : (
+        <div className="flex w-full items-center justify-center">
+          <span>-</span>
+        </div>
+      ),
   },
   {
     id: "orderCount",

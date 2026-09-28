@@ -263,7 +263,7 @@ export default function LandingVideo({
 
   // Size against the content area, including when a sidebar is present.
   // max height is 450px
-  const widthFormula = "min(calc(min(100svh - 74px,450px)), 100%)";
+  const widthFormula = "min(calc(min(100svh - 90px,450px)), 100%)";
 
   return (
     <>
@@ -272,10 +272,11 @@ export default function LandingVideo({
         className="sticky top-0 mx-auto origin-top z-[-1] pointer-events-none w-full max-w-full aspect-square"
         style={{ width: widthFormula }}
       >
-        <div className="relative aspect-square w-full">
+        <div className="relative aspect-square w-full bg-[#161f24]">
           <video
             ref={first}
-            src="/landing-shots/lens-p1.mp4"
+            // src="/landing-shots/lens-p1.mp4"
+            src="/landing-shots/lens-p1-bg-oklch-23.28.mp4"
             width={1024}
             height={1024}
             muted
@@ -283,7 +284,7 @@ export default function LandingVideo({
             preload="auto"
             aria-label="نمایش عدسی، بخش اول"
             aria-hidden={part !== 1}
-            className="absolute inset-0 h-full w-full object-contain"
+            className="absolute inset-0 h-full w-full object-contain mix-blend-lighten"
             onPlay={() => setPlaying(true)}
             onPause={() => {
               if (!reversing.current) setPlaying(false);
@@ -296,7 +297,8 @@ export default function LandingVideo({
           />
           <video
             ref={second}
-            src="/landing-shots/lens-p2.mp4"
+            // src="/landing-shots/lens-p2.mp4"
+            src="/landing-shots/lens-p2-bg-oklch-23.28.mp4"
             width={1024}
             height={1024}
             muted
@@ -304,7 +306,7 @@ export default function LandingVideo({
             preload="auto"
             aria-label="نمایش عدسی، بخش دوم"
             aria-hidden={part !== 2}
-            className={`absolute inset-0 h-full w-full object-contain ${part === 2 ? "opacity-100" : "pointer-events-none opacity-0"}`}
+            className={`absolute inset-0 h-full w-full object-contain mix-blend-lighten ${part === 2 ? "opacity-100" : "pointer-events-none opacity-0"}`}
             onPlaying={() => {
               setPlaying(true);
               if (
