@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import LandingVideo from "@/components/landing-video";
 import { auth } from "@/lib/Auth";
 import LandingProductsSummery from "@/components/landing-products-summery";
+import { PhoneIcon } from "lucide-react";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName } = await getSettings();
@@ -84,7 +85,12 @@ export default async function Home() {
                 <span>شماره تماس جهت مشاوره : </span>
 
                 <a href="tel:+989120034497" className="hover:underline">
-                  <span dir="ltr">0912 003 4497</span>
+                  <span
+                    dir="ltr"
+                    className="shimmer text-sm text-muted-foreground underline font-semibold"
+                  >
+                    0912 003 4497
+                  </span>
                 </a>
               </h2>
             </div>
@@ -92,7 +98,9 @@ export default async function Home() {
         </LandingVideo>
       </div>
 
-      <LandingProductsSummery />
+      <div className="w-full max-w-5xl mx-auto">
+        <LandingProductsSummery />
+      </div>
     </>
   );
 }
