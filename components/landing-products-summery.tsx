@@ -10,8 +10,14 @@ export default function LandingProductsSummery() {
   return (
     <>
       <div className="w-full py-6 px-5 space-y-2">
+        <h2 className="text-xl sm:text-2xl md:text-3xl">
+          لیست عدسی های تحویل فوری
+        </h2>
+
+        <hr className="mt-3 mb-4" />
+
         {/* see care */}
-        <div className="flex shadow-md shadow-black/30 z-10 flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
+        <div className="flex flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
           {/* image container */}
           <div className="relative flex sm:block gap-2 w-full sm:max-w-[200px]">
             <div className="relative overflow-hidden aspect-[1.1/1] w-full max-w-[120px] sm:max-w-[200px] shrink-0 rounded-lg border-2 border-emerald-800">
@@ -26,12 +32,12 @@ export default function LandingProductsSummery() {
             </div>
 
             {/* flag container */}
-            <div className="w-fit rounded-lg overflow-hidden absolute -right-2 -top-2">
+            <div className="w-fit rounded-full overflow-hidden absolute -right-2 -top-2">
               <Image
                 src={Japan}
                 alt="japan flag - see care glasses are made in japan"
-                width={25}
-                height={25}
+                width={30}
+                height={30}
               />
             </div>
 
@@ -59,7 +65,7 @@ export default function LandingProductsSummery() {
                 <span className="bg-yellow-500/40 border-yellow-500/60 px-1 py-0.5 rounded-full border-2">
                   Yellow کنترل
                 </span>
-                <span className="bg-linear-to-r from-gray-600 from-30% to-55% to-taupe-800 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-linear-to-r from-gray-600 to-taupe-700 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
                   فتو Transiton
                 </span>
               </div>
@@ -91,23 +97,24 @@ export default function LandingProductsSummery() {
                 <span className="bg-yellow-500/40 border-yellow-500/60 px-1 py-0.5 rounded-full border-2">
                   Yellow کنترل
                 </span>
-                <span className="bg-linear-to-r from-gray-600 from-30% to-55% to-taupe-800 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-linear-to-r from-gray-600 to-taupe-700 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
                   فتو Transiton
                 </span>
               </div>
             </div>
 
             <p className="text-wrap mt-2">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Pariatur
-              ex dolores incidunt praesentium, itaque aut doloribus repellat
-              animi deleniti! Sint nesciunt reprehenderit, eligendi magni natus
-              qui deleniti ullam amet? Earum?
+              لنزهای See Care با استفاده از مونومر اپتیکی باکیفیت MR-8 و پوشش
+              محافظ چندلایه تولید می‌شوند تا دیدی شفاف، مقاومت بالا در برابر
+              خط‌وخش و بازتاب نور، و دوام طولانی ارائه دهند. این لنزها علاوه بر
+              کیفیت اپتیکی بالا، با خدمات پس از فروش، ضمانت و گارانتی پوشش عرضه
+              می‌شوند تا انتخابی مطمئن برای استفاده روزمره باشند.
             </p>
           </div>
         </div>
 
         {/* see max */}
-        <div className="flex shadow-md shadow-black/30 z-10 flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
+        <div className="flex flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
           {/* image container */}
           <div className="relative flex sm:block gap-2 w-full sm:max-w-[200px]">
             <div className="relative overflow-hidden aspect-[1.1/1] w-full max-w-[120px] sm:max-w-[200px] shrink-0 rounded-lg border-2 border-blue-800">
@@ -122,12 +129,12 @@ export default function LandingProductsSummery() {
             </div>
 
             {/* flag container */}
-            <div className="w-fit rounded-lg overflow-hidden absolute -right-2 -top-2">
+            <div className="w-fit rounded-full overflow-hidden absolute -right-2 -top-2">
               <Image
                 src={Japan}
                 alt="japan flag - see max glasses are made in japan"
-                width={25}
-                height={25}
+                width={30}
+                height={30}
               />
             </div>
 
@@ -155,7 +162,7 @@ export default function LandingProductsSummery() {
                 <span className="bg-cyan-500/40 border-cyan-500/60 px-1 py-0.5 rounded-full border-2">
                   بلو کنترل 1.67
                 </span>
-                <span className="bg-linear-to-r from-gray-600 from-30% to-55% to-taupe-800 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-linear-to-r from-gray-600 to-taupe-700 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
                   فتو Spin
                 </span>
               </div>
@@ -187,23 +194,25 @@ export default function LandingProductsSummery() {
                 <span className="bg-cyan-500/40 border-cyan-500/60 px-1 py-0.5 rounded-full border-2">
                   بلو کنترل 1.67
                 </span>
-                <span className="bg-linear-to-r from-gray-600 from-30% to-55% to-taupe-800 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-linear-to-r from-gray-600 to-taupe-700 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
                   فتو Spin
                 </span>
               </div>
             </div>
 
             <p className="text-wrap mt-2">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Pariatur
-              ex dolores incidunt praesentium, itaque aut doloribus repellat
-              animi deleniti! Sint nesciunt reprehenderit, eligendi magni natus
-              qui deleniti ullam amet? Earum?
+              لنزهای See Max از محصولات ویژه Eye Care هستند که با استفاده از
+              مونومرهای گرید +A و متریال باکیفیت تولید می‌شوند. بهره‌گیری از
+              پوشش‌های پیشرفته آنتی‌رفلکس، کنترل دقیق شرایط تولید و استانداردهای
+              کیفی بالا، این لنزها را به گزینه‌ای شفاف، بادوام و مطمئن برای دید
+              بهتر تبدیل کرده است. محصولات See Max همچنین با گارانتی پوشش و
+              خدمات پس از فروش عرضه می‌شوند.
             </p>
           </div>
         </div>
 
         {/* see more */}
-        <div className="flex shadow-md shadow-black/30 z-10 flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
+        <div className="flex flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
           {/* image container */}
           <div className="relative flex sm:block gap-2 w-full sm:max-w-[200px]">
             <div className="relative overflow-hidden aspect-[1.1/1] w-full max-w-[120px] sm:max-w-[200px] shrink-0 rounded-lg border-2 border-taupe-600">
@@ -218,12 +227,12 @@ export default function LandingProductsSummery() {
             </div>
 
             {/* flag container */}
-            <div className="w-fit rounded-lg overflow-hidden absolute -right-2 -top-2">
+            <div className="w-fit rounded-full overflow-hidden absolute -right-2 -top-2">
               <Image
                 src={SouthKorea}
                 alt="south korea flag - see more glasses are made in south korea"
-                width={25}
-                height={25}
+                width={30}
+                height={30}
               />
             </div>
 
@@ -236,7 +245,7 @@ export default function LandingProductsSummery() {
 
               {/* tags */}
               <div className="w-full flex flex-wrap gap-1 text-[8px]">
-                <span className="bg-white/40 border-white/60 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-white/60 border-white/80 px-1 py-0.5 rounded-full border-2">
                   شفاف 1.55
                 </span>
 
@@ -252,7 +261,7 @@ export default function LandingProductsSummery() {
                   نازک 1.56
                 </span>
 
-                <span className="bg-linear-to-r from-gray-600 from-30% to-55% to-taupe-800 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-linear-to-r from-gray-600 to-taupe-700 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
                   فتو کرومیک
                 </span>
               </div>
@@ -269,7 +278,7 @@ export default function LandingProductsSummery() {
 
               {/* tags */}
               <div className="w-full flex flex-wrap gap-1 text-[10px]">
-                <span className="bg-white/40 border-white/60 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-white/60 border-white/80 px-1 py-0.5 rounded-full border-2">
                   شفاف 1.55
                 </span>
 
@@ -285,23 +294,24 @@ export default function LandingProductsSummery() {
                   نازک 1.56
                 </span>
 
-                <span className="bg-linear-to-r from-gray-600 from-30% to-55% to-taupe-800 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
+                <span className="bg-linear-to-r from-gray-600 to-taupe-700 border-gray-400/40 px-1 py-0.5 rounded-full border-2">
                   فتو کرومیک
                 </span>
               </div>
             </div>
 
             <p className="text-wrap mt-2">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Pariatur
-              ex dolores incidunt praesentium, itaque aut doloribus repellat
-              animi deleniti! Sint nesciunt reprehenderit, eligendi magni natus
-              qui deleniti ullam amet? Earum?
+              لنزهای See More از محصولات Eye Care، ساخت کره جنوبی و تولیدشده با
+              مونومر باکیفیت گرید +A هستند. رعایت استانداردهای تولید و استفاده
+              از مواد اولیه مرغوب، شفافیت و دوام بالایی را برای این لنزها فراهم
+              می‌کند. محصولات See More همچنین با گارانتی یک‌ساله پوشش، تراش و
+              ارسال رایگان و خدمات فیتینگ و مشاوره عرضه می‌شوند.
             </p>
           </div>
         </div>
 
         {/* see fine */}
-        <div className="flex shadow-md shadow-black/30 z-10 flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
+        <div className="flex flex-col sm:flex-row gap-2 p-3 border bg-card/20 rounded-lg">
           {/* image container */}
           <div className="relative flex sm:block gap-2 w-full sm:max-w-[200px]">
             <div className="relative overflow-hidden aspect-[1.1/1] w-full max-w-[120px] sm:max-w-[200px] shrink-0 rounded-lg border-2 border-yellow-600">
@@ -316,12 +326,12 @@ export default function LandingProductsSummery() {
             </div>
 
             {/* flag container */}
-            <div className="w-fit rounded-lg overflow-hidden absolute -right-2 -top-2">
+            <div className="w-fit rounded-full overflow-hidden absolute -right-2 -top-2">
               <Image
                 src={SouthKorea}
                 alt="south korea flag - see fine glasses are made in south korea"
-                width={25}
-                height={25}
+                width={30}
+                height={30}
               />
             </div>
 
@@ -382,10 +392,8 @@ export default function LandingProductsSummery() {
             </div>
 
             <p className="text-wrap mt-2">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Pariatur
-              ex dolores incidunt praesentium, itaque aut doloribus repellat
-              animi deleniti! Sint nesciunt reprehenderit, eligendi magni natus
-              qui deleniti ullam amet? Earum?
+              لنزهای See Fine از محصولات Eye Care گزینه اقتصادی هستند که با وجود
+              قیمت اقتصادی تنوع خوبی از محصولات رو هم شامل میشوند
             </p>
           </div>
         </div>

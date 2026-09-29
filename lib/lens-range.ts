@@ -43,6 +43,6 @@ function Construct(sign: "-" | "+", maxNumber = 10, noReverseSort = true) {
 
 export type LensRangeItemType = { sign: "-" | "+", value: LensRangeValueType }
 
-export const AllLensRanges = [...Construct("-"), { sign: "", value: "0.00" }, ...Construct("+")]
+export const AllLensRanges = [...Construct("-").reverse(), { sign: "", value: "0.00" }, ...Construct("+")]
 export const NegativeLensRanges = [{ sign: "", value: "0.00" }, ...Construct("-")]
 export const PositiveLensRanges = [{ sign: "", value: "0.00" }, ...Construct("+")]

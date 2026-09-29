@@ -26,6 +26,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | Database | PostgreSQL; Prisma/client/pg adapter ^7.8.0; `pg` |
 | Authentication | Auth.js `next-auth ^5.0.0-beta.31`, credentials, JWT sessions |
 | UI | shadcn `base-rhea`, Base UI ^1.6.0, Lucide |
+| Blog editor | Tiptap React/ProseMirror; server-rendered allowlisted JSON content |
 | Styling | Tailwind CSS 4, CSS variables, CVA, clsx/tailwind-merge, tw-animate-css |
 | Forms | React Hook Form ^7.83.0, Zod ^4.4.3, Zod resolver |
 | Tables/charts | TanStack React Table 8; Recharts 3 |
@@ -66,6 +67,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | URL | Implementation |
 | --- | --- |
 | `/` | `app/(main)/page.tsx`, Persian landing, `components/landing-video.tsx`, local MP4s |
+| `/blog`, `/blog/[slug]`, `/blog/category/[slug]`, `/blog/tag/[slug]` | Public article index, article, and taxonomy archives; see [blog guide](BLOG.md) |
 | `/login`, `/signup` | Auth route group and `components/forms/AuthForms.tsx` |
 | `/profile` | ProfileForm, ProfileAccountStatus, verification workflow |
 | `/profile/uploads` | Owner upload library/removal |
@@ -77,6 +79,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/tickets`, `/tickets/[id]` | Shared TicketPages server components and TicketForm client controls |
 | `/admin` | Today's grouped orders and summary tabs for orders/financial/tickets |
 | `/admin/products` | Server list, `columns.tsx`, create/edit links |
+| `/admin/blog`, `/admin/blog/create`, `/admin/blog/[id]`, `/admin/blog/[id]/preview`, `/admin/blog/terms` | Admin article list, Tiptap editor, private preview, categories and tags |
 | `/admin/products/create`, `/admin/products/[id]` | Separate RHF product create/edit forms |
 | `/admin/products/tags` | Create/list tags; edit/delete placeholders |
 | `/admin/discounts` | Paginated discount table with code/title, status and amount-type filters; create/edit dialog |
@@ -92,8 +95,11 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/api/auth/[...nextauth]` | Auth.js handlers |
 | `/api/orders/order-stream` | Admin-only no-store JSON pending count, polled every 15 seconds |
 | `/api/images/[filename]` | Owner/admin-only uploaded WebP serving |
+| `/api/blog/images/[filename]` | Public WebP serving for admin-uploaded blog assets recorded in `BlogImageAsset` |
 | `/api/financial/print`, `/api/admin/users/[id]/financial/print` | Authenticated owner/admin-only A4 credit statements for all transactions |
-| `/robots.txt`, `/sitemap.xml` | Metadata routes; sitemap lists landing URL |
+| `/robots.txt`, `/sitemap.xml` | Metadata routes; sitemap lists landing, blog index, live indexable articles and their populated taxonomy archives |
+
+The blog uses `BlogPost`, `BlogCategory`, `BlogTag`, and `BlogImageAsset`. Posts store validated Tiptap JSON and are rendered as semantic HTML on the server. Admin mutations recheck authorization, validate input, and audit in the same transaction. Scheduled posts are gated by `publishedAt <= now` at read time; no cron is required. Read [docs/BLOG.md](BLOG.md) for publishing, SEO, storage, and migration details.
 
 There is no `/admin/summary` page; affected invalidations target `/admin`. Dynamic pages use promised `params`/`searchParams` and await them.
 
@@ -106,7 +112,7 @@ There is no `/admin/summary` page; affected invalidations target `/admin`. Dynam
 - `app/providers.tsx` provides another SessionProvider wrapper; root currently mounts SessionProvider directly.
 - Main/admin `error.tsx` files supply section error UI. Check installed Next error-boundary APIs before changing them.
 
-`components/core/CustomSidebar.tsx` owns AdminSidebarData/UserSidebarData **and** adminSections/userSections. Sections find groups by the normalized first menu item's path. When adding navigation, update both menu data and section registration or the new group may be invisible. Preserve right-side RTL, active links, badges, footer switch and CSS module. Badge callbacks currently call provider hooks; avoid extending that with changing conditional hook calls.
+`components/core/CustomSidebar.tsx` owns AdminSidebarData/UserSidebarData. Each menu group now declares its `section` and numeric `order` within that data; the sidebar groups and sorts entries from those fields without a separate path registry. When adding navigation, give the entry a section and order in the relevant data array. Preserve right-side RTL, active links, badges, footer switch and CSS module. Badge callbacks currently call provider hooks; avoid extending that with changing conditional hook calls.
 
 ## Admin CRUD reference: products
 
@@ -333,6 +339,8 @@ Source-derived export index at review time. An export is not proof that a contro
 | Action module | Exported functions |
 | --- | --- |
 | `lib/actions/admin.cart.actions.ts` | `ADMIN_GetOrderUserAction`, `ADMIN_AddItemToCartAction`, `ADMIN_UpdateCartItemRawOrCutAction`, `ADMIN_DeleteItemFromCartAction`, `ADMIN_ClearCartAction`, `ADMIN_SubmitCartOrderAction` |
+| `lib/actions/admin.blog.actions.ts` | `saveBlogPost`, `archiveBlogPost`, `duplicateBlogPost`, `saveBlogTerm`, `deleteBlogTerm` |
+| `lib/actions/admin.blog-images.actions.ts` | `uploadBlogImage` |
 | `lib/actions/admin.invoices.action.ts` | `ADMIN_GetInvoicesAction`, `ADMIN_GetSingleInvoiceAction`, `ADMIN_ApproveInvoiceAction`, `ADMIN_RejectInvoiceAction` |
 | `lib/actions/admin.logs.action.ts` | `ADMIN_GetLogsAction` |
 | `lib/actions/admin.masterCategory.actions.ts` | `ADMIN_CreateMasterCategoryAction`, `ADMIN_GetMasterCategorys`, `ADMIN_UpdateMasterCategorys`, `ADMIN_DeleteMasterCategorys` |

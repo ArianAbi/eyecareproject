@@ -5,7 +5,9 @@ import { buttonVariants } from "@/components/ui/button";
 import LandingVideo from "@/components/landing-video";
 import { auth } from "@/lib/Auth";
 import LandingProductsSummery from "@/components/landing-products-summery";
-import { PhoneIcon } from "lucide-react";
+import prisma from "@/lib/db";
+import { blogCardSelect, publishedBlogWhere } from "@/lib/blog";
+import { BlogCard } from "@/components/blog/BlogCard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName } = await getSettings();
@@ -28,6 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Home() {
   const session = await auth();
+  const recentPosts = await prisma.blogPost.findMany({ where: { AND: [publishedBlogWhere(), { noindex: false }] }, select: blogCardSelect, orderBy: { publishedAt: "desc" }, take: 3 });
 
   return (
     <>
@@ -101,6 +104,7 @@ export default async function Home() {
       <div className="w-full max-w-5xl mx-auto">
         <LandingProductsSummery />
       </div>
+      {recentPosts.length > 0 && <section className="mx-auto w-full max-w-6xl space-y-6 px-5 py-12"><div className="flex items-center justify-between gap-4"><h2 className="text-2xl font-bold">تازه‌های مجله چشم و عینک</h2><Link href="/blog" className="text-primary hover:underline">همه مقاله‌ها</Link></div><div className="grid gap-5 md:grid-cols-3">{recentPosts.map(post => <BlogCard key={post.id} post={post} />)}</div></section>}
     </>
   );
 }

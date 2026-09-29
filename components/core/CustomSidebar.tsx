@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import {
   BanknoteArrowUp,
   BoxIcon,
+  BookOpen,
   ChevronDown,
   Eye,
   Clock,
-  CreditCard,
   BadgePercent,
   Globe,
   Hammer,
@@ -45,7 +45,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SidebarDataType } from "@/types/sidebar-data";
@@ -93,7 +92,12 @@ export function CustomSidebar({
 }: AppSidebarProps) {
   const data = menu === "admin" ? AdminSidebarData : UserSidebarData;
   const pathname = usePathname();
-  const sections = menu === "admin" ? adminSections : userSections;
+  const sections = [...data.menus].sort((a, b) => a.order - b.order).reduce<{ title: string; menus: SidebarDataType["menus"] }[]>((result, group) => {
+    const section = result.find((entry) => entry.title === group.section);
+    if (section) section.menus.push(group);
+    else result.push({ title: group.section, menus: [group] });
+    return result;
+  }, []);
   return (
     <Sidebar dir="rtl" side="right" collapsible="icon" {...props}>
       <SidebarHeader className={styles.header}>
@@ -120,15 +124,7 @@ export function CustomSidebar({
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
-                {section.paths
-                  .map((path) =>
-                    data.menus.find(
-                      (group) =>
-                        group.items[0]?.path.replace(/\/$/, "") === path,
-                    ),
-                  )
-                  .filter((group) => group !== undefined)
-                  .map((group, index) =>
+                {section.menus.map((group, index) =>
                     group.items.length > 1 ? (
                       <SidebarNavCollapsibleGroup
                         key={group.group_title + pathname}
@@ -163,37 +159,6 @@ export function CustomSidebar({
     </Sidebar>
   );
 }
-
-const adminSections = [
-  {
-    title: "مدیریت اصلی",
-    paths: ["/admin", "/admin/orders", "/admin/users", "/admin/invoices"],
-  },
-  {
-    title: "کاتالوگ محصولات",
-    paths: ["/admin/products", "/admin/master-category", "/admin/discounts"],
-  },
-  {
-    title: "گزارش‌ها و آمار",
-    paths: ["/admin/financial", "/admin/analytics", "/admin/logs"],
-  },
-  { title: "پشتیبانی و تنظیمات", paths: ["/admin/tickets", "/admin/settings"] },
-];
-
-const userSections = [
-  { title: "حساب کاربری", paths: ["", "/profile"] },
-  {
-    title: "سفارش‌ها و پرداخت‌ها",
-    paths: [
-      "/glasslens-order",
-      "/orders",
-      "/invoices?addCreditOpen=true",
-      "/invoices",
-      "/financial",
-    ],
-  },
-  { title: "پشتیبانی", paths: ["/tickets"] },
-];
 
 function isRouteActive(pathname: string, path: string) {
   const route = path.replace(/\/$/, "") || "/";
@@ -365,11 +330,22 @@ function SidebarNavCollapsibleGroup({ group }: { group: SidebarNavGroup }) {
 const AdminSidebarData: SidebarDataType = {
   menus: [
     {
+      section: "محتوا", order: 7,
+      group_title: "وبلاگ",
+      icon: BookOpen,
+      items: [
+        { title: "مقاله‌های وبلاگ", path: "/admin/blog" },
+        { title: "دسته‌ها و برچسب‌ها", path: "/admin/blog/terms" },
+      ],
+    },
+    {
+      section: "کاتالوگ محصولات", order: 6,
       group_title: "کدهای تخفیف",
       icon: BadgePercent,
       items: [{ title: "کدهای تخفیف", path: "/admin/discounts" }],
     },
     {
+      section: "مدیریت اصلی", order: 0,
       group_title: "داشبورد",
       icon: LayoutDashboard,
       items: [
@@ -380,27 +356,32 @@ const AdminSidebarData: SidebarDataType = {
       ],
     },
     {
+      section: "گزارش‌ها و آمار", order: 8,
       group_title: "گزارش مالی",
       icon: BanknoteArrowUp,
       items: [{ title: "گزارش مالی", path: "/admin/financial" }],
     },
     {
+      section: "گزارش‌ها و آمار", order: 9,
       group_title: "آمار ورودی سایت",
       icon: PieChartIcon,
       items: [{ title: "آمار ورودی سایت", path: "/admin/analytics" }],
     },
     {
+      section: "پشتیبانی و تنظیمات", order: 11,
       group_title: "تیکت‌ها",
       icon: TicketIcon,
       badgeFn: useOpenTicketCount,
       items: [{ title: "تیکت‌ها", path: "/admin/tickets" }],
     },
     {
+      section: "گزارش‌ها و آمار", order: 10,
       group_title: "گزارش فعالیت‌ها",
       icon: List,
       items: [{ title: "گزارش فعالیت‌ها", path: "/admin/logs" }],
     },
     {
+      section: "مدیریت اصلی", order: 2,
       group_title: "مدیریت کاربران",
       icon: User,
       badgeFn: useApprovalCount,
@@ -412,6 +393,7 @@ const AdminSidebarData: SidebarDataType = {
       ],
     },
     {
+      section: "مدیریت اصلی", order: 1,
       group_title: "سفارش ها",
       icon: Clock,
       items: [
@@ -427,6 +409,7 @@ const AdminSidebarData: SidebarDataType = {
       badgeFn: useOrderCount,
     },
     {
+      section: "کاتالوگ محصولات", order: 5,
       group_title: "دسته بندی ها",
       icon: LayoutList,
       items: [
@@ -441,6 +424,7 @@ const AdminSidebarData: SidebarDataType = {
       ],
     },
     {
+      section: "کاتالوگ محصولات", order: 4,
       group_title: "محصولات",
       icon: BoxIcon,
       items: [
@@ -455,6 +439,7 @@ const AdminSidebarData: SidebarDataType = {
       ],
     },
     {
+      section: "مدیریت اصلی", order: 3,
       group_title: "صورتحساب ها",
       icon: BanknoteArrowUp,
       badgeFn: useCreditInvoiceCount,
@@ -466,6 +451,7 @@ const AdminSidebarData: SidebarDataType = {
       ],
     },
     {
+      section: "پشتیبانی و تنظیمات", order: 12,
       group_title: "تنظیمات",
       icon: Settings,
       items: [{ title: "تنظیمات", path: "/admin/settings" }],
@@ -480,13 +466,21 @@ const AdminSidebarData: SidebarDataType = {
 
 const UserSidebarData: SidebarDataType = {
   menus: [
-    { group_title: "خانه", icon: Globe, items: [{ title: "خانه", path: "/" }] },
+    { section: "حساب کاربری", order: 0, group_title: "خانه", icon: Globe, items: [{ title: "خانه", path: "/" }] },
     {
+      section: "حساب کاربری", order: 2,
+      group_title: "مجله",
+      icon: BookOpen,
+      items: [{ title: "مقالات و اخبار", path: "/blog" }],
+    },
+    {
+      section: "حساب کاربری", order: 1,
       group_title: "پروفایل",
       icon: UserIcon,
       items: [{ title: "پروفایل", path: "/profile" }],
     },
     {
+      section: "سفارش‌ها و پرداخت‌ها", order: 3,
       group_title: "سفارش عدسی",
       icon: ReceiptIcon,
       items: [
@@ -497,11 +491,13 @@ const UserSidebarData: SidebarDataType = {
       ],
     },
     {
+      section: "پشتیبانی", order: 6,
       group_title: "پشتیبانی",
       icon: ReceiptIcon,
       items: [{ title: "پشتیبانی و تیکت‌ها", path: "/tickets" }],
     },
     {
+      section: "سفارش‌ها و پرداخت‌ها", order: 4,
       group_title: "سفارش ها",
       icon: List,
       items: [
@@ -512,24 +508,19 @@ const UserSidebarData: SidebarDataType = {
       ],
     },
     {
-      group_title: "افزایش موجودی",
-      icon: CreditCard,
-      items: [
-        {
-          title: "افزایش موجودی",
-          path: `/invoices?addCreditOpen=true`,
-        },
-      ],
-    },
-    {
+      section: "سفارش‌ها و پرداخت‌ها", order: 5,
       group_title: "مالی",
       icon: BanknoteArrowUp,
       items: [
         {
-          title: "مالی",
+          title: "تارخچه مالی",
           path: `/financial`,
         },
         { title: "صورتحساب‌ها", path: `/invoices` },
+        {
+          title: "افزایش موجودی",
+          path: `/invoices?addCreditOpen=true`,
+        },
       ],
     },
   ],

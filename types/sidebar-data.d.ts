@@ -1,5 +1,7 @@
 export interface SidebarDataType {
   menus: {
+    section: string          // entries with this title form one visible section
+    order: number             // display order within the entire sidebar
     group_title: string        // shown only if items.length > 1, otherwise items[0].title is shown
     icon: LucideIcon            // lucide-react icon component
     items: {
