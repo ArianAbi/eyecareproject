@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -16,14 +16,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { uploadBlogImage } from "@/lib/actions/admin.blog-images.actions";
+import { MediaPickerDialog } from "@/components/media/MediaPickerDialog";
 import { safeBlogLink, type BlogNode } from "@/lib/blog-content";
 import { cn } from "@/lib/utils";
 
 type Tool = { label: string; icon: React.ComponentType<{ className?: string }>; action: () => void; active?: boolean; disabled?: boolean; badge?: "+" | "−" };
 
 export function BlogEditor({ initial, onChange }: { initial: BlogNode; onChange: (value: BlogNode) => void }) {
-  const imageInputId = useId();
   const [error, setError] = useState("");
   const editor = useEditor({
     immediatelyRender: false,
@@ -41,18 +40,6 @@ export function BlogEditor({ initial, onChange }: { initial: BlogNode; onChange:
     },
     editorProps: { attributes: { class: "blog-prose min-h-[32rem] focus:outline-none" } },
   });
-
-  async function upload(file: File) {
-    if (!editor) return;
-    const alt = window.prompt("متن جایگزین تصویر (برای خوانندگان و موتورهای جستجو):");
-    if (!alt?.trim()) { setError("برای تصویر، متن جایگزین لازم است."); return; }
-    const title = window.prompt("زیرنویس تصویر (اختیاری):") || "";
-    setError("");
-    const form = new FormData(); form.set("image", file);
-    const result = await uploadBlogImage(form);
-    if (!result.success) { setError(result.error); return; }
-    editor.chain().focus().setImage({ src: result.url, alt: alt.trim(), title: title.trim() }).run();
-  }
 
   if (!editor) return <div className="min-h-96 rounded-2xl border bg-card p-5 text-muted-foreground">در حال بارگذاری ویرایشگر…</div>;
 
@@ -108,10 +95,9 @@ export function BlogEditor({ initial, onChange }: { initial: BlogNode; onChange:
           {index > 0 && <Separator orientation="vertical" className="mx-1 h-6" />}
           {group.map(({ label, icon: Icon, action, active, disabled, badge }) => <Button key={label} type="button" size="icon" variant={active ? "secondary" : "ghost"} title={label} aria-label={label} aria-pressed={active || false} disabled={disabled} onClick={action} className={cn("rounded-lg", active && "text-primary")}><span className="relative"><Icon className="size-4" />{badge && <span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded bg-card px-0.5 text-[9px] font-bold leading-none">{badge}</span>}</span></Button>)}
         </div>)}
-        <label htmlFor={imageInputId} title="درج تصویر" className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg hover:bg-muted" aria-label="درج تصویر"><ImagePlus className="size-4" /></label>
+        <MediaPickerDialog trigger={<Button type="button" size="icon" variant="ghost" title="درج تصویر" aria-label="درج تصویر"><ImagePlus className="size-4" /></Button>} onSelect={asset => editor.chain().focus().setImage({ src: asset.url, alt: asset.altText || asset.title, title: asset.title }).run()} />
       </div>
     </div>
-    <input id={imageInputId} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="بارگذاری تصویر مقاله" onChange={event => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }} />
     <div className="px-5 py-6 sm:px-8"><EditorContent editor={editor} /></div>
     {error && <p role="alert" className="px-5 pb-4 text-sm text-destructive">{error}</p>}
   </div>;

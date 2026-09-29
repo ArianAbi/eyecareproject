@@ -1,4 +1,4 @@
-// Dry run by default. Only UUID WebP files absent from ImageAsset and older than 24h qualify.
+// Dry run by default. Only UUID WebP/PDF files absent from both asset tables and older than 24h qualify.
 require("dotenv").config({ quiet: true });
 const { Pool } = require("pg");
 const fs = require("node:fs/promises");
@@ -11,12 +11,12 @@ async function main() {
   try {
     const directory = await fs.opendir(root);
     for await (const entry of directory) {
-      if (!entry.isFile() || !/^[0-9a-f-]{36}\.webp$/.test(entry.name)) continue;
+      if (!entry.isFile() || !/^[0-9a-f-]{36}\.(?:webp|pdf)$/.test(entry.name)) continue;
       const target = path.resolve(root, entry.name);
       if (path.dirname(target) !== root) throw Error("Unexpected cleanup path");
       const stat = await fs.lstat(target);
       if (!stat.isFile() || Date.now() - stat.mtimeMs < 86400000) continue;
-      const result = await pool.query('SELECT 1 FROM "ImageAsset" WHERE "filename" = $1', [entry.name]);
+      const result = await pool.query('SELECT 1 FROM "ImageAsset" WHERE "filename" = $1 UNION SELECT 1 FROM "MediaAsset" WHERE "filename" = $1', [entry.name]);
       if (result.rowCount) continue;
       console.log(process.argv.includes("--apply") ? "Remove" : "Would remove", entry.name);
       if (process.argv.includes("--apply")) await fs.unlink(target);

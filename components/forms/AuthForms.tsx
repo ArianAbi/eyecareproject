@@ -1,216 +1,225 @@
-"use client"
+"use client";
 
-import { CreateUserAction, LoginAction } from "@/lib/actions/auth.actions"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card"
-import { Button } from "../ui/button"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { LoginSchema, LoginSchemaType, SignupSchema, SignupSchemaType } from "@/lib/schemas/auth.schema"
-import { FieldGroup } from "../ui/field"
-import { FormFieldShorthand } from "../core/FormFieldShorthand"
-import { Separator } from "../ui/separator"
-import { TermsAndConditions } from "../core/TermsAndConditions"
-import { toast } from "../ui/toast"
-import { Spinner } from "../ui/spinner"
+import { CreateUserAction, LoginAction } from "@/lib/actions/auth.actions";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import { Button } from "../ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  LoginSchema,
+  LoginSchemaType,
+  SignupSchema,
+  SignupSchemaType,
+} from "@/lib/schemas/auth.schema";
+import { FieldGroup } from "../ui/field";
+import { FormFieldShorthand } from "../core/FormFieldShorthand";
+import { Separator } from "../ui/separator";
+import { TermsAndConditions } from "../core/TermsAndConditions";
+import { toast } from "../ui/toast";
+import { Spinner } from "../ui/spinner";
 
 export function LoginForm() {
-    const {
-        handleSubmit,
-        formState,
-        control
-    } = useForm<LoginSchemaType>({
-        resolver: zodResolver(LoginSchema),
-        reValidateMode: "onChange",
-        mode: "onChange",
-        defaultValues: {
-            username: "",
-            password: ""
-        }
-    })
+  const { handleSubmit, formState, control } = useForm<LoginSchemaType>({
+    resolver: zodResolver(LoginSchema),
+    reValidateMode: "onChange",
+    mode: "onChange",
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
 
-    const onSubmit = handleSubmit(async (data) => {
-        const response = await LoginAction(data.username, data.password)
+  const onSubmit = handleSubmit(async (data) => {
+    const username = data.username.trim();
 
-        if (response?.error) {
-            toast.add({
-                title: response.error,
-                type: "error"
-            })
+    const response = await LoginAction(username, data.password);
 
-            return
-        }
+    if (response?.error) {
+      toast.add({
+        title: response.error,
+        type: "error",
+      });
 
-        toast.add({
-            title: "خوش آمدید",
-            type: "success"
-        })
-    })
+      return;
+    }
 
-    return <>
-        <Card>
-            <CardHeader>
-                <CardTitle>
-                    ورود به حساب
-                </CardTitle>
-            </CardHeader>
-            <form onSubmit={onSubmit} className="min-w-96">
-                <CardContent className="space-y-3">
-                    <FieldGroup>
-                        <FormFieldShorthand
-                            control={control}
-                            label="نام کاربری یا شماره"
-                            placeholder="نام کاربری یا شماره"
-                            name="username"
-                            type="text"
-                        />
+    toast.add({
+      title: "خوش آمدید",
+      type: "success",
+    });
+  });
 
-                        <FormFieldShorthand
-                            control={control}
-                            label="رمز عبور"
-                            placeholder="رمز عبور"
-                            name="password"
-                            type="password"
-                        />
-                    </FieldGroup>
-                </CardContent>
-                <CardFooter>
-                    <Button disabled={formState.isSubmitting || !formState.isValid} className={"w-full mt-5"} type="submit">
-                        <span>
-                            ورود
-                        </span>
-                        {formState.isSubmitting && <Spinner />}
-                    </Button>
-                </CardFooter>
-            </form>
-        </Card>
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>ورود به حساب</CardTitle>
+        </CardHeader>
+        <form onSubmit={onSubmit} className="min-w-96">
+          <CardContent className="space-y-3">
+            <FieldGroup>
+              <FormFieldShorthand
+                control={control}
+                label="نام کاربری یا شماره"
+                placeholder="نام کاربری یا شماره"
+                name="username"
+                type="text"
+              />
+
+              <FormFieldShorthand
+                control={control}
+                label="رمز عبور"
+                placeholder="رمز عبور"
+                name="password"
+                type="password"
+              />
+            </FieldGroup>
+          </CardContent>
+          <CardFooter>
+            <Button
+              disabled={formState.isSubmitting || !formState.isValid}
+              className={"w-full mt-5"}
+              type="submit"
+            >
+              <span>ورود</span>
+              {formState.isSubmitting && <Spinner />}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </>
+  );
 }
 
-
 export function SignupForm() {
-    const {
-        handleSubmit,
-        formState,
-        control,
-        setError
-    } = useForm<SignupSchemaType>({
-        resolver: zodResolver(SignupSchema),
-        mode: "onChange",
-        reValidateMode: "onChange",
-        defaultValues: {
-            username: "",
-            number: "",
-            password: "",
-            confirmPassword: ""
-        }
-    })
+  const { handleSubmit, formState, control, setError } =
+    useForm<SignupSchemaType>({
+      resolver: zodResolver(SignupSchema),
+      mode: "onChange",
+      reValidateMode: "onChange",
+      defaultValues: {
+        username: "",
+        number: "",
+        password: "",
+        confirmPassword: "",
+      },
+    });
 
-    const onSubmit = handleSubmit(async (data) => {
-        let response: Awaited<ReturnType<typeof CreateUserAction>>
+  const onSubmit = handleSubmit(async (data) => {
+    let response: Awaited<ReturnType<typeof CreateUserAction>>;
 
-        try {
-            response = await CreateUserAction(data.username, data.number, data.password)
-        } catch (err) {
-            toast.add({
-                type: "error",
-                title: "مشکلی در ایجاد حساب پیش آمده. دوباره تلاش کنید یا با پشتیبانی تماس بگیرید",
-                ...(err instanceof Error ? {} : {})
-            })
-            return
-        }
+    try {
+      response = await CreateUserAction(
+        data.username.trim(),
+        data.number,
+        data.password,
+      );
+    } catch (err) {
+      toast.add({
+        type: "error",
+        title:
+          "مشکلی در ایجاد حساب پیش آمده. دوباره تلاش کنید یا با پشتیبانی تماس بگیرید",
+        ...(err instanceof Error ? {} : {}),
+      });
+      return;
+    }
 
-        if (!response.success) {
-            // show the message under the offending field(s)
-            for (const [field, message] of Object.entries(response.fieldErrors ?? {})) {
-                setError(field as keyof SignupSchemaType, { type: "server", message })
-            }
+    if (!response.success) {
+      // show the message under the offending field(s)
+      for (const [field, message] of Object.entries(
+        response.fieldErrors ?? {},
+      )) {
+        setError(field as keyof SignupSchemaType, { type: "server", message });
+      }
 
-            toast.add({
-                title: response.error,
-                type: "error"
-            })
-            return
-        }
+      toast.add({
+        title: response.error,
+        type: "error",
+      });
+      return;
+    }
 
-        toast.add({
-            title: "حساب ساخته شد",
-            type: "success"
-        })
+    toast.add({
+      title: "حساب ساخته شد",
+      type: "success",
+    });
 
-        // outside the try/catch so its redirect isn't caught as an error
-        await LoginAction(data.username, data.password)
-    })
+    // outside the try/catch so its redirect isn't caught as an error
+    await LoginAction(data.username, data.password);
+  });
 
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center font-semibold">ساخت حساب</CardTitle>
+        </CardHeader>
+        <Separator />
+        <form onSubmit={onSubmit} className="min-w-96">
+          <CardContent>
+            <FieldGroup className="gap-2">
+              <FormFieldShorthand
+                control={control}
+                label="نام کاربری"
+                placeholder="نام کاربری"
+                name="username"
+                type="text"
+              />
 
-    return <>
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-center font-semibold">
-                    ساخت حساب
-                </CardTitle>
+              {/* number */}
+              <FormFieldShorthand
+                control={control}
+                label="شماره"
+                placeholder="0912xxxxxxx"
+                name="number"
+                type="text"
+              />
 
-            </CardHeader>
-            <Separator />
-            <form onSubmit={onSubmit} className="min-w-96">
-                <CardContent>
-                    <FieldGroup className="gap-2">
-                        <FormFieldShorthand
-                            control={control}
-                            label="نام کاربری"
-                            placeholder="نام کاربری"
-                            name="username"
-                            type="text"
-                        />
+              {/* password */}
+              <FormFieldShorthand
+                control={control}
+                label="رمز عبور"
+                placeholder="رمز عبور"
+                name="password"
+                type="password"
+              />
 
-                        {/* number */}
-                        <FormFieldShorthand
-                            control={control}
-                            label="شماره"
-                            placeholder="0912xxxxxxx"
-                            name="number"
-                            type="text"
-                        />
-
-                        {/* password */}
-                        <FormFieldShorthand
-                            control={control}
-                            label="رمز عبور"
-                            placeholder="رمز عبور"
-                            name="password"
-                            type="password"
-                        />
-
-                        {/* number */}
-                        <FormFieldShorthand
-                            control={control}
-                            label="تکرار رمز عبور"
-                            placeholder="تکرار رمز عبور"
-                            name="confirmPassword"
-                            type="password"
-                        />
-                    </FieldGroup>
-                </CardContent>
-                <CardFooter>
-                    <Button disabled={formState.isSubmitting || !formState.isValid} className={"w-full mt-5"} type="submit">
-                        <span>
-                            ساخت حساب
-                        </span>
-                        {formState.isSubmitting && <Spinner />}
-                    </Button>
-                </CardFooter>
-                <Separator className={"mt-2"} />
-                <div className="px-2 text-xs">
-                    <span>
-                        افتتاح حساب به منزله پذیرش
-                    </span>
-                    <TermsAndConditions />
-                    <span>
-                        میباشد
-                    </span>
-                </div>
-            </form>
-        </Card>
+              {/* number */}
+              <FormFieldShorthand
+                control={control}
+                label="تکرار رمز عبور"
+                placeholder="تکرار رمز عبور"
+                name="confirmPassword"
+                type="password"
+              />
+            </FieldGroup>
+          </CardContent>
+          <CardFooter>
+            <Button
+              disabled={formState.isSubmitting || !formState.isValid}
+              className={"w-full mt-5"}
+              type="submit"
+            >
+              <span>ساخت حساب</span>
+              {formState.isSubmitting && <Spinner />}
+            </Button>
+          </CardFooter>
+          <Separator className={"mt-2"} />
+          <div className="px-2 text-xs">
+            <span>افتتاح حساب به منزله پذیرش</span>
+            <TermsAndConditions />
+            <span>میباشد</span>
+          </div>
+        </form>
+      </Card>
     </>
+  );
 }
 
 // export function SignupFormCopy() {
@@ -308,4 +317,3 @@ export function SignupForm() {
 //         </Card>
 //     </>
 // }
-

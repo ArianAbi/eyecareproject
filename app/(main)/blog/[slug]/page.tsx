@@ -8,6 +8,7 @@ import { BlogContent, blogHeadings } from "@/components/blog/BlogContent";
 import { normalizeBlogContent, readingMinutes, faqSchema } from "@/lib/blog-content";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { getSettings } from "@/lib/settings";
+import { mediaFilename } from "@/lib/media";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -35,10 +36,12 @@ export default async function BlogArticle({ params }: Props) {
   const headings = blogHeadings(content);
   const faqs = faqSchema.safeParse(post.faq).data ?? [];
   const settings = await getSettings();
+  const coverFilename = post.coverImage ? mediaFilename(post.coverImage) : null;
+  const coverMedia = coverFilename ? await prisma.mediaAsset.findUnique({ where: { filename: coverFilename }, select: { title: true, altText: true, description: true, keywords: true, width: true, height: true } }) : null;
   const related = await prisma.blogPost.findMany({ where: { AND: [publishedBlogWhere(), { id: { not: post.id } }, ...(post.categoryId ? [{ categoryId: post.categoryId }] : [])] }, select: blogCardSelect, orderBy: { publishedAt: "desc" }, take: 3 });
   const url = post.canonicalUrl || absoluteBlogUrl(`/blog/${post.slug}`);
   const schemas = [
-    { "@context": "https://schema.org", "@type": "BlogPosting", headline: post.title, description: post.excerpt, mainEntityOfPage: url, url, image: post.coverImage ? [absoluteBlogUrl(post.coverImage)] : undefined, datePublished: post.publishedAt?.toISOString(), dateModified: post.updatedAt.toISOString(), inLanguage: "fa-IR", author: { "@type": "Person", name: post.author.username }, publisher: { "@type": "Organization", name: settings.siteName }, articleSection: post.category?.name, keywords: post.tags.map(tag => tag.name).join(", ") },
+    { "@context": "https://schema.org", "@type": "BlogPosting", headline: post.title, description: post.excerpt, mainEntityOfPage: url, url, image: post.coverImage ? [{ "@type": "ImageObject", contentUrl: absoluteBlogUrl(post.coverImage), name: coverMedia?.title || post.title, description: coverMedia?.description || post.coverAlt || undefined, caption: post.coverAlt || coverMedia?.altText || undefined, width: coverMedia?.width || undefined, height: coverMedia?.height || undefined, keywords: coverMedia?.keywords.join(", ") || undefined }] : undefined, datePublished: post.publishedAt?.toISOString(), dateModified: post.updatedAt.toISOString(), inLanguage: "fa-IR", author: { "@type": "Person", name: post.author.username }, publisher: { "@type": "Organization", name: settings.siteName }, articleSection: post.category?.name, keywords: post.tags.map(tag => tag.name).join(", ") },
     { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "خانه", item: absoluteBlogUrl("/") }, { "@type": "ListItem", position: 2, name: "مجله", item: absoluteBlogUrl("/blog") }, { "@type": "ListItem", position: 3, name: post.title, item: absoluteBlogUrl(`/blog/${post.slug}`) }] },
     ...(faqs.length ? [{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map(item => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: item.answer } })) }] : []),
   ];

@@ -1,7 +1,7 @@
 # Image uploads
 
 `ImageInput` uploads on selection and returns a table-independent `StoredImage` through `onChange`.
-Uploads require a signed-in user. Image URLs require the owner or a current admin session. ImageAsset records owner, filename, size and creation time. These are compressed application assets, not diagnostic originals.
+Uploads require a signed-in user. Existing `ImageInput` image URLs require the owner or a current admin session. `ImageAsset` also supports a generic image/PDF flow with server-decided `PRIVATE`/`PUBLIC` visibility; see [media endpoints and flow](MEDIA.md#user-files-visibility-and-endpoints). These are application assets, not diagnostic originals.
 
 ```tsx
 "use client";
@@ -36,7 +36,7 @@ The standalone `uploadImageAction` accepts FormData with an `image` File and ret
 - Quota: at most 100 assets and 100 MiB per account; upload reserves worst-case 5 MiB headroom under a database user-row lock before writing. Rate limit: 10 uploads per account/hour. Failed transactions attempt to remove the newly written file.
 - Filenames are generated UUIDs. Callers cannot choose paths. GET enforces ownership before disk access and returns `Cache-Control: private, no-store`.
 - Migration does not guess ownership of old files. Legacy files without ImageAsset metadata are inaccessible until an operator explicitly maps them to an owner. Review that mapping before orphan cleanup.
-- `node scripts/cleanup-orphan-images.cjs` is a dry run for untracked UUID WebP files older than 24 hours (up to 1000 per run). An operator can use `--apply` after reviewing the output and configured persistent directory. Metadata-backed assets are preserved. Never use this as a substitute for future business-reference retention policies.
+- `node scripts/cleanup-orphan-images.cjs` is a dry run for untracked UUID WebP or PDF files older than 24 hours (up to 1000 per run). An operator can use `--apply` after reviewing the output and configured persistent directory. Metadata-backed assets are preserved. Never use this as a substitute for future business-reference retention policies.
 
 See [deployment notes](hardening-deployment.md) for migration, proxy and storage requirements. Private HTTP access does not itself establish medical-record retention/compliance.
 

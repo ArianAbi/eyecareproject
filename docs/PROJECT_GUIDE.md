@@ -79,6 +79,7 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/tickets`, `/tickets/[id]` | Shared TicketPages server components and TicketForm client controls |
 | `/admin` | Today's grouped orders and summary tabs for orders/financial/tickets |
 | `/admin/products` | Server list, `columns.tsx`, create/edit links |
+| `/admin/media` | Public admin image library, metadata editing, reusable selection/upload dialog |
 | `/admin/blog`, `/admin/blog/create`, `/admin/blog/[id]`, `/admin/blog/[id]/preview`, `/admin/blog/terms` | Admin article list, Tiptap editor, private preview, categories and tags |
 | `/admin/products/create`, `/admin/products/[id]` | Separate RHF product create/edit forms |
 | `/admin/products/tags` | Create/list tags; edit/delete placeholders |
@@ -95,11 +96,11 @@ Versions below are declarations in `package.json`, not an audit of every install
 | `/api/auth/[...nextauth]` | Auth.js handlers |
 | `/api/orders/order-stream` | Admin-only no-store JSON pending count, polled every 15 seconds |
 | `/api/images/[filename]` | Owner/admin-only uploaded WebP serving |
-| `/api/blog/images/[filename]` | Public WebP serving for admin-uploaded blog assets recorded in `BlogImageAsset` |
+| `/api/blog/images/[filename]` | Public WebP serving for admin-uploaded assets recorded in `MediaAsset` |
 | `/api/financial/print`, `/api/admin/users/[id]/financial/print` | Authenticated owner/admin-only A4 credit statements for all transactions |
 | `/robots.txt`, `/sitemap.xml` | Metadata routes; sitemap lists landing, blog index, live indexable articles and their populated taxonomy archives |
 
-The blog uses `BlogPost`, `BlogCategory`, `BlogTag`, and `BlogImageAsset`. Posts store validated Tiptap JSON and are rendered as semantic HTML on the server. Admin mutations recheck authorization, validate input, and audit in the same transaction. Scheduled posts are gated by `publishedAt <= now` at read time; no cron is required. Read [docs/BLOG.md](BLOG.md) for publishing, SEO, storage, and migration details.
+The blog uses `BlogPost`, `BlogCategory`, `BlogTag`, and public `MediaAsset`. Posts store validated Tiptap JSON and are rendered as semantic HTML on the server. Admin mutations recheck authorization, validate input, and audit in the same transaction. Scheduled posts are gated by `publishedAt <= now` at read time; no cron is required. Read [docs/BLOG.md](BLOG.md) for publishing and [docs/MEDIA.md](MEDIA.md) for media reuse, SEO, storage, and migration details.
 
 There is no `/admin/summary` page; affected invalidations target `/admin`. Dynamic pages use promised `params`/`searchParams` and await them.
 
@@ -206,7 +207,8 @@ prisma/schema.prisma is authoritative. prisma.config.ts reads DATABASE_URL. lib/
 | Setting | Singleton global: siteName, deliveryPrice, cutPrice, Bale/Telegram group IDs |
 | Notification | Schema exists; no complete workflow found |
 | PaymentAttempt | Gateway authority history, status and check timestamps |
-| ImageAsset | Private upload owner, size and filename |
+| ImageAsset | Generic user file owner, visibility, MIME type, original name, size and filename; older image uploads remain private |
+| MediaAsset | Public admin image, owner, dimensions, title/alt/description/keywords and blur placeholder |
 | RateLimit | Shared atomic operation counters and expiry |
 
 Preserve persisted spellings `orederIdentification`, `positivToSph`, `WAITING_FOR_APPORVAL`. User states are UNVERIFIED, WAITING_FOR_APPROVAL, VERIFIED, REJECTED. Order states are PENDING, APPROVED, INPROCESS, FINISHED, SENT, ONHOLD; ONHOLD displays as rejected.
@@ -267,7 +269,7 @@ requireUser derives session identity; requireAdmin rechecks DB role. Customer ow
 | Analytics | Public validated UUID session cookie/source input; createMany skipDuplicates; first-touch tracker excludes admin; not trusted user identity |
 | Uploads | Signed-in users; still JPEG/PNG/WebP <=5 MiB and <=40MP; Sharp strips metadata/re-encodes <=2048 edge; UUID WebP and 10x10 blur data URL |
 
-Uploaded files are private to owner/admin with no-store caching. ImageAsset tracks ownership/size; quotas, rate limits, deletion, an owner library and orphan cleanup are implemented. Product has no image reference field. Production requires explicit persistent shared storage; see [image uploads](image-uploads.md).
+Generic files are private to owner/admin by default; admins can explicitly upload public files. `ImageAsset` tracks ownership, visibility, type and size; quotas, rate limits, deletion, an owner library, an admin user-files tab and orphan cleanup are implemented. Product has no image reference field. Production requires explicit persistent shared storage; see [image uploads](image-uploads.md) and [media endpoints](MEDIA.md#user-files-visibility-and-endpoints).
 
 Revalidation is not a broadcast. Pending-order badges poll shared database state across workers; full tables and other server-fed badges still need refreshed data.
 
@@ -306,7 +308,7 @@ Current verification: see [hardening deployment notes](hardening-deployment.md).
 3. Add feature actions under lib/actions with requireAdmin, full input validation, minimal returns, transaction/audit and post-commit invalidation. Prefer explicit expected-error results.
 4. Add async server list/create/detail pages under app/admin/<feature>. Pass minimal data to colocated client forms/columns; await promised route props.
 5. Compose DataTable/ColumnDef, dialogs, RHF shorthand fields and local Base UI controls. Include pending/error/empty/not-found behavior. Add explicit server pagination/filtering where needed.
-6. Register sidebar menu data and section paths. Add badge providers only if required and decide how they refresh.
+6. Register sidebar menu data with its section and order. Add badge providers only if required and decide how they refresh.
 7. Revalidate actual affected routes, including detail/count consumers. Test authorization/ownership/invalid input/retries and relevant transaction invariants; check types/lint/RTL/mobile.
 
 ## Repurposing for another domain
@@ -341,6 +343,7 @@ Source-derived export index at review time. An export is not proof that a contro
 | `lib/actions/admin.cart.actions.ts` | `ADMIN_GetOrderUserAction`, `ADMIN_AddItemToCartAction`, `ADMIN_UpdateCartItemRawOrCutAction`, `ADMIN_DeleteItemFromCartAction`, `ADMIN_ClearCartAction`, `ADMIN_SubmitCartOrderAction` |
 | `lib/actions/admin.blog.actions.ts` | `saveBlogPost`, `archiveBlogPost`, `duplicateBlogPost`, `saveBlogTerm`, `deleteBlogTerm` |
 | `lib/actions/admin.blog-images.actions.ts` | `uploadBlogImage` |
+| `lib/actions/admin.media.actions.ts` | `listMediaForPicker`, `saveMediaMetadata`, `deleteMedia` |
 | `lib/actions/admin.invoices.action.ts` | `ADMIN_GetInvoicesAction`, `ADMIN_GetSingleInvoiceAction`, `ADMIN_ApproveInvoiceAction`, `ADMIN_RejectInvoiceAction` |
 | `lib/actions/admin.logs.action.ts` | `ADMIN_GetLogsAction` |
 | `lib/actions/admin.masterCategory.actions.ts` | `ADMIN_CreateMasterCategoryAction`, `ADMIN_GetMasterCategorys`, `ADMIN_UpdateMasterCategorys`, `ADMIN_DeleteMasterCategorys` |

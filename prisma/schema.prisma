@@ -46,7 +46,7 @@ model User {
   discounts           Discount[]
   discountRedemptions DiscountRedemption[]
   blogPosts           BlogPost[]
-  blogImages          BlogImageAsset[]
+  mediaAssets         MediaAsset[]
 }
 
 enum BlogPostStatus {
@@ -105,12 +105,20 @@ model BlogPost {
   @@index([categoryId, status, publishedAt])
 }
 
-model BlogImageAsset {
-  filename  String   @id
-  ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  size      Int
-  createdAt DateTime @default(now())
+model MediaAsset {
+  filename    String   @id
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  size        Int
+  width       Int?
+  height      Int?
+  title       String   @default("")
+  altText     String   @default("")
+  description String   @default("")
+  keywords    String[] @default([])
+  blurDataUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([ownerId, createdAt])
 }
@@ -514,13 +522,23 @@ model RateLimit {
   @@index([expiresAt])
 }
 
+enum UploadVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+// Historical name retained for existing image URLs; this table also stores PDF uploads.
 model ImageAsset {
-  filename  String   @id
-  ownerId   String
-  size      Int
-  createdAt DateTime @default(now())
+  filename     String           @id
+  ownerId      String
+  size         Int
+  visibility   UploadVisibility @default(PRIVATE)
+  mimeType     String           @default("image/webp")
+  originalName String           @default("")
+  createdAt    DateTime         @default(now())
 
   @@index([ownerId, createdAt])
+  @@index([visibility, createdAt])
 }
 
 model PaymentAttempt {

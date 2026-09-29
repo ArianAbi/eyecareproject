@@ -6,13 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { Archive, CalendarClock, Check, Eye, FileText, Globe2, ImagePlus, Save, Search, Send, Sparkles, X } from "lucide-react";
 import { BlogEditor } from "@/components/blog/BlogEditor";
+import { MediaPickerDialog } from "@/components/media/MediaPickerDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { uploadBlogImage } from "@/lib/actions/admin.blog-images.actions";
 import { saveBlogPost } from "@/lib/actions/admin.blog.actions";
 import { blogText, type BlogNode, type BlogPostInput } from "@/lib/blog-content";
 
@@ -55,7 +55,6 @@ export function BlogPostForm({ id, initial, categories, tags }: { id?: string; i
   const [form, setForm] = useState<BlogPostInput>(initial);
   const [slugTouched, setSlugTouched] = useState(Boolean(id));
   const [pending, setPending] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const slugLocked = Boolean(id && (initial.status === "PUBLISHED" || initial.status === "SCHEDULED"));
@@ -72,17 +71,6 @@ export function BlogPostForm({ id, initial, categories, tags }: { id?: string; i
 
   function set<K extends keyof BlogPostInput>(key: K, value: BlogPostInput[K]) {
     setForm(current => ({ ...current, [key]: value }));
-  }
-
-  async function upload(file: File, target: "coverImage" | "ogImage") {
-    setUploading(true); setError("");
-    try {
-      const data = new FormData(); data.set("image", file);
-      const result = await uploadBlogImage(data);
-      if (!result.success) { setError(result.error); return; }
-      set(target, result.url);
-    } catch { setError("بارگذاری تصویر انجام نشد. دوباره تلاش کنید."); }
-    finally { setUploading(false); }
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -108,7 +96,7 @@ export function BlogPostForm({ id, initial, categories, tags }: { id?: string; i
         <div className="flex items-center gap-3"><h1 className="text-2xl font-bold">{id ? "ویرایش مقاله" : "مقاله جدید"}</h1><Badge variant={form.status === "PUBLISHED" ? "default" : "secondary"}>{statusChoices.find(choice => choice.value === form.status)?.label}</Badge></div>
         <p className="text-sm text-muted-foreground">عنوان و متن را بنویسید، سپس تنظیمات انتشار و نمایش در جستجو را بررسی کنید.</p>
       </div>
-      <div className="flex flex-wrap gap-2">{id && <Button type="button" variant="outline" render={<Link href={`/admin/blog/${id}/preview`} target="_blank" />}><Eye className="size-4" /> پیش‌نمایش</Button>}<Button type="submit" disabled={pending || uploading}><SubmitIcon className="size-4" />{pending ? "در حال ذخیره…" : submitLabel}</Button></div>
+      <div className="flex flex-wrap gap-2">{id && <Button type="button" variant="outline" render={<Link href={`/admin/blog/${id}/preview`} target="_blank" />}><Eye className="size-4" /> پیش‌نمایش</Button>}<Button type="submit" disabled={pending}><SubmitIcon className="size-4" />{pending ? "در حال ذخیره…" : submitLabel}</Button></div>
     </div>
     {error && <div role="alert" className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
     {message && <div role="status" className="rounded-xl border border-primary/50 bg-primary/10 p-4 text-sm text-primary">{message}</div>}
@@ -158,7 +146,7 @@ export function BlogPostForm({ id, initial, categories, tags }: { id?: string; i
             </div>
             {form.status === "SCHEDULED" && <div className="space-y-2"><Label htmlFor="blog-scheduled-at">تاریخ و ساعت انتشار</Label><Input id="blog-scheduled-at" type="datetime-local" value={form.publishedAt ? localDateTime(form.publishedAt) : ""} onChange={event => set("publishedAt", event.target.value ? new Date(event.target.value).toISOString() : null)} className="h-10 bg-background" /><p className="text-xs text-muted-foreground">بر اساس ساعت محلی مرورگر شما</p></div>}
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.featured} onChange={event => set("featured", event.target.checked)} className="accent-primary" />نمایش به‌عنوان مقاله ویژه</label>
-            <Button type="submit" disabled={pending || uploading} className="w-full"><SubmitIcon className="size-4" />{pending ? "در حال ذخیره…" : submitLabel}</Button>
+            <Button type="submit" disabled={pending} className="w-full"><SubmitIcon className="size-4" />{pending ? "در حال ذخیره…" : submitLabel}</Button>
           </CardContent>
         </Card>
 
@@ -175,8 +163,7 @@ export function BlogPostForm({ id, initial, categories, tags }: { id?: string; i
           <CardHeader><CardTitle>تصویر شاخص</CardTitle><CardDescription>روی کارت مقاله و بالای صفحه نمایش داده می‌شود.</CardDescription></CardHeader>
           <CardContent className="space-y-3">
             {form.coverImage && <Image src={form.coverImage} alt={form.coverAlt || "پیش‌نمایش تصویر شاخص"} width={600} height={340} sizes="300px" className="aspect-video w-full rounded-xl object-cover" />}
-            <Label htmlFor="blog-cover" className="cursor-pointer rounded-xl border border-dashed px-3 py-3"><ImagePlus className="size-4" />{uploading ? "در حال بارگذاری…" : "انتخاب تصویر"}</Label>
-            <Input id="blog-cover" type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { const file = event.target.files?.[0]; if (file) void upload(file, "coverImage"); }} className="sr-only" />
+            <MediaPickerDialog trigger={<Button type="button" variant="outline"><ImagePlus className="size-4" />انتخاب تصویر از رسانه‌ها</Button>} onSelect={asset => setForm(current => ({ ...current, coverImage: asset.url, coverAlt: asset.altText || asset.title }))} />
             <TextField id="blog-cover-alt" label="متن جایگزین تصویر" value={form.coverAlt} onChange={value => set("coverAlt", value)} maxLength={200} description="توصیف کوتاه و دقیق از محتوای تصویر" />
           </CardContent>
         </Card>
@@ -192,7 +179,7 @@ export function BlogPostForm({ id, initial, categories, tags }: { id?: string; i
               <TextField id="blog-canonical" label="نشانی اصلی (canonical)" value={form.canonicalUrl} onChange={value => set("canonicalUrl", value)} placeholder="https://example.com/blog/article" description="اختیاری؛ فقط وقتی مقاله نسخه اصلی در نشانی دیگری دارد." />
               <TextField id="blog-og-title" label="عنوان اشتراک‌گذاری" value={form.ogTitle} onChange={value => set("ogTitle", value)} maxLength={100} description="اختیاری؛ برای پیش‌نمایش در پیام‌رسان‌ها." />
               <TextField id="blog-og-description" label="توضیح اشتراک‌گذاری" value={form.ogDescription} onChange={value => set("ogDescription", value)} multiline maxLength={320} />
-              <div className="space-y-2"><Label htmlFor="blog-og-image">تصویر اشتراک‌گذاری</Label><Input id="blog-og-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { const file = event.target.files?.[0]; if (file) void upload(file, "ogImage"); }} />{form.ogImage && <p className="break-all text-xs text-muted-foreground">{form.ogImage}</p>}</div>
+              <div className="space-y-2"><Label>تصویر اشتراک‌گذاری</Label><MediaPickerDialog trigger={<Button type="button" variant="outline"><ImagePlus className="size-4" />انتخاب از رسانه‌ها</Button>} onSelect={asset => set("ogImage", asset.url)} />{form.ogImage && <p className="break-all text-xs text-muted-foreground">{form.ogImage}</p>}</div>
               <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={form.noindex} onChange={event => set("noindex", event.target.checked)} className="mt-1 accent-primary" /><span>این مقاله در نتایج جستجو نمایش داده نشود</span></label>
             </div></details>
           </CardContent>
